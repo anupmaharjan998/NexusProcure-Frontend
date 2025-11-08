@@ -119,7 +119,7 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
                 fontWeight: 600,
               }}
             >
-              {user?.fullName ? getInitials(user.fullName) : 'U'}
+              {user?.fullName ? getInitials(user.fullName || '') : 'U'}
             </Avatar>
           </IconButton>
         </Box>

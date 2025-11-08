@@ -26,7 +26,7 @@ import { getInitials } from '../utils/helpers.ts';
 
 const profileSchema = yup.object({
   name: yup.string().required('Name is required'),
-  phone: yup.string(),
+  username: yup.string(),
 });
 
 const passwordSchema = yup.object({
@@ -56,7 +56,7 @@ export const Profile = () => {
     resolver: yupResolver(profileSchema),
     defaultValues: {
       name: user?.fullName || '',
-      phone: user?.phone || '',
+        username: user?.username || '',
     },
   });
 
@@ -194,14 +194,14 @@ export const Profile = () => {
                       {user?.email}
                     </Typography>
                   </Box>
-                  {user?.phone && (
+                  {user?.username && (
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
                       <PhoneIcon sx={{ color: '#64748B', fontSize: 20 }} />
                       <Typography
                         variant="body2"
                         sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}
                       >
-                        {user.phone}
+                        {user.username}
                       </Typography>
                     </Box>
                   )}
@@ -288,10 +288,10 @@ export const Profile = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Input
-                        label="Phone"
-                        {...registerProfile('phone')}
-                        error={!!profileErrors.phone}
-                        helperText={profileErrors.phone?.message}
+                        label="username"
+                        {...registerProfile('username')}
+                        error={!!profileErrors.username}
+                        helperText={profileErrors.username?.message}
                         disabled={!editMode || loading}
                       />
                     </Grid>
