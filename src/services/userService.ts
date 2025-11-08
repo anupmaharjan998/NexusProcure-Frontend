@@ -10,26 +10,26 @@ export const getUsers = async (): Promise<User[]> => {
     return [
       {
         id: 'u-1',
-        fullName: 'Alice Johnson',
+        fullName: 'Alice Johnson - Dummy',
         email: 'alice@example.com',
-        phone: '1234567890',
+        username: 'alicejohnson',
         roleId: 'r-1',
         role: 'Admin',
         departmentId: 'd-1',
         departmentName: 'IT',
-        status: 'Active',
+        isActive: true,
         createdAt: new Date().toISOString(),
       },
       {
         id: 'u-2',
-        fullName: 'Bob Smith',
+        fullName: 'Bob Smith - Dummy',
         email: 'bob@example.com',
-        phone: '9876543210',
+        username: 'bobsmith',
         roleId: 'r-2',
         role: 'Employee',
         departmentId: 'd-2',
         departmentName: 'Finance',
-        status: 'Inactive',
+        isActive: false,
         createdAt: new Date().toISOString(),
       },
     ];
@@ -42,12 +42,32 @@ export const getUserById = async (id: string): Promise<User> => {
 };
 
 export const createUser = async (data: UserFormData): Promise<User> => {
-  const response = await api.post<User>('/users', data);
+  const payload = {
+    fullName: data.name,
+    email: data.email,
+    username: data.username,
+    roleId: data.roleId,
+    departmentId: data.departmentId,
+    isActive: data.isActive,
+    ...(data.password ? { password: data.password } : {}),
+  };
+  const response = await api.post<User>('/users', payload);
   return response.data;
 };
 
 export const updateUser = async (id: string, data: Partial<UserFormData>): Promise<User> => {
-  const response = await api.put<User>(`/users/${id}`, data);
+  const payload: any = {
+    ...(data.name !== undefined ? { fullName: data.name } : {}),
+    ...(data.email !== undefined ? { email: data.email } : {}),
+    ...(data.username !== undefined ? { username: data.username } : {}),
+    ...(data.roleId !== undefined ? { roleId: data.roleId } : {}),
+    ...(data.departmentId !== undefined ? { departmentId: data.departmentId } : {}),
+    ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+  };
+  if (data.password) {
+    payload.password = data.password;
+  }
+  const response = await api.put<User>(`/users/${id}`, payload);
   return response.data;
 };
 

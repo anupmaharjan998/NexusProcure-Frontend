@@ -109,13 +109,13 @@ export const Users = () => {
     { id: 'role', label: 'Role', minWidth: 120 },
     { id: 'departmentName', label: 'Department', minWidth: 150 },
     {
-      id: 'status',
+      id: 'isActive',
       label: 'Status',
       minWidth: 100,
       format: (value) => (
         <Chip
           label={value}
-          color={value === 'Active' ? 'success' : 'default'}
+          color={value === true ? 'success' : 'default'}
           size="small"
           sx={{ fontFamily: 'Poppins, sans-serif' }}
         />

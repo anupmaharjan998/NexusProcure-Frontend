@@ -1,4 +1,4 @@
-import { Box, Grid, MenuItem } from '@mui/material';
+import { Box, Grid, MenuItem, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -21,7 +21,7 @@ const schema = yup.object({
   }),
   roleId: yup.string().required('Role is required'),
   departmentId: yup.string().required('Department is required'),
-  status: yup.string().oneOf(['Active', 'Inactive']).required('Status is required'),
+  isActive: yup.boolean().required('Status is required'),
 });
 
 interface UserFormProps {
@@ -50,10 +50,11 @@ export const UserForm = ({
     handleSubmit,
     control,
     reset,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<UserFormData>({
     resolver: yupResolver(schema),
     context: { isEdit },
+    mode: 'onChange',
     defaultValues: {
       name: '',
       email: '',
@@ -61,7 +62,7 @@ export const UserForm = ({
       password: '',
       roleId: '',
       departmentId: '',
-      status: 'Active',
+      isActive: true,
     },
   });
 
@@ -73,7 +74,7 @@ export const UserForm = ({
         phone: user.phone || '',
         roleId: user.roleId,
         departmentId: user.departmentId,
-        status: user.status,
+        isActive: user.isActive,
       });
     } else {
       reset({
@@ -83,7 +84,7 @@ export const UserForm = ({
         password: '',
         roleId: '',
         departmentId: '',
-        status: 'Active',
+        isActive: true,
       });
     }
   }, [user, reset]);
@@ -113,6 +114,7 @@ export const UserForm = ({
             variant="contained"
             onClick={handleSubmit(handleFormSubmit)}
             loading={loading}
+            disabled={!isValid || loading}
           >
             {isEdit ? 'Update' : 'Create'}
           </Button>
@@ -120,7 +122,7 @@ export const UserForm = ({
       }
     >
       <form>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} marginTop={2}>
           <Grid item xs={12} sm={6}>
             <Input
               label="Full Name"
@@ -207,20 +209,25 @@ export const UserForm = ({
           </Grid>
           <Grid item xs={12} sm={6}>
             <Controller
-              name="status"
+              name="isActive"
               control={control}
               render={({ field }) => (
-                <Input
-                  {...field}
-                  select
-                  label="Status"
-                  error={!!errors.status}
-                  helperText={errors.status?.message}
-                  disabled={loading}
-                >
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                </Input>
+                <FormControl component="fieldset" error={!!errors.isActive} disabled={loading}>
+                  <FormLabel component="legend">Status</FormLabel>
+                  <RadioGroup
+                    row
+                    value={field.value ? 'true' : 'false'}
+                    onChange={(e) => field.onChange(e.target.value === 'true')}
+                  >
+                    <FormControlLabel value="true" control={<Radio />} label="Active" />
+                    <FormControlLabel value="false" control={<Radio />} label="Inactive" />
+                  </RadioGroup>
+                  {errors.isActive && (
+                    <Box sx={{ color: 'error.main', fontSize: 12, mt: 0.5 }}>
+                      {errors.isActive.message}
+                    </Box>
+                  )}
+                </FormControl>
               )}
             />
           </Grid>

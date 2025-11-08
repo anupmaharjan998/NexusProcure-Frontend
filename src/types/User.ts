@@ -2,12 +2,12 @@ export interface User {
   id?: string;
   fullName: string;
   email: string;
-  phone?: string;
+  username?: string;
   roleId: string;
   role?: string;
   departmentId: string;
   departmentName?: string;
-  status: 'Active' | 'Inactive';
+  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -26,11 +26,11 @@ export interface LoginResponse {
 export interface UserFormData {
   name: string;
   email: string;
-  phone?: string;
+  username?: string;
   password?: string;
   roleId: string;
   departmentId: string;
-  status: 'Active' | 'Inactive';
+  isActive: boolean;
 }
 
 
