@@ -104,7 +104,7 @@ export const Users = () => {
   };
 
   const columns: Column<User>[] = [
-    { id: 'fullName', label: 'Name', minWidth: 150 },
+    { id: 'fullName', label: 'Name', minWidth: 150, format: (_, row) => row.fullName || (row as any).name || '' },
     { id: 'email', label: 'Email', minWidth: 200 },
     { id: 'role', label: 'Role', minWidth: 120 },
     { id: 'departmentName', label: 'Department', minWidth: 150 },
