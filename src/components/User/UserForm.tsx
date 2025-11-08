@@ -58,7 +58,7 @@ export const UserForm = ({
     defaultValues: {
       name: '',
       email: '',
-      phone: '',
+      username: '',
       password: '',
       roleId: '',
       departmentId: '',
@@ -71,7 +71,7 @@ export const UserForm = ({
       reset({
         name: user.fullName,
         email: user.email,
-        phone: user.phone || '',
+        username: user.username || '',
         roleId: user.roleId,
         departmentId: user.departmentId,
         isActive: user.isActive,
@@ -80,7 +80,7 @@ export const UserForm = ({
       reset({
         name: '',
         email: '',
-        phone: '',
+        username: '',
         password: '',
         roleId: '',
         departmentId: '',
@@ -144,10 +144,10 @@ export const UserForm = ({
           </Grid>
           <Grid item xs={12} sm={6}>
             <Input
-              label="Phone"
-              {...register('phone')}
-              error={!!errors.phone}
-              helperText={errors.phone?.message}
+              label="username"
+              {...register('username')}
+              error={!!errors.username}
+              helperText={errors.username?.message}
               disabled={loading}
             />
           </Grid>
