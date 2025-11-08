@@ -13,7 +13,7 @@ import { useEffect } from 'react';
 const schema = yup.object({
   name: yup.string().required('Name is required'),
   email: yup.string().email('Invalid email').required('Email is required'),
-  phone: yup.string(),
+  //username: yup.string(),
   password: yup.string().when('$isEdit', {
     is: false,
     then: (schema) => schema.required('Password is required').min(6, 'Password must be at least 6 characters'),
