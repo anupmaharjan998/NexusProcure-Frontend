@@ -1,3 +1,5 @@
+import {Permission} from "@/types/Permission.ts";
+
 export interface Role {
   id: string;
   name: string;
@@ -5,14 +7,6 @@ export interface Role {
   permissions?: Permission[];
   createdAt?: string;
   updatedAt?: string;
-}
-
-export interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  group: string;
-  isGranted?: boolean;
 }
 
 export interface RoleFormData {

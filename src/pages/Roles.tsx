@@ -7,15 +7,16 @@ import { Table, Column } from '../components/UI/Table';
 import { Button } from '../components/UI/Button';
 import { ConfirmDialog } from '../components/UI/ConfirmDialog';
 import { RoleForm } from '../components/Role/RoleForm';
-import { Role, RoleFormData, Permission } from '../types/Role.ts';
+import { Role, RoleFormData } from '../types/Role.ts';
 import { useEffect, useState } from 'react';
 import {
   getRoles,
   createRole,
   updateRole,
   deleteRole,
-  getPermissions,
 } from '../services/roleService.ts';
+import {Permission} from "@/types/Permission.ts";
+import {getPermissions} from "@/services/permissionService.ts";
 
 export const Roles = () => {
   const [roles, setRoles] = useState<Role[]>([]);

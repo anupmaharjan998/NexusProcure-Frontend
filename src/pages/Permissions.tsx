@@ -2,8 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Box, Typography, FormGroup, FormControlLabel, Checkbox, Select, MenuItem, Card, CardContent, Alert, CircularProgress } from '@mui/material';
 import { DashboardLayout } from '../components/Layout/DashboardLayout';
 import { Button } from '../components/UI/Button';
-import { Role, Permission } from '../types/Role.ts';
-import { getRoles, getPermissions, updateRole, getRolePermissions } from '../services/roleService.ts';
+import { Role } from '../types/Role.ts';
+import {
+    getRoles,
+} from '../services/roleService.ts';
+import {Permission} from "@/types/Permission.ts";
+import {getPermissions, getRolePermissions, updateRolePermissions} from "@/services/permissionService.ts";
 
 export const Permissions = () => {
   const [roles, setRoles] = useState<Role[]>([]);
@@ -78,12 +82,8 @@ export const Permissions = () => {
     setError('');
     setSuccess('');
     try {
-      await updateRole(currentRole.id, {
-        name: currentRole.name,
-        description: currentRole.description,
-        permissionIds: selectedPermissionIds,
-      });
-      // reflect in local state
+      await updateRolePermissions(currentRole.id, selectedPermissionIds);
+
       setRoles(prev => prev.map(r => r.id === currentRole.id ? { ...r, permissions: allPermissions.filter(p => selectedPermissionIds.includes(p.id)) } : r));
       setSuccess('Permissions updated successfully');
     } catch (e: any) {
