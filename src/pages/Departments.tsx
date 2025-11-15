@@ -120,7 +120,7 @@ export const Departments = () => {
         ),
     },
     {
-      id: 'employeeCount',
+      id: 'employeesCount',
       label: 'Employees',
       minWidth: 100,
       align: 'center',

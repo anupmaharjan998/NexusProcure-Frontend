@@ -61,6 +61,12 @@ const menuItems: MenuItem[] = [
     roles: [ROLE_TYPES.ADMIN],
   },
   {
+    text: 'Permissions',
+    icon: <SecurityIcon />,
+    path: '/permissions',
+    roles: [ROLE_TYPES.ADMIN],
+  },
+  {
     text: 'Departments',
     icon: <BusinessIcon />,
     path: '/departments',

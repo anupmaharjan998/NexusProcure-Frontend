@@ -87,7 +87,7 @@ export const RoleForm = ({
 
   // Group permissions by module
   const groupedPermissions = permissions.reduce((acc, permission) => {
-    const module = permission.module || 'General';
+    const module = permission.group || 'General';
     if (!acc[module]) {
       acc[module] = [];
     }

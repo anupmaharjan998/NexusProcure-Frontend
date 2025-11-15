@@ -4,7 +4,7 @@ export interface User {
   email: string;
   username?: string;
   roleId: string;
-  role?: string;
+  roleName?: string;
   departmentId: string;
   departmentName?: string;
   isActive: boolean;
@@ -20,7 +20,7 @@ export interface LoginCredentials {
 export interface LoginResponse {
   token: string;
   user: User;
-  role: string;
+  roleName: string;
 }
 
 export interface UserFormData {

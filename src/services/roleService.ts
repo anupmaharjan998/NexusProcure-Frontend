@@ -40,7 +40,7 @@ export const getPermissions = async (): Promise<Permission[]> => {
 };
 
 export const getRolePermissions = async (roleId: string): Promise<Permission[]> => {
-  const response = await api.get<Permission[]>(`/roles/${roleId}/permissions`);
+  const response = await api.get<Permission[]>(`/permissions/${roleId}`);
   return response.data;
 };
 
