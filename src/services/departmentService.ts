@@ -7,8 +7,8 @@ export const getDepartments = async (): Promise<Department[]> => {
     return response.data;
   } catch (error) {
     return [
-      { id: 'd-1', name: 'IT', description: 'Information Technology', headId: 'u-1', headName: 'Alice Johnson', employeesCount: 12 },
-      { id: 'd-2', name: 'Finance', description: 'Finance Department', headId: 'u-2', headName: 'Bob Smith', employeesCount: 8 },
+      { id: 'd-1', departmentName: 'IT', description: 'Information Technology', headId: 'u-1', headName: 'Alice Johnson', employeesCount: 12 },
+      { id: 'd-2', departmentName: 'Finance', description: 'Finance Department', headId: 'u-2', headName: 'Bob Smith', employeesCount: 8 },
     ];
   }
 };
