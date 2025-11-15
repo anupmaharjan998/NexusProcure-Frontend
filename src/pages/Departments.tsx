@@ -11,10 +11,10 @@ import { Department, DepartmentFormData } from '../types/Department.ts';
 import { User } from '../types/User.ts';
 import { useEffect, useState } from 'react';
 import {
-  getDepartments,
-  createDepartment,
-  updateDepartment,
-  deleteDepartment,
+    getDepartments,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment, getDepartmentById,
 } from '../services/departmentService.ts';
 import { getUsers } from '../services/userService.ts';
 
@@ -55,10 +55,22 @@ export const Departments = () => {
     setFormOpen(true);
   };
 
-  const handleEdit = (department: Department) => {
-    setSelectedDepartment(department);
-    setFormOpen(true);
-  };
+
+
+    const handleEdit = async (department: Department) => {
+        try {
+            setActionLoading(true);
+
+            const detailedDepartment = await getDepartmentById(department.id);
+
+            setSelectedDepartment(detailedDepartment);
+            setFormOpen(true);
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to load department data");
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
   const handleDeleteClick = (department: Department) => {
     setDepartmentToDelete(department);
@@ -104,7 +116,7 @@ export const Departments = () => {
   };
 
   const columns: Column<Department>[] = [
-    { id: 'name', label: 'Department Name', minWidth: 150 },
+    { id: 'departmentName', label: 'Department Name', minWidth: 150 },
     { id: 'description', label: 'Description', minWidth: 250 },
     {
       id: 'headName',
@@ -232,7 +244,7 @@ export const Departments = () => {
         <ConfirmDialog
           open={deleteDialogOpen}
           title="Delete Department"
-          message={`Are you sure you want to delete "${departmentToDelete?.name}"? This action cannot be undone.`}
+          message={`Are you sure you want to delete "${departmentToDelete?.departmentName}"? This action cannot be undone.`}
           onConfirm={handleDeleteConfirm}
           onCancel={() => {
             setDeleteDialogOpen(false);

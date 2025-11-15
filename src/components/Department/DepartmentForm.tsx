@@ -10,7 +10,7 @@ import { User } from '../../types/User.ts';
 import { useEffect } from 'react';
 
 const schema = yup.object({
-  name: yup.string().required('Department name is required'),
+  departmentName: yup.string().required('Department name is required'),
   description: yup.string(),
   headId: yup.string(),
 });
@@ -43,7 +43,7 @@ export const DepartmentForm = ({
   } = useForm<DepartmentFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
-      name: '',
+      departmentName: '',
       description: '',
       headId: '',
     },
@@ -52,13 +52,13 @@ export const DepartmentForm = ({
   useEffect(() => {
     if (department) {
       reset({
-        name: department.name,
+        departmentName: department.departmentName,
         description: department.description || '',
         headId: department.headId || '',
       });
     } else {
       reset({
-        name: '',
+        departmentName: '',
         description: '',
         headId: '',
       });
@@ -101,9 +101,9 @@ export const DepartmentForm = ({
           <Grid item xs={12}>
             <Input
               label="Department Name"
-              {...register('name')}
-              error={!!errors.name}
-              helperText={errors.name?.message}
+              {...register('departmentName')}
+              error={!!errors.departmentName}
+              helperText={errors.departmentName?.message}
               disabled={loading}
             />
           </Grid>

@@ -1,6 +1,6 @@
 export interface Department {
   id: string;
-  name: string;
+  departmentName: string;
   description?: string;
   headId?: string;
   headName?: string;
@@ -10,7 +10,7 @@ export interface Department {
 }
 
 export interface DepartmentFormData {
-  name: string;
+  departmentName: string;
   description?: string;
   headId?: string;
 }

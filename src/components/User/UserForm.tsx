@@ -200,7 +200,7 @@ export const UserForm = ({
                 >
                   {departments.map((dept) => (
                     <MenuItem key={dept.id} value={dept.id}>
-                      {dept.name}
+                      {dept.departmentName}
                     </MenuItem>
                   ))}
                 </Input>
