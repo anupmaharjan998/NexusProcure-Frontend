@@ -9,7 +9,7 @@ import { ConfirmDialog } from '../components/UI/ConfirmDialog';
 import { UserForm } from '../components/User/UserForm';
 import { User, UserFormData } from '../types/User.ts';
 import { useEffect, useState } from 'react';
-import { getUsers, createUser, updateUser, deleteUser } from '../services/userService.ts';
+import { getUsers, createUser, updateUser, deleteUser, getUserById } from '../services/userService.ts';
 import { getRoles } from '../services/roleService.ts';
 import { getDepartments } from '../services/departmentService.ts';
 import { Role } from '../types/Role.ts';
@@ -35,6 +35,7 @@ export const Users = () => {
         getUsers(),
         getRoles(),
         getDepartments(),
+
       ]);
       setUsers(usersData);
       setRoles(rolesData);
@@ -55,10 +56,21 @@ export const Users = () => {
     setFormOpen(true);
   };
 
-  const handleEdit = (user: User) => {
-    setSelectedUser(user);
-    setFormOpen(true);
-  };
+
+    const handleEdit = async (user: User) => {
+        try {
+            setActionLoading(true);
+
+            const userDetails = await getUserById(user.id);
+
+            setSelectedUser(userDetails);
+            setFormOpen(true);
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to load user data");
+        } finally {
+            setActionLoading(false);
+        }
+    };
 
   const handleDeleteClick = (user: User) => {
     setUserToDelete(user);

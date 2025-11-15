@@ -49,7 +49,6 @@ export const createUser = async (data: UserFormData): Promise<User> => {
     roleId: data.roleId,
     departmentId: data.departmentId,
     isActive: data.isActive,
-    ...(data.password ? { password: data.password } : {}),
   };
   const response = await api.post<User>('/users', payload);
   return response.data;
@@ -64,9 +63,6 @@ export const updateUser = async (id: string, data: Partial<UserFormData>): Promi
     ...(data.departmentId !== undefined ? { departmentId: data.departmentId } : {}),
     ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
   };
-  if (data.password) {
-    payload.password = data.password;
-  }
   const response = await api.put<User>(`/users/${id}`, payload);
   return response.data;
 };
