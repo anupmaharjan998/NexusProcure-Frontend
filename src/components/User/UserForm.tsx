@@ -14,11 +14,6 @@ const schema = yup.object({
   name: yup.string().required('Name is required'),
   email: yup.string().email('Invalid email').required('Email is required'),
   //username: yup.string(),
-  password: yup.string().when('$isEdit', {
-    is: false,
-    then: (schema) => schema.required('Password is required').min(6, 'Password must be at least 6 characters'),
-    otherwise: (schema) => schema,
-  }),
   roleId: yup.string().required('Role is required'),
   departmentId: yup.string().required('Department is required'),
   isActive: yup.boolean().required('Status is required'),
@@ -59,7 +54,6 @@ export const UserForm = ({
       name: '',
       email: '',
       username: '',
-      password: '',
       roleId: '',
       departmentId: '',
       isActive: true,
@@ -81,7 +75,6 @@ export const UserForm = ({
         name: '',
         email: '',
         username: '',
-        password: '',
         roleId: '',
         departmentId: '',
         isActive: true,
@@ -151,18 +144,6 @@ export const UserForm = ({
               disabled={loading}
             />
           </Grid>
-          {!isEdit && (
-            <Grid item xs={12} sm={6}>
-              <Input
-                label="Password"
-                type="password"
-                {...register('password')}
-                error={!!errors.password}
-                helperText={errors.password?.message}
-                disabled={loading}
-              />
-            </Grid>
-          )}
           <Grid item xs={12} sm={6}>
             <Controller
               name="roleId"

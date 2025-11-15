@@ -1,5 +1,5 @@
 export interface User {
-  id?: string;
+  id: string;
   fullName: string;
   email: string;
   username?: string;
@@ -27,7 +27,6 @@ export interface UserFormData {
   name: string;
   email: string;
   username?: string;
-  password?: string;
   roleId: string;
   departmentId: string;
   isActive: boolean;
