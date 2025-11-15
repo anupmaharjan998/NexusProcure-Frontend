@@ -6,8 +6,8 @@ import { Role } from '../types/Role.ts';
 import {
     getRoles,
 } from '../services/roleService.ts';
-import {Permission} from "@/types/Permission.ts";
-import {getPermissions, getRolePermissions, updateRolePermissions} from "@/services/permissionService.ts";
+import {Permission} from "../types/Permission.ts";
+import {getPermissions, getRolePermissions, updateRolePermissions} from "../services/permissionService.ts";
 
 export const Permissions = () => {
   const [roles, setRoles] = useState<Role[]>([]);
