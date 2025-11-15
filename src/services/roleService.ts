@@ -1,5 +1,5 @@
 import api from './api.ts';
-import { Role, RoleFormData, Permission } from '../types/Role.ts';
+import {Role, RoleFormData} from '../types/Role.ts';
 
 export const getRoles = async (): Promise<Role[]> => {
   try {
@@ -33,15 +33,3 @@ export const updateRole = async (id: string, data: RoleFormData): Promise<Role> 
 export const deleteRole = async (id: string): Promise<void> => {
   await api.delete(`/roles/${id}`);
 };
-
-export const getPermissions = async (): Promise<Permission[]> => {
-  const response = await api.get<Permission[]>('/permissions');
-  return response.data;
-};
-
-export const getRolePermissions = async (roleId: string): Promise<Permission[]> => {
-  const response = await api.get<Permission[]>(`/permissions/${roleId}`);
-  return response.data;
-};
-
-

@@ -5,8 +5,9 @@ import * as yup from 'yup';
 import { Input } from '../UI/Input.tsx';
 import { Button } from '../UI/Button.tsx';
 import { Modal } from '../UI/Modal.tsx';
-import { Role, RoleFormData, Permission } from '../../types/Role.ts';
+import { Role, RoleFormData } from '../../types/Role.ts';
 import { useEffect, useState } from 'react';
+import {Permission} from "../../types/Permission.ts";
 
 const schema = yup.object({
   name: yup.string().required('Role name is required'),

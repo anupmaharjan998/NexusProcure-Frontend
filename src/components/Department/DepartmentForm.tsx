@@ -10,7 +10,11 @@ import { User } from '../../types/User.ts';
 import { useEffect } from 'react';
 
 const schema = yup.object({
-  departmentName: yup.string().required('Department name is required'),
+    departmentName: yup
+        .string()
+        .trim()
+        .required('Department name is required')
+        .matches(/.*\S.*/, 'Department name cannot be empty or spaces only'),
   description: yup.string(),
   headId: yup.string(),
 });
