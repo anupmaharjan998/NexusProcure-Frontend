@@ -1,4 +1,4 @@
-import {Permission} from "@/types/Permission.ts";
+import {Permission} from "../types/Permission.ts";
 
 export interface Role {
   id: string;

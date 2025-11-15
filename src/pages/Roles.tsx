@@ -15,8 +15,8 @@ import {
   updateRole,
   deleteRole,
 } from '../services/roleService.ts';
-import {Permission} from "@/types/Permission.ts";
-import {getPermissions} from "@/services/permissionService.ts";
+import {Permission} from "../types/Permission.ts";
+import {getPermissions} from "../services/permissionService.ts";
 
 export const Roles = () => {
   const [roles, setRoles] = useState<Role[]>([]);

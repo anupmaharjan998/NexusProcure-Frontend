@@ -1,5 +1,5 @@
-import {Permission} from "@/types/Permission.ts";
-import api from "@/services/api.ts";
+import {Permission} from "../types/Permission.ts";
+import api from "../services/api.ts";
 
 export const getPermissions = async (): Promise<Permission[]> => {
     const response = await api.get<Permission[]>('/permissions');

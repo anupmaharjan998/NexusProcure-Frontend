@@ -7,7 +7,7 @@ import { Button } from '../UI/Button.tsx';
 import { Modal } from '../UI/Modal.tsx';
 import { Role, RoleFormData } from '../../types/Role.ts';
 import { useEffect, useState } from 'react';
-import {Permission} from "@/types/Permission.ts";
+import {Permission} from "../../types/Permission.ts";
 
 const schema = yup.object({
   name: yup.string().required('Role name is required'),
