@@ -22,6 +22,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { updateProfile } from '../services/userService.ts';
+import { changePassword } from '../services/authService.ts';
 import { getInitials } from '../utils/helpers.ts';
 
 const profileSchema = yup.object({
@@ -88,7 +89,11 @@ export const Profile = () => {
     setLoading(true);
     setError('');
     try {
-      // Password change API call would go here
+      await changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
+        confirmPassword: data.confirmPassword,
+      });
       setSuccess('Password changed successfully');
       resetPassword();
     } catch (err: any) {
@@ -179,7 +184,7 @@ export const Profile = () => {
                     mb: 3,
                   }}
                 >
-                  {user?.role}
+                  {user?.roleName}
                 </Typography>
 
                 <Divider sx={{ mb: 3 }} />
@@ -220,7 +225,7 @@ export const Profile = () => {
                       variant="body2"
                       sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}
                     >
-                      {user?.role}
+                      {user?.roleName}
                     </Typography>
                   </Box>
                 </Box>
@@ -373,7 +378,7 @@ export const Profile = () => {
                   </Grid>
 
                   <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                    <Button type="submit" variant="contained" loading={loading}>
+                    <Button type="button" variant="contained" loading={loading} onClick={handlePasswordSubmit(onPasswordSubmit)}>
                       Change Password
                     </Button>
                   </Box>

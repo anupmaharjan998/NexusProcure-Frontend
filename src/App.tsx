@@ -9,6 +9,7 @@ import { Users } from './pages/Users';
 import { Roles } from './pages/Roles';
 import { Departments } from './pages/Departments';
 import { Profile } from './pages/Profile';
+import { Permissions } from './pages/Permissions';
 import { ROLE_TYPES } from './types/Role';
 
 // Create Material-UI theme with NexusProcure design system
@@ -124,6 +125,14 @@ function App() {
                             element={
                                 <ProtectedRoute requiredRoles={[ROLE_TYPES.ADMIN]}>
                                     <Roles />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/permissions"
+                            element={
+                                <ProtectedRoute requiredRoles={[ROLE_TYPES.ADMIN]}>
+                                    <Permissions />
                                 </ProtectedRoute>
                             }
                         />

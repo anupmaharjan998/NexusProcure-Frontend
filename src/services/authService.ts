@@ -25,8 +25,15 @@ export const getCurrentUser = async () => {
 export const changePassword = async (data: {
   currentPassword: string;
   newPassword: string;
+  confirmPassword: string;
 }) => {
-  const response = await api.post('/auth/change-password', data);
+  const payload = {
+    CurrentPassword: data.currentPassword,
+    NewPassword: data.newPassword,
+    ConfirmNewPassword: data.confirmPassword,
+  };
+  console.log(payload);
+  const response = await api.post('/Auth/change-password', payload);
   return response.data;
 };
 

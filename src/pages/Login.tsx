@@ -53,7 +53,8 @@ export const Login = () => {
         console.log('Login data');
       const response = await login(data);
       console.log('Login response:', response);
-      setAuth(response.user, response.token);
+      const userWithRole = { ...response.user, roleName: response.roleName || response.user.roleName };
+      setAuth(userWithRole, response.token);
       
       const from = (location.state as any)?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });

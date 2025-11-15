@@ -105,7 +105,7 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
                 color: '#64748B',
               }}
             >
-              {user?.role}
+              {user?.roleName}
             </Typography>
           </Box>
 

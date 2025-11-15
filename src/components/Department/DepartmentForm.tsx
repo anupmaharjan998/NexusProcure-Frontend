@@ -136,7 +136,7 @@ export const DepartmentForm = ({
                   </MenuItem>
                   {users.map((user) => (
                     <MenuItem key={user.id} value={user.id}>
-                      {user.fullName} - {user.role}
+                      {user.fullName} - {user.roleName}
                     </MenuItem>
                   ))}
                 </Input>

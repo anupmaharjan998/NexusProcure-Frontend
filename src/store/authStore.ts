@@ -11,14 +11,27 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: JSON.parse(localStorage.getItem('user') || 'null'),
+  user: (() => {
+    try {
+      const raw = localStorage.getItem('user');
+      if (!raw) return null;
+      const parsed: any = JSON.parse(raw);
+      if (parsed && !parsed.roleName) {
+        parsed.roleName = parsed.roleName || parsed.role || parsed.role?.name || '';
+      }
+      return parsed as User;
+    } catch {
+      return null;
+    }
+  })(),
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
   
   setAuth: (user: User, token: string) => {
-    localStorage.setItem('user', JSON.stringify(user));
+    const normalized: User = { ...user, roleName: (user as any).roleName || (user as any).role || (user as any).role?.name } as User;
+    localStorage.setItem('user', JSON.stringify(normalized));
     localStorage.setItem('token', token);
-    set({ user, token, isAuthenticated: true });
+    set({ user: normalized, token, isAuthenticated: true });
   },
   
   logout: () => {
@@ -28,8 +41,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   
   updateUser: (user: User) => {
-    localStorage.setItem('user', JSON.stringify(user));
-    set({ user });
+    const normalized: User = { ...user, roleName: (user as any).roleName || (user as any).role || (user as any).role?.name } as User;
+    localStorage.setItem('user', JSON.stringify(normalized));
+    set({ user: normalized });
   },
 }));
 

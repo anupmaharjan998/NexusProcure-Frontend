@@ -18,11 +18,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { user, token, isAuthenticated, setAuth, logout, updateUser } = useAuthStore();
 
     const hasRole = (role: string | string[]): boolean => {
-        if (!user?.role) return false;
+        const current = user?.roleName;
+        if (!current) return false;
+        const currentNorm = current.toLowerCase();
         if (Array.isArray(role)) {
-            return role.includes(user.role);
+            return role.some(r => (r || '').toLowerCase() === currentNorm);
         }
-        return user.role === role;
+        return (role || '').toLowerCase() === currentNorm;
     };
 
     return (

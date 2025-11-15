@@ -4,7 +4,7 @@ export interface Department {
   description?: string;
   headId?: string;
   headName?: string;
-  employeeCount?: number;
+  employeesCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }

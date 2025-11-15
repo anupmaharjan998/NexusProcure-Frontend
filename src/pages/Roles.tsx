@@ -75,7 +75,7 @@ export const Roles = () => {
       setRoleToDelete(undefined);
       fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete role');
+      setError(err.response?.data?.message || 'Failed to delete roleName');
     } finally {
       setActionLoading(false);
     }
@@ -96,7 +96,7 @@ export const Roles = () => {
       setSelectedRole(undefined);
       fetchData();
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save role');
+      setError(err.response?.data?.message || 'Failed to save roleName');
     } finally {
       setActionLoading(false);
     }
