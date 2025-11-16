@@ -8,6 +8,7 @@ export interface User {
   departmentId: string;
   departmentName?: string;
   isActive: boolean;
+  permissions: string[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -21,12 +22,13 @@ export interface LoginResponse {
   token: string;
   user: User;
   roleName: string;
+  permissions: string[];
 }
 
 export interface UserFormData {
   name: string;
   email: string;
-  username?: string;
+  username: string;
   roleId: string;
   departmentId: string;
   isActive: boolean;

@@ -51,10 +51,11 @@ export const Login = () => {
 
       // PRODUCTION: Uncomment this when backend is ready
         console.log('Login data');
+        debugger;
       const response = await login(data);
       console.log('Login response:', response);
-      const userWithRole = { ...response.user, roleName: response.roleName || response.user.roleName };
-      setAuth(userWithRole, response.token);
+      const userWithRoleAndPermissions = { ...response.user, roleName: response.roleName || response.user.roleName};
+      setAuth(userWithRoleAndPermissions, response.token, response.permissions);
       
       const from = (location.state as any)?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });

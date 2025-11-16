@@ -19,6 +19,7 @@ export const getUsers = async (): Promise<User[]> => {
         departmentName: 'IT',
         isActive: true,
         createdAt: new Date().toISOString(),
+          permissions: ["VIEW_USERS"]
       },
       {
         id: 'u-2',
@@ -31,6 +32,7 @@ export const getUsers = async (): Promise<User[]> => {
         departmentName: 'Finance',
         isActive: false,
         createdAt: new Date().toISOString(),
+          permissions: ["VIEW_USERS"]
       },
     ];
   }
