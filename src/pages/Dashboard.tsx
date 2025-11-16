@@ -19,7 +19,7 @@ interface StatCard {
 }
 
 export const Dashboard = () => {
-  const { user, hasRole } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     users: 0,
@@ -32,7 +32,7 @@ export const Dashboard = () => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        if (hasRole(ROLE_TYPES.ADMIN)) {
+        if (hasPermission(ROLE_TYPES.ADMIN)) {
             //TODO: Fetch stats from backend
           // const [usersData, departmentsData] = await Promise.all([
           //   getUsers(),
@@ -53,7 +53,7 @@ export const Dashboard = () => {
     };
 
     fetchStats();
-  }, [hasRole]);
+  }, [hasPermission]);
 
   const statCards: StatCard[] = [
     {

@@ -6,10 +6,10 @@ interface AuthContextType {
     user: User | null;
     token: string | null;
     isAuthenticated: boolean;
-    setAuth: (user: User, token: string) => void;
+    setAuth: (user: User, token: string, permissions: string[]) => void;
     logout: () => void;
     updateUser: (user: User) => void;
-    hasRole: (role: string | string[]) => boolean;
+    hasPermission: (permission: string | string[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,14 +17,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { user, token, isAuthenticated, setAuth, logout, updateUser } = useAuthStore();
 
-    const hasRole = (role: string | string[]): boolean => {
-        const current = user?.roleName;
-        if (!current) return false;
-        const currentNorm = current.toLowerCase();
-        if (Array.isArray(role)) {
-            return role.some(r => (r || '').toLowerCase() === currentNorm);
+    const hasPermission = (required: string | string[]) => {
+        const perms = user?.permissions || [];
+        if (!perms.length) return false;
+
+        const lowerPerms = perms.map((p: string) => p.toLowerCase());
+
+        if (Array.isArray(required)) {
+            return required.some(r => lowerPerms.includes(r.toLowerCase()));
         }
-        return (role || '').toLowerCase() === currentNorm;
+
+        return lowerPerms.includes(required.toLowerCase());
     };
 
     return (
@@ -36,7 +39,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setAuth,
                 logout,
                 updateUser,
-                hasRole,
+                hasPermission,
             }}
         >
             {children}

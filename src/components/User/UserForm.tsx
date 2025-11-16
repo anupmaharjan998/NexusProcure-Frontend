@@ -11,9 +11,17 @@ import { Department } from '../../types/Department.ts';
 import { useEffect } from 'react';
 
 const schema = yup.object({
-  name: yup.string().required('Name is required'),
+  name: yup
+      .string()
+      .trim()
+      .required('Name is required')
+      .matches(/.*\S.*/, 'Please enter a name'),
   email: yup.string().email('Invalid email').required('Email is required'),
-  //username: yup.string(),
+  username: yup
+      .string()
+      .trim()
+      .required('Username is required')
+      .matches(/.*\S.*/, 'Please enter a username'),
   roleId: yup.string().required('Role is required'),
   departmentId: yup.string().required('Department is required'),
   isActive: yup.boolean().required('Status is required'),

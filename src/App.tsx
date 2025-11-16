@@ -107,15 +107,14 @@ function App() {
                         <Route
                             path="/dashboard"
                             element={
-                                <ProtectedRoute>
-                                    <Dashboard />
-                                </ProtectedRoute>
+                                <Dashboard />
+                                //<ProtectedRoute></ProtectedRoute>
                             }
                         />
                         <Route
                             path="/users"
                             element={
-                                <ProtectedRoute requiredRoles={[ROLE_TYPES.ADMIN]}>
+                                <ProtectedRoute>
                                     <Users />
                                 </ProtectedRoute>
                             }
@@ -123,7 +122,7 @@ function App() {
                         <Route
                             path="/roles"
                             element={
-                                <ProtectedRoute requiredRoles={[ROLE_TYPES.ADMIN]}>
+                                <ProtectedRoute>
                                     <Roles />
                                 </ProtectedRoute>
                             }
@@ -131,7 +130,7 @@ function App() {
                         <Route
                             path="/permissions"
                             element={
-                                <ProtectedRoute requiredRoles={[ROLE_TYPES.ADMIN]}>
+                                <ProtectedRoute>
                                     <Permissions />
                                 </ProtectedRoute>
                             }
@@ -139,9 +138,7 @@ function App() {
                         <Route
                             path="/departments"
                             element={
-                                <ProtectedRoute
-                                    requiredRoles={[ROLE_TYPES.ADMIN, ROLE_TYPES.DEPARTMENT_HEAD]}
-                                >
+                                <ProtectedRoute>
                                     <Departments />
                                 </ProtectedRoute>
                             }

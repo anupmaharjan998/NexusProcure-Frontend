@@ -38,73 +38,75 @@ interface MenuItem {
   text: string;
   icon: JSX.Element;
   path: string;
-  roles: string[];
+  permissions: string[];
 }
 
 const menuItems: MenuItem[] = [
-  {
-    text: 'Dashboard',
-    icon: <DashboardIcon />,
-    path: '/dashboard',
-    roles: [ROLE_TYPES.ADMIN, ROLE_TYPES.EMPLOYEE, ROLE_TYPES.DEPARTMENT_HEAD, ROLE_TYPES.PROCUREMENT_OFFICER],
-  },
-  {
-    text: 'Users',
-    icon: <PeopleIcon />,
-    path: '/users',
-    roles: [ROLE_TYPES.ADMIN],
-  },
-  {
-    text: 'Roles',
-    icon: <SecurityIcon />,
-    path: '/roles',
-    roles: [ROLE_TYPES.ADMIN],
-  },
-  {
-    text: 'Permissions',
-    icon: <SecurityIcon />,
-    path: '/permissions',
-    roles: [ROLE_TYPES.ADMIN],
-  },
-  {
-    text: 'Departments',
-    icon: <BusinessIcon />,
-    path: '/departments',
-    roles: [ROLE_TYPES.ADMIN, ROLE_TYPES.DEPARTMENT_HEAD],
-  },
-  {
-    text: 'Inventory',
-    icon: <InventoryIcon />,
-    path: '/inventory',
-    roles: [ROLE_TYPES.ADMIN, ROLE_TYPES.PROCUREMENT_OFFICER],
-  },
-  {
-    text: 'Procurement',
-    icon: <ShoppingCartIcon />,
-    path: '/procurement',
-    roles: [ROLE_TYPES.ADMIN, ROLE_TYPES.PROCUREMENT_OFFICER],
-  },
-  {
-    text: 'Reports',
-    icon: <AssessmentIcon />,
-    path: '/reports',
-    roles: [ROLE_TYPES.ADMIN, ROLE_TYPES.DEPARTMENT_HEAD],
-  },
+    {
+        text: "Dashboard",
+        icon: <DashboardIcon />,
+        path: "/dashboard",
+        permissions: ["PUBLIC"],
+    },
+    {
+        text: "Users",
+        icon: <PeopleIcon />,
+        path: "/users",
+        permissions: ["VIEW_USERS"],
+    },
+    {
+        text: "Roles",
+        icon: <SecurityIcon />,
+        path: "/roles",
+        permissions: ["VIEW_ROLES"],
+    },
+    {
+        text: "Permissions",
+        icon: <SecurityIcon />,
+        path: "/permissions",
+        permissions: ["VIEW_PERMISSIONS"],
+    },
+    {
+        text: "Departments",
+        icon: <BusinessIcon />,
+        path: "/departments",
+        permissions: ["VIEW_DEPARTMENTS"],
+    },
+    {
+        text: "Inventory",
+        icon: <InventoryIcon />,
+        path: "/inventory",
+        permissions: ["VIEW_INVENTORY"],
+    },
+    {
+        text: "Procurement",
+        icon: <ShoppingCartIcon />,
+        path: "/procurement",
+        permissions: ["VIEW_PROCUREMENT"],
+    },
+    {
+        text: "Reports",
+        icon: <AssessmentIcon />,
+        path: "/reports",
+        permissions: ["VIEW_REPORTS"],
+    },
 ];
+
 
 export const Sidebar = ({ open, onClose, collapsed, onToggleCollapse }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hasRole } = useAuth();
+  const { hasPermission } = useAuth();
 
   const handleNavigation = (path: string) => {
     navigate(path);
     onClose();
   };
 
-  const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.some((role) => hasRole(role))
-  );
+    const filteredMenuItems = menuItems.filter((item) => {
+        if (item.permissions.includes("PUBLIC")) return true;
+        return hasPermission(item.permissions);
+    });
 
   const drawer = (isDesktop: boolean) => (
     <>
@@ -112,6 +114,7 @@ export const Sidebar = ({ open, onClose, collapsed, onToggleCollapse }: SidebarP
       <Box sx={{ overflow: 'auto', mt: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <List>
           {filteredMenuItems.map((item) => {
+              debugger;
             const isActive = location.pathname === item.path;
             const button = (
               <ListItemButton

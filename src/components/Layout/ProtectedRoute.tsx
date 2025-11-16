@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
-  const { isAuthenticated, hasRole } = useAuth();
+  const { isAuthenticated, hasPermission } = useAuth();
   const location = useLocation();
 
   // FOR TESTING: Comment this out to bypass authentication
@@ -18,7 +18,7 @@ export const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps)
   }
 
   if (requiredRoles && requiredRoles.length > 0) {
-    const hasRequiredRole = requiredRoles.some((role) => hasRole(role));
+    const hasRequiredRole = requiredRoles.some((role) => hasPermission(role));
     if (!hasRequiredRole) {
       return <Navigate to="/dashboard" replace />;
     }

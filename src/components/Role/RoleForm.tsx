@@ -10,7 +10,11 @@ import { useEffect, useState } from 'react';
 import {Permission} from "../../types/Permission.ts";
 
 const schema = yup.object({
-  name: yup.string().required('Role name is required'),
+  name: yup
+      .string()
+      .trim()
+      .required('Role name is required')
+      .matches(/.*\S.*/, 'Please enter a role name'),
   description: yup.string(),
 });
 
