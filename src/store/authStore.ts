@@ -14,9 +14,6 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
 
-    /** ---------------------------
-     *  INITIAL STATE (Load from LocalStorage)
-     * ---------------------------- */
     user: (() => {
         try {
             const raw = localStorage.getItem('user');
@@ -41,9 +38,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     permissions: JSON.parse(localStorage.getItem('permissions') || '[]'),
     isAuthenticated: !!localStorage.getItem('token'),
 
-    /** ---------------------------
-     *  SET AUTH ON LOGIN
-     * ---------------------------- */
     setAuth: (user: User, token: string, permissions: string[]) => {
         const normalized: User = {
             ...user,
@@ -66,9 +60,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         });
     },
 
-    /** ---------------------------
-     *  LOGOUT
-     * ---------------------------- */
     logout: () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
@@ -82,9 +73,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         });
     },
 
-    /** ---------------------------
-     *  UPDATE USER WITHOUT AFFECTING TOKEN OR PERMISSIONS
-     * ---------------------------- */
     updateUser: (user: User) => {
         const normalized: User = {
             ...user,
