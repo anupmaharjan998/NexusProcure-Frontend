@@ -1,4 +1,4 @@
-import { Box, Typography, IconButton, Alert, Chip } from '@mui/material';
+import { Box, Typography, IconButton, Alert } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -107,37 +107,6 @@ export const Roles = () => {
     { id: 'name', label: 'Role Name', minWidth: 150 },
     { id: 'description', label: 'Description', minWidth: 250 },
     {
-      id: 'permissions',
-      label: 'Permissions',
-      minWidth: 200,
-      format: (value: Permission[]) => (
-        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-          {value && value.length > 0 ? (
-            value.slice(0, 3).map((permission) => (
-              <Chip
-                key={permission.id}
-                label={permission.name}
-                size="small"
-                sx={{ fontFamily: 'Poppins, sans-serif' }}
-              />
-            ))
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              No permissions
-            </Typography>
-          )}
-          {value && value.length > 3 && (
-            <Chip
-              label={`+${value.length - 3} more`}
-              size="small"
-              variant="outlined"
-              sx={{ fontFamily: 'Poppins, sans-serif' }}
-            />
-          )}
-        </Box>
-      ),
-    },
-    {
       id: 'actions',
       label: 'Actions',
       minWidth: 120,
@@ -229,7 +198,6 @@ export const Roles = () => {
           }}
           onSubmit={handleFormSubmit}
           role={selectedRole}
-          permissions={permissions}
           loading={actionLoading}
         />
 

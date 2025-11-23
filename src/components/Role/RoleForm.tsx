@@ -7,7 +7,6 @@ import { Button } from '../UI/Button.tsx';
 import { Modal } from '../UI/Modal.tsx';
 import { Role, RoleFormData } from '../../types/Role.ts';
 import { useEffect, useState } from 'react';
-import {Permission} from "../../types/Permission.ts";
 
 const schema = yup.object({
   name: yup
@@ -23,7 +22,6 @@ interface RoleFormProps {
   onClose: () => void;
   onSubmit: (data: RoleFormData) => Promise<void>;
   role?: Role;
-  permissions: Permission[];
   loading?: boolean;
 }
 
@@ -32,7 +30,6 @@ export const RoleForm = ({
   onClose,
   onSubmit,
   role,
-  permissions,
   loading = false,
 }: RoleFormProps) => {
   const isEdit = !!role;
@@ -67,14 +64,6 @@ export const RoleForm = ({
     }
   }, [role, reset]);
 
-  const handlePermissionChange = (permissionId: string) => {
-    setSelectedPermissions((prev) =>
-      prev.includes(permissionId)
-        ? prev.filter((id) => id !== permissionId)
-        : [...prev, permissionId]
-    );
-  };
-
   const handleFormSubmit = async (data: RoleFormData) => {
     await onSubmit({
       ...data,
@@ -89,16 +78,6 @@ export const RoleForm = ({
     setSelectedPermissions([]);
     onClose();
   };
-
-  // Group permissions by module
-  const groupedPermissions = permissions.reduce((acc, permission) => {
-    const module = permission.group || 'General';
-    if (!acc[module]) {
-      acc[module] = [];
-    }
-    acc[module].push(permission);
-    return acc;
-  }, {} as Record<string, Permission[]>);
 
   return (
     <Modal
@@ -142,66 +121,6 @@ export const RoleForm = ({
               helperText={errors.description?.message}
               disabled={loading}
             />
-          </Grid>
-          <Grid item xs={12}>
-            <Typography
-              variant="subtitle2"
-              sx={{
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 600,
-                color: '#1E293B',
-                mb: 1,
-                mt: 2,
-              }}
-            >
-              Permissions
-            </Typography>
-            {Object.entries(groupedPermissions).map(([module, perms]) => (
-              <Box key={module} sx={{ mb: 2 }}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontFamily: 'Poppins, sans-serif',
-                    fontWeight: 600,
-                    color: '#0056D2',
-                    mb: 1,
-                  }}
-                >
-                  {module}
-                </Typography>
-                <FormGroup>
-                  {perms.map((permission) => (
-                    <FormControlLabel
-                      key={permission.id}
-                      control={
-                        <Checkbox
-                          checked={selectedPermissions.includes(permission.id)}
-                          onChange={() => handlePermissionChange(permission.id)}
-                          disabled={loading}
-                        />
-                      }
-                      label={
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontFamily: 'Poppins, sans-serif' }}
-                          >
-                            {permission.name}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{ fontFamily: 'Poppins, sans-serif', color: '#64748B' }}
-                          >
-                            {permission.description}
-                          </Typography>
-                        </Box>
-                      }
-                      sx={{ mb: 1 }}
-                    />
-                  ))}
-                </FormGroup>
-              </Box>
-            ))}
           </Grid>
         </Grid>
       </form>
