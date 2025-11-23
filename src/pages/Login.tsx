@@ -50,13 +50,13 @@ export const Login = () => {
       // setAuth(mockUser, mockToken);
 
       // PRODUCTION: Uncomment this when backend is ready
-        console.log('Login data');
-        debugger;
+      console.log('Login data');
+      debugger;
       const response = await login(data);
       console.log('Login response:', response);
-      const userWithRoleAndPermissions = { ...response.user, roleName: response.roleName || response.user.roleName};
+      const userWithRoleAndPermissions = { ...response.user, roleName: response.roleName || response.user.roleName };
       setAuth(userWithRoleAndPermissions, response.token, response.permissions);
-      
+
       const from = (location.state as any)?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     } catch (err: any) {
@@ -143,7 +143,10 @@ export const Login = () => {
 
           <Box sx={{ mb: 2, textAlign: 'right' }}>
             <Link
-              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/forget-password');
+              }}
               sx={{
                 fontFamily: 'Poppins, sans-serif',
                 fontSize: '14px',
