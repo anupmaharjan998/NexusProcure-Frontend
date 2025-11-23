@@ -23,20 +23,27 @@ export const Permissions = () => {
     const fetchData = async () => {
       setLoading(true);
       setError('');
-      try {
-        const [rolesData, permissionsData] = await Promise.all([getRoles(), getPermissions()]);
-        setRoles(rolesData);
-        setAllPermissions(permissionsData);
-        if (rolesData.length > 0) {
-          const first = rolesData[0];
-          setSelectedRoleId(first.id);
-          setSelectedPermissionIds((first.permissions || []).map(p => p.id));
+        try {
+            const [rolesData, permissionsData] = await Promise.all([
+                getRoles(),
+                getPermissions()
+            ]);
+
+            const filteredRoles = rolesData.filter(role => role.name.toLowerCase() !== 'admin');
+
+            setRoles(filteredRoles);
+            setAllPermissions(permissionsData);
+
+            if (filteredRoles.length > 0) {
+                const first = filteredRoles[0];
+                setSelectedRoleId(first.id);
+                setSelectedPermissionIds((first.permissions || []).map(p => p.id));
+            }
+        } catch (e: any) {
+            setError(e?.response?.data?.message || 'Failed to load roles/permissions');
+        } finally {
+            setLoading(false);
         }
-      } catch (e: any) {
-        setError(e?.response?.data?.message || 'Failed to load roles/permissions');
-      } finally {
-        setLoading(false);
-      }
     };
     fetchData();
   }, []);

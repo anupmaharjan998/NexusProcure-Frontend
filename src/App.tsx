@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/Layout/ProtectedRoute';
+import { PublicRoute } from './components/Layout/PublicRoute';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Users } from './pages/Users';
@@ -10,7 +11,8 @@ import { Roles } from './pages/Roles';
 import { Departments } from './pages/Departments';
 import { Profile } from './pages/Profile';
 import { Permissions } from './pages/Permissions';
-import { ROLE_TYPES } from './types/Role';
+import { ForgetPassword } from './pages/ForgetPassword';
+import { ResetPassword } from './pages/ResetPassword';
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -101,14 +103,20 @@ function App() {
                 <BrowserRouter>
                     <Routes>
                         {/* Public Routes */}
-                        <Route path="/login" element={<Login />} />
+                        <Route element={<PublicRoute />}>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/forget-password" element={<ForgetPassword />} />
+                            <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+                        </Route>
 
                         {/* Protected Routes */}
                         <Route
                             path="/dashboard"
                             element={
-                                <Dashboard />
-                                //<ProtectedRoute></ProtectedRoute>
+                                <ProtectedRoute>
+                                    <Dashboard />
+                                </ProtectedRoute>
                             }
                         />
                         <Route

@@ -5,6 +5,8 @@ interface AuthState {
     user: User | null;
     token: string | null;
     permissions: string[];
+
+    // computed
     isAuthenticated: boolean;
 
     setAuth: (user: User, token: string, permissions: string[]) => void;
@@ -13,24 +15,13 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-
-    /** ---------------------------
-     *  INITIAL STATE (Load from LocalStorage)
-     * ---------------------------- */
     user: (() => {
         try {
             const raw = localStorage.getItem('user');
             if (!raw) return null;
 
             const parsed: any = JSON.parse(raw);
-
-            // Normalize roleName always
-            parsed.roleName =
-                parsed.roleName ||
-                parsed.role ||
-                parsed.role?.name ||
-                '';
-
+            parsed.roleName = parsed.roleName || parsed.role?.name || '';
             return parsed as User;
         } catch {
             return null;
@@ -39,19 +30,16 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     token: localStorage.getItem('token'),
     permissions: JSON.parse(localStorage.getItem('permissions') || '[]'),
-    isAuthenticated: !!localStorage.getItem('token'),
 
-    /** ---------------------------
-     *  SET AUTH ON LOGIN
-     * ---------------------------- */
+    // Remove the getter here and instead compute dynamically in useAuth
+    get isAuthenticated() {
+        return !!localStorage.getItem('token');
+    },
+
     setAuth: (user: User, token: string, permissions: string[]) => {
         const normalized: User = {
             ...user,
-            roleName:
-                (user as any).roleName ||
-                (user as any).role ||
-                (user as any).role?.name ||
-                ''
+            roleName: (user as any).roleName || (user as any).role?.name || ''
         };
 
         localStorage.setItem('user', JSON.stringify(normalized));
@@ -62,13 +50,9 @@ export const useAuthStore = create<AuthState>((set) => ({
             user: normalized,
             token,
             permissions,
-            isAuthenticated: true
         });
     },
 
-    /** ---------------------------
-     *  LOGOUT
-     * ---------------------------- */
     logout: () => {
         localStorage.removeItem('user');
         localStorage.removeItem('token');
@@ -78,23 +62,14 @@ export const useAuthStore = create<AuthState>((set) => ({
             user: null,
             token: null,
             permissions: [],
-            isAuthenticated: false
         });
     },
 
-    /** ---------------------------
-     *  UPDATE USER WITHOUT AFFECTING TOKEN OR PERMISSIONS
-     * ---------------------------- */
     updateUser: (user: User) => {
         const normalized: User = {
             ...user,
-            roleName:
-                (user as any).roleName ||
-                (user as any).role ||
-                (user as any).role?.name ||
-                ''
+            roleName: (user as any).roleName || (user as any).role?.name || ''
         };
-
         localStorage.setItem('user', JSON.stringify(normalized));
         set({ user: normalized });
     }

@@ -8,7 +8,6 @@ import { useAuth } from '../hooks/useAuth.ts';
 import { useEffect, useState } from 'react';
 import { getUsers } from '../services/userService.ts';
 import { getDepartments } from '../services/departmentService.ts';
-import { ROLE_TYPES } from '../types/Role.ts';
 
 interface StatCard {
   title: string;
@@ -32,19 +31,21 @@ export const Dashboard = () => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        if (hasPermission(ROLE_TYPES.ADMIN)) {
+          debugger;
+        //if (hasPermission(ROLE_TYPES.ADMIN)) {
+            debugger;
             //TODO: Fetch stats from backend
-          // const [usersData, departmentsData] = await Promise.all([
-          //   getUsers(),
-          //   getDepartments(),
-          // ]);
-          // setStats({
-          //   users: usersData.length ? usersData.length : 0,
-          //   departments: departmentsData.length ? departmentsData.length : 0,
-          //   inventory: 0,
-          //   procurement: 0,
-          // });
-        }
+          const [usersData, departmentsData] = await Promise.all([
+            getUsers(),
+            getDepartments(),
+          ]);
+          setStats({
+            users: usersData.length ? usersData.length : 0,
+            departments: departmentsData.length ? departmentsData.length : 0,
+            inventory: 0,
+            procurement: 0,
+          });
+        //}
       } catch (error) {
         console.error('Error fetching stats:', error);
       } finally {
@@ -53,7 +54,7 @@ export const Dashboard = () => {
     };
 
     fetchStats();
-  }, [hasPermission]);
+  }, []);
 
   const statCards: StatCard[] = [
     {
