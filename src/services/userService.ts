@@ -78,4 +78,17 @@ export const updateProfile = async (data: Partial<User>): Promise<User> => {
   return response.data;
 };
 
+export const uploadProfilePicture = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("fileRequest", file);
+
+    const response = await api.post("/users/upload-profile-picture", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+
+    return response.data.imageUrl;
+};
+
 

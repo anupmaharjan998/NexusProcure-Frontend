@@ -114,7 +114,6 @@ export const Sidebar = ({ open, onClose, collapsed, onToggleCollapse }: SidebarP
       <Box sx={{ overflow: 'auto', mt: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <List>
           {filteredMenuItems.map((item) => {
-              debugger;
             const isActive = location.pathname === item.path;
             const button = (
               <ListItemButton

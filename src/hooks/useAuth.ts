@@ -5,7 +5,6 @@ export const useAuth = () => {
   const { user, token, permissions, isAuthenticated, setAuth, logout, updateUser } = useAuthStore();
 
     const hasPermission = (required: string | string[]) => {
-        debugger;
         if (!permissions.length) return false;
 
         const norm = permissions.map(p => p.toLowerCase());
