@@ -147,8 +147,10 @@ export const Profile = () => {
         }
     };
 
-    const handleProfilePicUpload = async (event) => {
-        const file = event.target.files[0];
+    const handleProfilePicUpload = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = event.target.files?.[0];
         if (!file) return;
 
         try {
@@ -209,7 +211,7 @@ export const Profile = () => {
 
                                 <Button
                                     variant="outlined"
-                                    onClick={() => document.getElementById('profilePicInput').click()}
+                                    onClick={() => document.getElementById('profilePicInput')?.click()}
                                     sx={{ mt: 2 }}
                                 >
                                     Change Picture
@@ -235,10 +237,10 @@ export const Profile = () => {
                                             <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user.username}</Typography>
                                         </Box>
                                     )}
-                                    {user?.phoneNumner && (
+                                    {user?.phoneNumber && (
                                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
                                             <PhoneIcon sx={{ color: '#64748B', fontSize: 20 }} />
-                                            <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user.phoneNumner}</Typography>
+                                            <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user.phoneNumber}</Typography>
                                         </Box>
                                     )}
                                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
