@@ -3,6 +3,8 @@ export interface User {
   fullName: string;
   email: string;
   username?: string;
+  phoneNumber?: string;
+  address?: string;
   roleId: string;
   roleName?: string;
   departmentId: string;
@@ -11,6 +13,7 @@ export interface User {
   permissions: string[];
   createdAt?: string;
   updatedAt?: string;
+  profileImageUrl?: string;
 }
 
 export interface LoginCredentials {

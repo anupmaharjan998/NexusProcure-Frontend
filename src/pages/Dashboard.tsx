@@ -31,9 +31,7 @@ export const Dashboard = () => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-          debugger;
-        //if (hasPermission(ROLE_TYPES.ADMIN)) {
-            debugger;
+        //if (hasPermission(ROLE_TYPES.ADMIN)) {;
             //TODO: Fetch stats from backend
           const [usersData, departmentsData] = await Promise.all([
             getUsers(),

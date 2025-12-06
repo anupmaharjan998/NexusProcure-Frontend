@@ -109,19 +109,31 @@ export const Navbar = ({ onMenuClick }: NavbarProps) => {
             </Typography>
           </Box>
 
-          <IconButton onClick={handleMenuOpen}>
-            <Avatar
-              sx={{
-                bgcolor: '#0056D2',
-                width: 40,
-                height: 40,
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 600,
-              }}
-            >
-              {user?.fullName ? getInitials(user.fullName || '') : 'U'}
-            </Avatar>
-          </IconButton>
+            <IconButton onClick={handleMenuOpen}>
+                {user?.profileImageUrl ? (
+                    <Avatar
+                        src={user.profileImageUrl}
+                        sx={{
+                            width: 40,
+                            height: 40,
+                            fontFamily: 'Inter, sans-serif',
+                            fontWeight: 600,
+                        }}
+                    />
+                ) : (
+                    <Avatar
+                        sx={{
+                            bgcolor: '#0056D2',
+                            width: 40,
+                            height: 40,
+                            fontFamily: 'Inter, sans-serif',
+                            fontWeight: 600,
+                        }}
+                    >
+                        {user?.fullName ? getInitials(user.fullName) : 'U'}
+                    </Avatar>
+                )}
+            </IconButton>
         </Box>
 
         <Menu
