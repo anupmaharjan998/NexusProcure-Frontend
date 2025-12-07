@@ -13,6 +13,8 @@ import { Profile } from './pages/Profile';
 import { Permissions } from './pages/Permissions';
 import { ForgetPassword } from './pages/ForgetPassword';
 import { ResetPassword } from './pages/ResetPassword';
+import {Vendors} from "./pages/Vendors.tsx";
+import {VendorDetails} from "./pages/VendorDetails.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -156,6 +158,22 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <Profile />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/vendors"
+                            element={
+                                <ProtectedRoute>
+                                    <Vendors />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/vendors/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <VendorDetails />
                                 </ProtectedRoute>
                             }
                         />
