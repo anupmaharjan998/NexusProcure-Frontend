@@ -14,12 +14,14 @@ import {
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import SecurityIcon from '@mui/icons-material/Security';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import BusinessIcon from '@mui/icons-material/Business';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import StorefrontIcon from '@mui/icons-material/Storefront';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth.ts';
 import { ROLE_TYPES } from '../../types/Role.ts';
@@ -62,7 +64,7 @@ const menuItems: MenuItem[] = [
     },
     {
         text: "Permissions",
-        icon: <SecurityIcon />,
+        icon: <VpnKeyIcon  />,
         path: "/permissions",
         permissions: ["VIEW_PERMISSIONS"],
     },
@@ -71,6 +73,12 @@ const menuItems: MenuItem[] = [
         icon: <BusinessIcon />,
         path: "/departments",
         permissions: ["VIEW_DEPARTMENTS"],
+    },
+    {
+        text: "Vendors",           // <-- new menu item
+        icon: <StorefrontIcon />,  // <-- suitable icon
+        path: "/vendors",
+        permissions: ["VIEW_VENDOR"],
     },
     {
         text: "Inventory",
