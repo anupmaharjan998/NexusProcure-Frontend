@@ -1,3 +1,5 @@
+import {TaxType} from "@/types/TaxType.ts";
+
 export interface Vendor {
     id: string;
     vendorName: string;
@@ -5,26 +7,35 @@ export interface Vendor {
     email?: string;
     phoneNumber?: string;
     address?: string;
+    categoryId?: string;
+    taxType: TaxType;
     taxId?: string;
     category?: string;
     status: 'Pending' | 'Active' | 'Inactive' | 'Rejected';
     bankAccount?: string;
-    paymentTerms?: string;
+    bankName?: string;
+    bankBranch?: string;
+    paymentTerms?: number;
     documents?: VendorDocument[];
 }
 
 export interface VendorFormData {
     vendorName: string;
-    companyName?: string;
+    companyName: string;
     email: string;
     phoneNumber: string;
     address: string;
-    taxId?: string;
-    category: string;
+    taxId: string;
+    taxType: TaxType;
+    category?: string;
+    categoryId?: string;
     bankAccount?: string;
-    paymentTerms?: string;
+    bankName?: string;
+    bankBranch?: string;
+    paymentTerms: number;
     status: 'Active' | 'Inactive' | 'Pending' | 'Rejected';
 }
+
 
 export interface VendorDocument {
     id: string;
@@ -35,4 +46,5 @@ export interface VendorDocument {
     publicId?: string;
     expiryDate?: string;
     uploadedBy?: string;
+    createdAt: string;
 }

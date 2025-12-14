@@ -1,5 +1,7 @@
 import api from './api.ts';
 import {Vendor, VendorFormData} from '../types/Vendor.ts';
+import {Category, CategoryRequest} from "../types/Category.ts";
+import {PaymentTerms} from "@/types/PaymentTerms.ts";
 
 export const getVendors = async (params?: any) => {
     const res = await api.get< Vendor[]>('/vendors');
@@ -34,6 +36,20 @@ export const deactivateVendor = async (id: string) => {
     const res = await api.post(`/vendors/${id}/deactivate`);
     return res.data;
 };
+export const approveVendor = async (id: string) => {
+    const res = await api.patch(`/vendors/${id}/status`);
+    return res.data;
+};
+
+export const rejectVendor = async (id: string) => {
+    const res = await api.patch(`/vendors/${id}/status`);
+    return res.data;
+};
+
+export const updateVendorStatus = async (id: string, status : string) => {
+    const res = await api.patch(`/vendors/${id}/status`, status);
+    return res.data;
+};
 
 export const uploadVendorDocument = async (vendorId: string, file: File) => {
     const formData = new FormData();
@@ -47,3 +63,28 @@ export const uploadVendorDocument = async (vendorId: string, file: File) => {
 
     return res.data;
 };
+
+export const getAllCategories = async () => {
+    const res = await api.get<Category[]>('/common/getAllCategories');
+    return res.data;
+};
+
+export const addCategory = async (name: string) => {
+    const categoryRequest: CategoryRequest = { name: name, type: "Vendor" };
+    const res = await api.post('/common/addCategory', categoryRequest);
+    return res.data;
+};
+
+
+export const getAllPaymentTerms = async () => {
+    const res = await api.get<PaymentTerms[]>('/vendors/get-payment-terms');
+    return res.data;
+};
+
+export const downloadDocument = async (id: string) => {
+    const res = await api.get(`/vendors/${id}/download-vendor-document`, {
+        responseType: "blob",
+    });
+    return res.data;
+};
+

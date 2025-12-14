@@ -74,7 +74,7 @@ export const deleteUser = async (id: string): Promise<void> => {
 };
 
 export const updateProfile = async (data: Partial<User>): Promise<User> => {
-  const response = await api.put<User>('/users/profile', data);
+  const response = await api.put<User>('/users', data);
   return response.data;
 };
 
@@ -88,7 +88,7 @@ export const uploadProfilePicture = async (file: File): Promise<string> => {
         },
     });
 
-    return response.data.imageUrl;
+    return response.data.imageUrl.url;
 };
 
 

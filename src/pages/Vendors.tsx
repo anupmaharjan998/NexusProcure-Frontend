@@ -3,7 +3,6 @@ import {
     Typography,
     IconButton,
     Alert,
-    Chip
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -25,6 +24,7 @@ import {
 
 import { Vendor, VendorFormData } from '../types/Vendor';
 import {useNavigate} from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export const Vendors = () => {
     const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -37,6 +37,8 @@ export const Vendors = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const navigate = useNavigate();
+    const { user } = useAuth();
+
 
     const fetchData = async () => {
         setLoading(true);
@@ -121,6 +123,33 @@ export const Vendors = () => {
         }
     };
 
+    const approveVendor = async (vendor: Vendor) => {
+        setActionLoading(true);
+        try {
+            //await vendorService.approveVendor(vendor.id);
+            setSuccess("Vendor approved");
+            fetchData();
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to approve vendor");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const rejectVendor = async (vendor: Vendor) => {
+        setActionLoading(true);
+        try {
+            //await vendorService.rejectVendor(vendor.id);
+            setSuccess("Vendor rejected");
+            fetchData();
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to reject vendor");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+
     const columns: Column<Vendor>[] = [
         { id: "vendorName", label: "Vendor Name", minWidth: 150 },
         { id: "email", label: "Email", minWidth: 180 },
@@ -164,6 +193,7 @@ export const Vendors = () => {
                         <DeleteIcon fontSize="small" />
                     </IconButton>
                 </Box>
+
             )
         }
     ];

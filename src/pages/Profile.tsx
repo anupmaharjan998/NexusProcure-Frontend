@@ -6,7 +6,7 @@ import {
     Grid,
     Avatar,
     Divider,
-    Alert,
+    Alert, CircularProgress,
 } from '@mui/material';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -45,6 +45,10 @@ const passwordSchema = yup.object({
         .required('Please confirm your password'),
 });
 
+function UploadIcon() {
+    return null;
+}
+
 export const Profile = () => {
     const { user: authUser, updateUser: updateAuthUser } = useAuth();
     const [user, setUser] = useState<any>(authUser);
@@ -52,6 +56,8 @@ export const Profile = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+
 
     debugger;
     console.log(user.profileImageUrl);
@@ -141,11 +147,19 @@ export const Profile = () => {
             setSuccess('Password changed successfully');
             resetPassword();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to change password');
+            debugger;
+            // Prevent global logout for password errors
+            // Show local error only
+            if (err.response?.status === 401) {
+                setError('Failed to change password.');
+            } else {
+                setError(err.response?.data?.message || 'Failed to change password');
+            }
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleProfilePicUpload = async (
         event: React.ChangeEvent<HTMLInputElement>
@@ -154,16 +168,27 @@ export const Profile = () => {
         if (!file) return;
 
         try {
-            const response = await uploadProfilePicture(file);
+            setIsUploading(true);
+            const imageUrl = await uploadProfilePicture(file);
 
-            setUser({ ...user, profileImageUrl: response });
-            updateAuthUser({ ...user, profileImageUrl: response });
+            const updatedUser = { ...user, profileImageUrl: imageUrl };
+
+            // Update states
+            setUser(updatedUser);
+            updateAuthUser(updatedUser);
+
+            // Fix persistence
+            localStorage.setItem("user", JSON.stringify(updatedUser));
 
             setSuccess("Profile picture updated");
         } catch (err) {
             setError("Failed to upload image");
+        } finally {
+            setIsUploading(false);
         }
     };
+
+
 
 
 
@@ -210,11 +235,15 @@ export const Profile = () => {
                                 />
 
                                 <Button
-                                    variant="outlined"
-                                    onClick={() => document.getElementById('profilePicInput')?.click()}
-                                    sx={{ mt: 2 }}
+                                    component="label"
+                                    variant="contained"
+                                    disabled={isUploading}
+                                    startIcon={
+                                        isUploading ? <CircularProgress size={18} /> : <UploadIcon />
+                                    }
                                 >
-                                    Change Picture
+                                    {isUploading ? "Uploading..." : "Upload Picture"}
+                                    <input type="file" hidden onChange={handleProfilePicUpload} />
                                 </Button>
 
 
@@ -266,28 +295,122 @@ export const Profile = () => {
                                 </Box>
 
                                 <form onSubmit={handleProfileSubmit(onProfileSubmit)}>
+                                    {/*<Grid container spacing={2}>*/}
+                                    {/*    <Grid item xs={12} sm={6}>*/}
+                                    {/*        <Input*/}
+                                    {/*            label="Full Name"*/}
+                                    {/*            defaultValue={user?.fullName}*/}
+                                    {/*            {...registerProfile("name")}*/}
+                                    {/*            error={!!profileErrors.name}*/}
+                                    {/*            helperText={profileErrors.name?.message}*/}
+                                    {/*        />*/}
+                                    {/*    </Grid>*/}
+
+                                    {/*    <Grid item xs={12} sm={6}>*/}
+                                    {/*        <Input label="Email" value={user?.email} disabled helperText="Email cannot be changed" />*/}
+                                    {/*    </Grid>*/}
+                                    {/*    <Grid item xs={12} sm={6}>*/}
+                                    {/*        <Input*/}
+                                    {/*            label="Username"*/}
+                                    {/*            defaultValue={user?.username}*/}
+                                    {/*            {...registerProfile("username")}*/}
+                                    {/*            error={!!profileErrors.username}*/}
+                                    {/*            helperText={profileErrors.username?.message}*/}
+                                    {/*        />*/}
+                                    {/*    </Grid>*/}
+
+                                    {/*    <Grid item xs={12} sm={6}>*/}
+                                    {/*        <Input label="Department" value={user?.departmentName} disabled helperText="Department cannot be changed"/>*/}
+                                    {/*    </Grid>*/}
+                                    {/*    <Grid item xs={12} sm={6}>*/}
+                                    {/*        <Input*/}
+                                    {/*            label="Phone Number"*/}
+                                    {/*            defaultValue={user?.phoneNumber}*/}
+                                    {/*            {...registerProfile("phoneNumber")}*/}
+                                    {/*            error={!!profileErrors.phoneNumber}*/}
+                                    {/*            helperText={profileErrors.phoneNumber?.message}*/}
+                                    {/*        />*/}
+                                    {/*    </Grid>*/}
+
+
+                                    {/*    <Grid item xs={12}>*/}
+                                    {/*        <Input*/}
+                                    {/*            label="Address"*/}
+                                    {/*            defaultValue={user?.address}*/}
+                                    {/*            {...registerProfile("address")}*/}
+                                    {/*            error={!!profileErrors.address}*/}
+                                    {/*            helperText={profileErrors.address?.message}*/}
+                                    {/*        />*/}
+                                    {/*    </Grid>*/}
+
+
+                                    {/*</Grid>*/}
+
                                     <Grid container spacing={2}>
+                                        {/* Full Name - not editable */}
                                         <Grid item xs={12} sm={6}>
-                                            <Input label="Full Name" value={user?.fullName} disabled helperText="Name cannot be changed" />
+                                            <Input
+                                                label="Full Name"
+                                                value={user?.fullName || ""}
+                                                disabled
+                                                helperText="Name cannot be changed"
+                                            />
                                         </Grid>
+
+                                        {/* Email - not editable */}
                                         <Grid item xs={12} sm={6}>
-                                            <Input label="Email" value={user?.email} disabled helperText="Email cannot be changed" />
+                                            <Input
+                                                label="Email"
+                                                value={user?.email || ""}
+                                                disabled
+                                                helperText="Email cannot be changed"
+                                            />
                                         </Grid>
+
+                                        {/* Username - not editable */}
                                         <Grid item xs={12} sm={6}>
-                                            <Input label="Username" value={user?.username} disabled helperText="USername cannot be changed"/>
+                                            <Input
+                                                label="Username"
+                                                value={user?.username || ""}
+                                                disabled
+                                                helperText="Username cannot be changed"
+                                            />
                                         </Grid>
+
+                                        {/* Department - not editable */}
                                         <Grid item xs={12} sm={6}>
-                                            <Input label="Department" value={user?.departmentName} disabled helperText="Department cannot be changed"/>
-                                        </Grid>
-                                        <Grid item xs={12} sm={6}>
-                                            <Input label="Phone" {...registerProfile('phoneNumber')} value={user?.phoneNumber == null ? "" : user?.phoneNumber} error={!!profileErrors.phoneNumber} helperText={profileErrors.phoneNumber?.message} disabled={!editMode || loading} />
+                                            <Input
+                                                label="Department"
+                                                value={user?.departmentName || ""}
+                                                disabled
+                                                helperText="Department cannot be changed"
+                                            />
                                         </Grid>
 
                                         <Grid item xs={12} sm={6}>
-                                            <Input label="Address" {...registerProfile('address')} value={user?.address == null ? "" : user?.address} error={!!profileErrors.address} helperText={profileErrors.address?.message} disabled={!editMode || loading} />
+                                            <Input
+                                                label="Phone Number"
+                                                {...registerProfile("phoneNumber")}
+                                                defaultValue={user?.phoneNumber || ""} // <-- use defaultValue instead of value
+                                                error={!!profileErrors.phoneNumber}
+                                                helperText={profileErrors.phoneNumber?.message}
+                                                disabled={!editMode || loading}
+                                            />
                                         </Grid>
 
+                                        {/* Address - editable only in edit mode */}
+                                        <Grid item xs={12} sm={6}>
+                                            <Input
+                                                label="Address"
+                                                {...registerProfile("address")}
+                                                defaultValue={user?.address || ""} // <-- use defaultValue instead of value
+                                                error={!!profileErrors.address}
+                                                helperText={profileErrors.address?.message}
+                                                disabled={!editMode || loading}
+                                            />
+                                        </Grid>
                                     </Grid>
+
 
                                     {editMode && (
                                         <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
