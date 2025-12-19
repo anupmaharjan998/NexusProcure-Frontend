@@ -15,6 +15,7 @@ import { ForgetPassword } from './pages/ForgetPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import {Vendors} from "./pages/Vendors.tsx";
 import {VendorDetails} from "./pages/VendorDetails.tsx";
+import {Categories} from "./pages/Categories.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -177,6 +178,41 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/categories"
+                            element={
+                                <ProtectedRoute>
+                                    <Categories />
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/procurement/approval-levels"
+                            // element={
+                            //     <ProtectedRoute>
+                            //         {/*<ApprovalLevels />*/}
+                            //     </ProtectedRoute>
+                            // }
+                        />
+
+                        {/*<Route*/}
+                        {/*    path="/procurement/requisitions"*/}
+                        {/*    element={*/}
+                        {/*        <ProtectedRoute>*/}
+                        {/*            <Requisitions />*/}
+                        {/*        </ProtectedRoute>*/}
+                        {/*    }*/}
+                        {/*/>*/}
+
+                        {/*<Route*/}
+                        {/*    path="/procurement/purchase-orders"*/}
+                        {/*    element={*/}
+                        {/*        <ProtectedRoute>*/}
+                        {/*            <PurchaseOrders />*/}
+                        {/*        </ProtectedRoute>*/}
+                        {/*    }*/}
+                        {/*/>*/}
 
                         {/* Default redirect */}
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />

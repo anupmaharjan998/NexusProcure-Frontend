@@ -247,7 +247,8 @@ export const VendorDetails = () => {
                 </Box>
 
                 {/* Approval */}
-                {vendor.status === "Pending" && (
+                {/*{vendor.status === "Pending" && hasPermission("APPROVE_VENDOR") &&(*/}
+                {vendor.status === "Pending" &&(
                     <Box display="flex" gap={2} mb={3}>
                         <Button
                             color="success"

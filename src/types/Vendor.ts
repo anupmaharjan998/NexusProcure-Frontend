@@ -27,7 +27,7 @@ export interface VendorFormData {
     address: string;
     taxId: string;
     taxType: TaxType;
-    category?: string;
+    category: string;
     categoryId?: string;
     bankAccount?: string;
     bankName?: string;

@@ -1,15 +1,16 @@
 import {
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Box,
-  Divider,
-  IconButton,
-  Tooltip,
+    Drawer,
+    List,
+    ListItem,
+    ListItemButton,
+    ListItemIcon,
+    ListItemText,
+    Toolbar,
+    Box,
+    Divider,
+    IconButton,
+    Tooltip,
+    Collapse,
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
@@ -22,25 +23,29 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import CategoryIcon from '@mui/icons-material/Category';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth.ts';
-import { ROLE_TYPES } from '../../types/Role.ts';
+import { useAuth } from '../../hooks/useAuth';
+import { useState } from 'react';
 
-export const drawerWidth = 240;  // Expanded sidebar width (with text)
-export const drawerWidthCollapsed = 70;  // Collapsed sidebar width (icon-only)
+export const drawerWidth = 240;
+export const drawerWidthCollapsed = 70;
 
 interface SidebarProps {
-  open: boolean;
-  onClose: () => void;
-  collapsed: boolean;
-  onToggleCollapse: () => void;
+    open: boolean;
+    onClose: () => void;
+    collapsed: boolean;
+    onToggleCollapse: () => void;
 }
 
 interface MenuItem {
-  text: string;
-  icon: JSX.Element;
-  path: string;
-  permissions: string[];
+    text: string;
+    icon: JSX.Element;
+    path?: string;
+    permissions: string[];
+    children?: MenuItem[];
 }
 
 const menuItems: MenuItem[] = [
@@ -64,7 +69,7 @@ const menuItems: MenuItem[] = [
     },
     {
         text: "Permissions",
-        icon: <VpnKeyIcon  />,
+        icon: <VpnKeyIcon />,
         path: "/permissions",
         permissions: ["VIEW_PERMISSIONS"],
     },
@@ -75,10 +80,16 @@ const menuItems: MenuItem[] = [
         permissions: ["VIEW_DEPARTMENTS"],
     },
     {
-        text: "Vendors",           // <-- new menu item
-        icon: <StorefrontIcon />,  // <-- suitable icon
+        text: "Vendors",
+        icon: <StorefrontIcon />,
         path: "/vendors",
         permissions: ["VIEW_VENDOR"],
+    },
+    {
+        text: "Categories",
+        icon: <CategoryIcon />,
+        path: "/categories",
+        permissions: ["VIEW_CATEGORIES"],
     },
     {
         text: "Inventory",
@@ -89,8 +100,27 @@ const menuItems: MenuItem[] = [
     {
         text: "Procurement",
         icon: <ShoppingCartIcon />,
-        path: "/procurement",
-        permissions: ["VIEW_PROCUREMENT"],
+        permissions: ["PUBLIC"],
+        children: [
+            {
+                text: "Requisitions",
+                icon: <ShoppingCartIcon />,
+                path: "/procurement/requisitions",
+                permissions: ["PUBLIC"],
+            },
+            {
+                text: "Purchase Orders",
+                icon: <InventoryIcon />,
+                path: "/procurement/purchase-orders",
+                permissions: ["PUBLIC"],
+            },
+            {
+                text: "Approval Levels",
+                icon: <SecurityIcon />,
+                path: "/procurement/approval-levels",
+                permissions: ["PUBLIC"],
+            },
+        ],
     },
     {
         text: "Reports",
@@ -100,145 +130,160 @@ const menuItems: MenuItem[] = [
     },
 ];
 
+export const Sidebar = ({
+                            open,
+                            onClose,
+                            collapsed,
+                            onToggleCollapse,
+                        }: SidebarProps) => {
+    const navigate = useNavigate();
+    const location = useLocation();
+    const { hasPermission } = useAuth();
 
-export const Sidebar = ({ open, onClose, collapsed, onToggleCollapse }: SidebarProps) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { hasPermission } = useAuth();
+    const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
-    onClose();
-  };
+    const toggleMenu = (key: string) => {
+        setOpenMenus(prev => ({
+            ...prev,
+            [key]: !prev[key],
+        }));
+    };
 
-    const filteredMenuItems = menuItems.filter((item) => {
-        if (item.permissions.includes("PUBLIC")) return true;
-        return hasPermission(item.permissions);
-    });
+    const handleNavigation = (path?: string) => {
+        if (!path) return;
+        navigate(path);
+        onClose();
+    };
 
-  const drawer = (isDesktop: boolean) => (
-    <>
-      <Toolbar />
-      <Box sx={{ overflow: 'auto', mt: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
-        <List>
-          {filteredMenuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const button = (
-              <ListItemButton
-                onClick={() => handleNavigation(item.path)}
-                sx={{
-                  borderRadius: '8px',
-                  backgroundColor: isActive ? '#EBF5FF' : 'transparent',
-                  color: isActive ? '#0056D2' : '#475569',
-                  fontWeight: isActive ? 600 : 400,
-                  justifyContent: collapsed && isDesktop ? 'center' : 'flex-start',
-                  '&:hover': {
-                    backgroundColor: isActive ? '#EBF5FF' : '#F8FAFC',
-                  },
-                  transition: 'all 0.3s ease',
-                  px: collapsed && isDesktop ? 1 : 2,
-                }}
-              >
-                <ListItemIcon
-                  sx={{
-                    color: isActive ? '#0056D2' : '#64748B',
-                    minWidth: collapsed && isDesktop ? 'auto' : 40,
-                    justifyContent: 'center',
-                  }}
-                >
-                  {item.icon}
-                </ListItemIcon>
-                {(!collapsed || !isDesktop) && (
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{
-                      fontFamily: 'Poppins, sans-serif',
-                      fontSize: '14px',
-                      fontWeight: isActive ? 600 : 500,
-                    }}
-                  />
+    const filteredMenuItems = menuItems.filter(item =>
+        item.permissions.includes("PUBLIC") || hasPermission(item.permissions)
+    );
+
+    const drawerContent = (isDesktop: boolean) => (
+        <>
+            <Toolbar />
+            <Box sx={{ overflow: 'auto', mt: 2, height: '100%' }}>
+                <List>
+                    {filteredMenuItems.map(item => {
+                        const hasChildren = !!item.children?.length;
+                        const isOpen = openMenus[item.text];
+                        const isActive = location.pathname === item.path;
+
+                        if (hasChildren) {
+                            return (
+                                <ListItem key={item.text} disablePadding>
+                                    <Box sx={{ width: '100%' }}>
+                                        <ListItemButton
+                                            onClick={() => toggleMenu(item.text)}
+                                            sx={{
+                                                justifyContent: collapsed ? 'center' : 'space-between',
+                                                borderRadius: '8px',
+                                                px: collapsed ? 1 : 2,
+                                            }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                                <ListItemIcon sx={{ minWidth: 40 }}>
+                                                    {item.icon}
+                                                </ListItemIcon>
+                                                {!collapsed && (
+                                                    <ListItemText primary={item.text} />
+                                                )}
+                                            </Box>
+                                            {!collapsed && (
+                                                isOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                                            )}
+                                        </ListItemButton>
+
+                                        <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                                            <List component="div" disablePadding>
+                                                {item.children!
+                                                    .filter(child =>
+                                                        child.permissions.includes("PUBLIC") ||
+                                                        hasPermission(child.permissions)
+                                                    )
+                                                    .map(child => (
+                                                        <ListItemButton
+                                                            key={child.text}
+                                                            sx={{
+                                                                pl: collapsed ? 2 : 6,
+                                                                borderRadius: '8px',
+                                                            }}
+                                                            onClick={() => handleNavigation(child.path)}
+                                                        >
+                                                            <ListItemIcon sx={{ minWidth: 36 }}>
+                                                                {child.icon}
+                                                            </ListItemIcon>
+                                                            {!collapsed && (
+                                                                <ListItemText primary={child.text} />
+                                                            )}
+                                                        </ListItemButton>
+                                                    ))}
+                                            </List>
+                                        </Collapse>
+                                    </Box>
+                                </ListItem>
+                            );
+                        }
+
+                        return (
+                            <ListItem key={item.text} disablePadding>
+                                <ListItemButton
+                                    onClick={() => handleNavigation(item.path)}
+                                    sx={{
+                                        borderRadius: '8px',
+                                        backgroundColor: isActive ? '#EBF5FF' : 'transparent',
+                                        justifyContent: collapsed ? 'center' : 'flex-start',
+                                    }}
+                                >
+                                    <ListItemIcon sx={{ minWidth: 40 }}>
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    {!collapsed && (
+                                        <ListItemText primary={item.text} />
+                                    )}
+                                </ListItemButton>
+                            </ListItem>
+                        );
+                    })}
+                </List>
+
+                <Divider sx={{ my: 2 }} />
+
+                {isDesktop && (
+                    <Box sx={{ p: collapsed ? 0.5 : 2 }}>
+                        <IconButton
+                            onClick={onToggleCollapse}
+                            sx={{ width: '100%' }}
+                        >
+                            {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+                        </IconButton>
+                    </Box>
                 )}
-              </ListItemButton>
-            );
+            </Box>
+        </>
+    );
 
-            return (
-              <ListItem key={item.text} disablePadding sx={{ px: collapsed && isDesktop ? 0.5 : 2, mb: 0.5 }}>
-                {collapsed && isDesktop ? (
-                  <Tooltip title={item.text} placement="right">
-                    {button}
-                  </Tooltip>
-                ) : (
-                  button
-                )}
-              </ListItem>
-            );
-          })}
-        </List>
-        <Divider sx={{ my: 2 }} />
-        
-        {isDesktop && (
-          <Box sx={{ mt: 'auto', p: collapsed ? 0.5 : 2 }}>
-            <IconButton
-              onClick={onToggleCollapse}
-              sx={{
-                width: '100%',
-                borderRadius: '8px',
-                border: '1px solid #E2E8F0',
-                '&:hover': {
-                  backgroundColor: '#F8FAFC',
-                },
-              }}
+    return (
+        <>
+            <Drawer
+                variant="temporary"
+                open={open}
+                onClose={onClose}
+                sx={{ display: { xs: 'block', sm: 'none' } }}
             >
-              {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-            </IconButton>
-          </Box>
-        )}
-      </Box>
-    </>
-  );
+                {drawerContent(false)}
+            </Drawer>
 
-  return (
-    <>
-      {/* Mobile drawer */}
-      <Drawer
-        variant="temporary"
-        open={open}
-        onClose={onClose}
-        ModalProps={{
-          keepMounted: true, // Better mobile performance
-        }}
-        sx={{
-          display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: drawerWidth,
-            borderRight: '1px solid #E2E8F0',
-          },
-        }}
-      >
-        {drawer(false)}
-      </Drawer>
-
-      {/* Desktop drawer */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          display: { xs: 'none', sm: 'block' },
-          width: collapsed ? drawerWidthCollapsed : drawerWidth,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': {
-            boxSizing: 'border-box',
-            width: collapsed ? drawerWidthCollapsed : drawerWidth,
-            borderRight: '1px solid #E2E8F0',
-            transition: 'width 0.3s ease',
-            overflowX: 'hidden',
-          },
-        }}
-        open
-      >
-        {drawer(true)}
-      </Drawer>
-    </>
-  );
+            <Drawer
+                variant="permanent"
+                sx={{
+                    display: { xs: 'none', sm: 'block' },
+                    width: collapsed ? drawerWidthCollapsed : drawerWidth,
+                }}
+                open
+            >
+                {drawerContent(true)}
+            </Drawer>
+        </>
+    );
 };
-

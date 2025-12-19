@@ -28,6 +28,7 @@ import {
 import { Category } from '../../types/Category';
 import {PaymentTerms} from "../../types/PaymentTerms.ts";
 import {TaxType} from "../../types/TaxType.ts";
+import {useAuth} from "../../hooks/useAuth.ts";
 
 /* ---------------- VALIDATION ---------------- */
 const schema = yup.object({
@@ -44,7 +45,7 @@ const schema = yup.object({
         .oneOf(Object.values(TaxType).filter(v => typeof v === 'number'))
         .required(),
     taxId: yup.string().required('Tax number is required'),
-    category: yup.string().optional(),
+    category: yup.string().required('Category is required'),
     categoryId: yup.string().optional(),
     bankName: yup.string().optional(),
     bankBranch: yup.string().optional(),
@@ -76,6 +77,7 @@ export const VendorForm = ({
     const [paymentTermsList, setPaymentTermsList] = useState<PaymentTerms[]>([]);
     const [categoryInput, setCategoryInput] = useState('');
     const [addingCategory, setAddingCategory] = useState(false);
+    const { hasPermission } = useAuth();
 
     const {
         register,
@@ -339,7 +341,7 @@ export const VendorForm = ({
 
                     <Grid item xs={12} sm={6}>
                         <Input
-                            label="Bank Name *"
+                            label="Bank Name"
                             {...register('bankName')}
                             error={!!errors.bankName}
                             helperText={errors.bankName?.message}
@@ -357,7 +359,7 @@ export const VendorForm = ({
 
                     <Grid item xs={12} sm={6}>
                         <Input
-                            label="Account Number *"
+                            label="Account Number"
                             {...register('bankAccount')}
                             error={!!errors.bankAccount}
                             helperText={errors.bankAccount?.message}
