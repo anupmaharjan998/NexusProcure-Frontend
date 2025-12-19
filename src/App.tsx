@@ -16,6 +16,7 @@ import { ResetPassword } from './pages/ResetPassword';
 import {Vendors} from "./pages/Vendors.tsx";
 import {VendorDetails} from "./pages/VendorDetails.tsx";
 import {Categories} from "./pages/Categories.tsx";
+import ApprovalFlowPage from "./pages/ApprovalFlowPage.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -189,11 +190,11 @@ function App() {
 
                         <Route
                             path="/procurement/approval-levels"
-                            // element={
-                            //     <ProtectedRoute>
-                            //         {/*<ApprovalLevels />*/}
-                            //     </ProtectedRoute>
-                            // }
+                            element={
+                                <ProtectedRoute>
+                                    {<ApprovalFlowPage />}
+                                </ProtectedRoute>
+                            }
                         />
 
                         {/*<Route*/}
