@@ -21,7 +21,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
 import { useEffect, useMemo, useState } from 'react';
-import { RequisitionRequest } from '../../types/requisition';
+import {RequisitionDto, RequisitionRequest} from '../../types/requisition';
 import { getAllCategories } from '../../services/vendorService';
 
 interface CategoryDto {
@@ -33,7 +33,7 @@ interface Props {
     open: boolean;
     onClose: () => void;
     onSubmit: (data: RequisitionRequest) => Promise<void>;
-    defaultValues?: RequisitionRequest;
+    defaultValues?: RequisitionDto;
 }
 
 export const RequisitionForm = ({

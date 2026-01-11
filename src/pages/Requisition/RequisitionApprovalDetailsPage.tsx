@@ -96,7 +96,7 @@ export default function RequisitionDetailsPage() {
 
             await approveRequisition(id, {
                 decision,
-                comments: comment || null
+                comments: comment || ""
             });
 
             setDialogOpen(false);
@@ -178,7 +178,7 @@ export default function RequisitionDetailsPage() {
                             <Typography variant="subtitle2">Status</Typography>
                             <Chip
                                 label={requisition.status}
-                                color={statusColor(requisition.status)}
+                                color={statusColor(requisition.status as string)}
                             />
                         </Grid>
 

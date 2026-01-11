@@ -143,7 +143,7 @@ export default function RequisitionDetailsPage() {
                             <Typography variant="subtitle2">Status</Typography>
                             <Chip
                                 label={requisition.status}
-                                color={statusColor(requisition.status)}
+                                color={statusColor(requisition.status as string)}
                             />
                         </Grid>
 
@@ -216,7 +216,7 @@ export default function RequisitionDetailsPage() {
                                 >
                                     <Typography fontWeight={600}>
                                         {a.approvedBy?.fullName ||
-                                            a.role?.name ||
+                                            //a.role?.name ||
                                             'System'}
                                     </Typography>
                                     <Chip

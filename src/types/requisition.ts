@@ -1,3 +1,5 @@
+import {User} from "@/types/User.ts";
+
 export interface RequisitionItemDto {
     id?: string;
     itemName: string;
@@ -7,8 +9,10 @@ export interface RequisitionItemDto {
 
 export interface RequisitionDto {
     id?: string;
+    requisitionNumber: string;
     requestedById: string;
     requestedByName?: string;
+    requestedBy: User;
     categoryName?: string;
     requestedDate?: string;
     status?: string;
