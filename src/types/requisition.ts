@@ -1,0 +1,43 @@
+import {User} from "@/types/User.ts";
+
+export interface RequisitionItemDto {
+    id?: string;
+    itemName: string;
+    quantity: number;
+    estimatedCost: number;
+}
+
+export interface RequisitionDto {
+    id?: string;
+    requisitionNumber: string;
+    requestedById: string;
+    requestedByName?: string;
+    requestedBy: User;
+    categoryName?: string;
+    requestedDate?: string;
+    status?: string;
+    items: RequisitionItemDto[];
+    totalAmount: number;
+    approvals: ApprovalsResponse[];
+}
+
+export interface RequisitionRequest {
+    categoryId: string;
+    isUrgent: boolean;
+    requestedById: string;
+    items: RequisitionItemDto[];
+}
+
+export interface ApprovalsResponse {
+    id?: string;
+    approvedByName: string;
+    status: string;
+    approvedDate?: string;
+    approvedBy: {
+        fullName: string;
+    };
+    decision: string;
+    comments: string;
+
+
+}

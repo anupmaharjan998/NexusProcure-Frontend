@@ -63,6 +63,13 @@ export const CategoryForm = ({ open, onClose, onSubmit, category, loading = fals
                         />
                     </Grid>
                     <Grid item xs={12}>
+                        <TextField
+                            label="Risk Weight"
+                            fullWidth
+                            {...register('riskWeight')}
+                        />
+                    </Grid>
+                    <Grid item xs={12}>
                         <Controller
                             name="type"
                             control={control}
