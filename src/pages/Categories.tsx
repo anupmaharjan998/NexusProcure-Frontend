@@ -90,6 +90,7 @@ export const Categories = () => {
     const columns: Column<Category>[] = [
         { id: 'name', label: 'Category Name', minWidth: 150 },
         { id: 'description', label: 'Description', minWidth: 200 },
+        { id: 'riskWeight', label: 'Risk Weight', minWidth: 120 },
         { id: 'type', label: 'Type', minWidth: 120 },
         {
             id: 'actions',

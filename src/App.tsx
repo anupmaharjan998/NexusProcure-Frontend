@@ -17,6 +17,12 @@ import {Vendors} from "./pages/Vendors.tsx";
 import {VendorDetails} from "./pages/VendorDetails.tsx";
 import {Categories} from "./pages/Categories.tsx";
 import ApprovalFlowPage from "./pages/ApprovalFlowPage.tsx";
+import RequisitionApprovalPage from "./pages/Requisition/RequisitionApprovalPage.tsx";
+import RequisitionPage from "./pages/Requisition/RequisitionPage.tsx";
+import RequisitionDetailsPage from "./pages/Requisition/RequisitionDetailsPage.tsx";
+import RequisitionApprovalDetailsPage from "./pages/Requisition/RequisitionApprovalDetailsPage.tsx";
+import ApprovalPolicyPage from "./pages/ApprovalPolicyPage.tsx";
+import {TotalAmountRiskScores} from "./pages/ApprovalPolicy/TotalAmountRiskScores.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -189,22 +195,56 @@ function App() {
                         />
 
                         <Route
-                            path="/procurement/approval-levels"
+                            path="/procurement/requisitions"
                             element={
                                 <ProtectedRoute>
-                                    {<ApprovalFlowPage />}
+                                    <RequisitionPage />
                                 </ProtectedRoute>
                             }
                         />
 
-                        {/*<Route*/}
-                        {/*    path="/procurement/requisitions"*/}
-                        {/*    element={*/}
-                        {/*        <ProtectedRoute>*/}
-                        {/*            <Requisitions />*/}
-                        {/*        </ProtectedRoute>*/}
-                        {/*    }*/}
-                        {/*/>*/}
+                        <Route
+                            path="/procurement/requisitions/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <RequisitionDetailsPage/>
+                                </ProtectedRoute>
+                            }
+                        />
+
+                        <Route
+                            path="/procurement/requisitions-approvals"
+                            element={
+                                <ProtectedRoute>
+                                    <RequisitionApprovalPage />
+                                </ProtectedRoute>
+                            }
+                        />
+
+
+                        <Route
+                            path="/procurement/requisitions/:id/approval"
+                            element={
+                                <RequisitionApprovalDetailsPage />
+                            }
+                        />
+
+
+                        <Route
+                            path="/procurement/approval-policy"
+                            element={
+                                <ApprovalPolicyPage />
+                            }
+                        />
+
+
+                        <Route
+                            path="/procurement/risk-score"
+                            element={
+                                <TotalAmountRiskScores />
+                            }
+                        />
+
 
                         {/*<Route*/}
                         {/*    path="/procurement/purchase-orders"*/}
