@@ -19,10 +19,14 @@ import {
 import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import SearchIcon from '@mui/icons-material/Search';
 import { useEffect, useMemo, useState } from 'react';
-import {RequisitionDto, RequisitionRequest} from '../../types/requisition';
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+
+import { RequisitionDto, RequisitionRequest } from '../../types/requisition';
 import { getAllCategories } from '../../services/vendorService';
+
+/* ---------------- Types ---------------- */
 
 interface CategoryDto {
     id: string;
@@ -36,6 +40,43 @@ interface Props {
     defaultValues?: RequisitionDto;
 }
 
+/* ---------------- Yup Schema ---------------- */
+
+const requisitionSchema: yup.SchemaOf<RequisitionRequest> = yup.object({
+    categoryId: yup
+        .string()
+        .required('Category is required'),
+
+    isUrgent: yup.boolean().required(),
+
+    items: yup
+        .array()
+        .of(
+            yup.object({
+                itemName: yup
+                    .string()
+                    .required('Item name is required'),
+
+                quantity: yup
+                    .number()
+                    .typeError('Quantity must be a number')
+                    .integer('Quantity must be an integer')
+                    .min(1, 'Quantity must be at least 1')
+                    .required('Quantity is required'),
+
+                estimatedCost: yup
+                    .number()
+                    .typeError('Amount must be a number')
+                    .min(1, 'Amount cannot be negative')
+                    .required('Unit cost is required')
+            })
+        )
+        .min(1, 'At least one item is required')
+        .required()
+});
+
+/* ---------------- Component ---------------- */
+
 export const RequisitionForm = ({
                                     open,
                                     onClose,
@@ -46,17 +87,13 @@ export const RequisitionForm = ({
     const [loadingCategories, setLoadingCategories] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    // Search & filter state
-    const [search, setSearch] = useState('');
-    const [minCost, setMinCost] = useState<number | ''>('');
-    const [maxCost, setMaxCost] = useState<number | ''>('');
-
     const {
         control,
         handleSubmit,
         watch,
         reset
     } = useForm<RequisitionRequest>({
+        resolver: yupResolver(requisitionSchema),
         defaultValues: defaultValues || {
             categoryId: '',
             isUrgent: false,
@@ -71,13 +108,16 @@ export const RequisitionForm = ({
 
     const items = watch('items');
 
-    const totalAmount = items?.reduce(
-        (sum, i) => sum + (i.quantity || 0) * (i.estimatedCost || 0),
-        0
-    ) || 0;
+    const totalAmount =
+        items?.reduce(
+            (sum, i) => sum + (i.quantity || 0) * (i.estimatedCost || 0),
+            0
+        ) || 0;
+
+    /* ---------------- Load Categories ---------------- */
 
     useEffect(() => {
-        const loadCategoryData = async () => {
+        const loadCategories = async () => {
             setLoadingCategories(true);
             try {
                 const cats = await getAllCategories();
@@ -86,8 +126,10 @@ export const RequisitionForm = ({
                 setLoadingCategories(false);
             }
         };
-        loadCategoryData();
+        loadCategories();
     }, []);
+
+    /* ---------------- Handlers ---------------- */
 
     const handleClose = () => {
         if (!submitting) {
@@ -106,25 +148,7 @@ export const RequisitionForm = ({
         }
     };
 
-    // Apply search & filters to UI only
-    const filteredFields = useMemo(() => {
-        return fields.filter((_, index) => {
-            const item = items?.[index];
-            if (!item) return false;
-
-            if (
-                search &&
-                !item.itemName.toLowerCase().includes(search.toLowerCase())
-            ) {
-                return false;
-            }
-
-            if (minCost !== '' && item.estimatedCost < minCost) return false;
-            if (maxCost !== '' && item.estimatedCost > maxCost) return false;
-
-            return true;
-        });
-    }, [fields, items, search, minCost, maxCost]);
+    /* ---------------- UI ---------------- */
 
     return (
         <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
@@ -139,7 +163,6 @@ export const RequisitionForm = ({
                         <Controller
                             name="categoryId"
                             control={control}
-                            rules={{ required: 'Category is required' }}
                             render={({ field, fieldState }) => (
                                 <TextField
                                     {...field}
@@ -188,71 +211,13 @@ export const RequisitionForm = ({
 
                 <Divider sx={{ mb: 3 }} />
 
-                {/* Search & Filters */}
-                {/*<Grid container spacing={2} mb={3}>*/}
-                {/*    <Grid item xs={6}>*/}
-                {/*        <TextField*/}
-                {/*            fullWidth*/}
-                {/*            label="Search Item"*/}
-                {/*            value={search}*/}
-                {/*            onChange={e => setSearch(e.target.value)}*/}
-                {/*            InputProps={{*/}
-                {/*                startAdornment: (*/}
-                {/*                    <InputAdornment position="start">*/}
-                {/*                        <SearchIcon />*/}
-                {/*                    </InputAdornment>*/}
-                {/*                )*/}
-                {/*            }}*/}
-                {/*        />*/}
-                {/*    </Grid>*/}
-
-                {/*    <Grid item xs={3}>*/}
-                {/*        <TextField*/}
-                {/*            type="number"*/}
-                {/*            label="Min Cost"*/}
-                {/*            fullWidth*/}
-                {/*            value={minCost}*/}
-                {/*            onChange={e =>*/}
-                {/*                setMinCost(*/}
-                {/*                    e.target.value === ''*/}
-                {/*                        ? ''*/}
-                {/*                        : Number(e.target.value)*/}
-                {/*                )*/}
-                {/*            }*/}
-                {/*        />*/}
-                {/*    </Grid>*/}
-
-                {/*    <Grid item xs={3}>*/}
-                {/*        <TextField*/}
-                {/*            type="number"*/}
-                {/*            label="Max Cost"*/}
-                {/*            fullWidth*/}
-                {/*            value={maxCost}*/}
-                {/*            onChange={e =>*/}
-                {/*                setMaxCost(*/}
-                {/*                    e.target.value === ''*/}
-                {/*                        ? ''*/}
-                {/*                        : Number(e.target.value)*/}
-                {/*                )*/}
-                {/*            }*/}
-                {/*        />*/}
-                {/*    </Grid>*/}
-                {/*</Grid>*/}
-
                 {/* Items */}
                 <Typography variant="subtitle1" fontWeight={600} mb={2}>
                     Requisition Items
                 </Typography>
 
-                {filteredFields.length === 0 && (
-                    <Typography color="text.secondary" mb={2}>
-                        No items match your search or filters.
-                    </Typography>
-                )}
-
                 <Grid container spacing={2}>
-                    {filteredFields.map((field) => {
-                        const index = fields.findIndex(f => f.id === field.id);
+                    {fields.map((field, index) => {
                         const lineTotal =
                             (items?.[index]?.quantity || 0) *
                             (items?.[index]?.estimatedCost || 0);
@@ -264,7 +229,6 @@ export const RequisitionForm = ({
                                         <Controller
                                             name={`items.${index}.itemName`}
                                             control={control}
-                                            rules={{ required: 'Item name required' }}
                                             render={({ field, fieldState }) => (
                                                 <TextField
                                                     {...field}
@@ -281,12 +245,14 @@ export const RequisitionForm = ({
                                         <Controller
                                             name={`items.${index}.quantity`}
                                             control={control}
-                                            render={({ field }) => (
+                                            render={({ field, fieldState }) => (
                                                 <TextField
                                                     {...field}
                                                     type="number"
                                                     label="Qty"
                                                     fullWidth
+                                                    error={!!fieldState.error}
+                                                    helperText={fieldState.error?.message}
                                                     inputProps={{ min: 1 }}
                                                 />
                                             )}
@@ -297,12 +263,14 @@ export const RequisitionForm = ({
                                         <Controller
                                             name={`items.${index}.estimatedCost`}
                                             control={control}
-                                            render={({ field }) => (
+                                            render={({ field, fieldState }) => (
                                                 <TextField
                                                     {...field}
                                                     type="number"
                                                     label="Unit Cost"
                                                     fullWidth
+                                                    error={!!fieldState.error}
+                                                    helperText={fieldState.error?.message}
                                                     inputProps={{ min: 0, step: 0.01 }}
                                                 />
                                             )}
@@ -358,9 +326,7 @@ export const RequisitionForm = ({
                     variant="contained"
                     onClick={handleSubmit(handleFormSubmit)}
                     disabled={submitting}
-                    startIcon={
-                        submitting ? <CircularProgress size={20} /> : null
-                    }
+                    startIcon={submitting ? <CircularProgress size={20} /> : null}
                 >
                     {defaultValues ? 'Update Requisition' : 'Create Requisition'}
                 </Button>

@@ -23,6 +23,7 @@ import RequisitionDetailsPage from "./pages/Requisition/RequisitionDetailsPage.t
 import RequisitionApprovalDetailsPage from "./pages/Requisition/RequisitionApprovalDetailsPage.tsx";
 import ApprovalPolicyPage from "./pages/ApprovalPolicyPage.tsx";
 import {TotalAmountRiskScores} from "./pages/ApprovalPolicy/TotalAmountRiskScores.tsx";
+import RfqPage from "./pages/RFQ/RfqPage.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -245,6 +246,9 @@ function App() {
                             }
                         />
 
+                        <Route path="/rfq/:token" element={<RfqPage />} />
+
+
 
                         {/*<Route*/}
                         {/*    path="/procurement/purchase-orders"*/}
@@ -259,6 +263,7 @@ function App() {
                         <Route path="/" element={<Navigate to="/dashboard" replace />} />
                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
+
                 </BrowserRouter>
             </AuthProvider>
         </ThemeProvider>
