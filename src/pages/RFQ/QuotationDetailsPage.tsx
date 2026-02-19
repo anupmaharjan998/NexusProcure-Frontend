@@ -12,7 +12,7 @@ import { useParams } from 'react-router-dom';
 
 import { DashboardLayout } from '../../components/Layout/DashboardLayout';
 import { getQuotationById } from '../../services/rfqService';
-import { QuotationDetailDto } from '../../types/QuotationDetailDto';
+import { QuotationDetailResponseDto } from '../../types/QuotationDetailDto';
 import { Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
@@ -20,7 +20,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function QuotationDetailsPage() {
     const { quotationId } = useParams();
-    const [data, setData] = useState<QuotationDetailDto | null>(null);
+    const [data, setData] = useState<QuotationDetailResponseDto | null>(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -83,12 +83,12 @@ export default function QuotationDetailsPage() {
                         <Typography>
                             Submitted: {new Date(data.submittedAt).toISOString().split('T')[0]}
                         </Typography>
-                        <Chip
-                            label={data.status}
-                            color={data.status === 'Approved' ? 'success' : 'warning'}
-                            size="small"
-                            sx={{ mt: 1 }}
-                        />
+                        {/*<Chip*/}
+                        {/*    label={data.status}*/}
+                        {/*    color={data.status === 'Approved' ? 'success' : 'warning'}*/}
+                        {/*    size="small"*/}
+                        {/*    sx={{ mt: 1 }}*/}
+                        {/*/>*/}
                     </Paper>
 
                     <Divider sx={{ mb: 2 }} />

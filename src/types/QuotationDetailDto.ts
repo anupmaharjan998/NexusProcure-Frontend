@@ -28,7 +28,7 @@ export interface QuotationDetailResponseDto {
     contactPerson: string;
 
     submittedAt: string;       // ISO string from DateTime
-    grandTotal: number;        // renamed from totalAmount
+    totalAmount: number;        // renamed from totalAmount
 
     paymentTerms: string;
     deliveryTime: string;      // DateTime from backend (ISO string)

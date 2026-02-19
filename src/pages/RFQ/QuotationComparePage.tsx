@@ -93,6 +93,15 @@ export default function QuotationComparePage() {
     };
 
 
+    const rows = [
+        ['Email', (q: QuotationDetailResponseDto) => q.vendorEmail],
+        ['Contact Person', (q: QuotationDetailResponseDto) => q.contactPerson],
+        ['Submitted At', (q: QuotationDetailResponseDto) =>
+            new Date(q.submittedAt).toLocaleDateString()]
+    ] satisfies [string, (q: QuotationDetailResponseDto) => string][];
+
+
+
     /* ================= Render ================= */
 
     return (
@@ -191,7 +200,7 @@ export default function QuotationComparePage() {
                             {quotations.map(q => (
                                 <Box key={q.id}>
                                     {q.vendorName}
-                                    {q.grandTotal === lowest && (
+                                    {q.totalAmount === lowest && (
                                         <Chip
                                             label="Best Price"
                                             color="success"
@@ -210,22 +219,39 @@ export default function QuotationComparePage() {
                             Vendor Information
                         </Typography>
 
-                        {[
-                            ['Email', (q: QuotationDetailResponseDto) => q.vendorEmail],
-                            ['Contact Person', (q: QuotationDetailResponseDto) => q.contactPerson],
-                            ['Submitted At', (q: QuotationDetailResponseDto) =>
-                                new Date(q.submittedAt).toLocaleDateString()]
-                        ].map(([label, accessor]) => (
+                        {/*{[*/}
+                        {/*    ['Email', (q: QuotationDetailResponseDto) => q.vendorEmail],*/}
+                        {/*    ['Contact Person', (q: QuotationDetailResponseDto) => q.contactPerson],*/}
+                        {/*    ['Submitted At', (q: QuotationDetailResponseDto) =>*/}
+                        {/*        new Date(q.submittedAt).toLocaleDateString()]*/}
+                        {/*].map(([label, accessor]) => (*/}
+                        {/*    <Box*/}
+                        {/*        key={label}*/}
+                        {/*        display="grid"*/}
+                        {/*        gridTemplateColumns={`250px repeat(${quotations.length}, 1fr)`}*/}
+                        {/*        mb={1}*/}
+                        {/*    >*/}
+                        {/*        <Box fontWeight={500}>{label}</Box>*/}
+                        {/*        {quotations.map(q => (*/}
+                        {/*            <Box key={q.id}>*/}
+                        {/*                {(accessor as any)(q)}*/}
+                        {/*            </Box>*/}
+                        {/*        ))}*/}
+                        {/*    </Box>*/}
+                        {/*))}*/}
+
+                        {rows.map(([label, accessor]) => (
                             <Box
                                 key={label}
                                 display="grid"
                                 gridTemplateColumns={`250px repeat(${quotations.length}, 1fr)`}
                                 mb={1}
                             >
-                                <Box fontWeight={500}>{label}</Box>
+                                <Box sx={{ fontWeight: 500 }}>{label}</Box>
+
                                 {quotations.map(q => (
                                     <Box key={q.id}>
-                                        {(accessor as any)(q)}
+                                        {accessor(q)}
                                     </Box>
                                 ))}
                             </Box>
@@ -307,7 +333,7 @@ export default function QuotationComparePage() {
                                             {q.vendorName}
                                         </Typography>
 
-                                        {q.grandTotal === lowest && (
+                                        {q.totalAmount === lowest && (
                                             <Chip
                                                 label="Best Price"
                                                 color="success"

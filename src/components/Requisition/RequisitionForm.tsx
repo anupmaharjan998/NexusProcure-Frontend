@@ -42,7 +42,11 @@ interface Props {
 
 /* ---------------- Yup Schema ---------------- */
 
-const requisitionSchema: yup.SchemaOf<RequisitionRequest> = yup.object({
+const requisitionSchema: yup.ObjectSchema<RequisitionRequest> = yup.object({
+    requestedById: yup
+        .string()
+        .required('Requester is required'),
+
     categoryId: yup
         .string()
         .required('Category is required'),

@@ -405,7 +405,10 @@ export default function VendorQuotationForm({rfqToken}: { rfqToken: string }) {
                                             />
                                         </TableCell>
 
-                                        <TableCell align="right" fontWeight={600}>
+                                        <TableCell
+                                            align="right"
+                                            sx={{ fontWeight: 600 }}
+                                        >
                                             {(base + vat).toFixed(2)}
                                         </TableCell>
                                     </TableRow>
