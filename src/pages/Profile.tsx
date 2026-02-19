@@ -14,17 +14,17 @@ import BusinessIcon from '@mui/icons-material/Business';
 import SecurityIcon from '@mui/icons-material/Security';
 import EditIcon from '@mui/icons-material/Edit';
 import PersonIcon from '@mui/icons-material/Person';
-import { DashboardLayout } from '../components/Layout/DashboardLayout';
-import { Button } from '../components/UI/Button';
-import { Input } from '../components/UI/Input';
-import { useAuth } from '../hooks/useAuth.ts';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {DashboardLayout} from '../components/Layout/DashboardLayout';
+import {Button} from '../components/UI/Button';
+import {Input} from '../components/UI/Input';
+import {useAuth} from '../hooks/useAuth.ts';
+import {useEffect, useState} from 'react';
+import {useForm} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { getUserById, updateProfile, uploadProfilePicture } from '../services/userService.ts';
-import { changePassword } from '../services/authService.ts';
-import { getInitials } from '../utils/helpers.ts';
+import {getUserById, updateProfile, uploadProfilePicture} from '../services/userService.ts';
+import {changePassword} from '../services/authService.ts';
+import {getInitials} from '../utils/helpers.ts';
 
 const profileSchema = yup.object({
     name: yup.string().required('Name is required'),
@@ -50,7 +50,7 @@ function UploadIcon() {
 }
 
 export const Profile = () => {
-    const { user: authUser, updateUser: updateAuthUser } = useAuth();
+    const {user: authUser, updateUser: updateAuthUser} = useAuth();
     const [user, setUser] = useState<any>(authUser);
     const [editMode, setEditMode] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -66,7 +66,7 @@ export const Profile = () => {
         register: registerProfile,
         handleSubmit: handleProfileSubmit,
         reset: resetProfile,
-        formState: { errors: profileErrors },
+        formState: {errors: profileErrors},
     } = useForm({
         resolver: yupResolver(profileSchema),
         defaultValues: {
@@ -81,7 +81,7 @@ export const Profile = () => {
         register: registerPassword,
         handleSubmit: handlePasswordSubmit,
         reset: resetPassword,
-        formState: { errors: passwordErrors },
+        formState: {errors: passwordErrors},
     } = useForm({
         resolver: yupResolver(passwordSchema),
     });
@@ -122,7 +122,7 @@ export const Profile = () => {
         setLoading(true);
         setError('');
         try {
-            const updatedUser = await updateProfile({ ...user, ...data });
+            const updatedUser = await updateProfile({...user, ...data});
             setUser(updatedUser);
             updateAuthUser(updatedUser); // Update global auth state
             setSuccess('Profile updated successfully');
@@ -171,7 +171,7 @@ export const Profile = () => {
             setIsUploading(true);
             const imageUrl = await uploadProfilePicture(file);
 
-            const updatedUser = { ...user, profileImageUrl: imageUrl };
+            const updatedUser = {...user, profileImageUrl: imageUrl};
 
             // Update states
             setUser(updatedUser);
@@ -189,28 +189,25 @@ export const Profile = () => {
     };
 
 
-
-
-
-
     return (
         <DashboardLayout>
             <Box>
-                <Typography variant="h4" sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, color: '#1E293B', mb: 1 }}>
+                <Typography variant="h4"
+                            sx={{fontFamily: 'Inter, sans-serif', fontWeight: 700, color: '#1E293B', mb: 1}}>
                     My Profile
                 </Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#64748B', mb: 4 }}>
+                <Typography variant="body2" sx={{fontFamily: 'Poppins, sans-serif', color: '#64748B', mb: 4}}>
                     View and manage your account information
                 </Typography>
 
-                {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
-                {success && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>{success}</Alert>}
+                {error && <Alert severity="error" sx={{mb: 3}} onClose={() => setError('')}>{error}</Alert>}
+                {success && <Alert severity="success" sx={{mb: 3}} onClose={() => setSuccess('')}>{success}</Alert>}
 
                 <Grid container spacing={3}>
                     {/* Profile Card */}
                     <Grid item xs={12} md={4}>
-                        <Card sx={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}>
-                            <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                        <Card sx={{borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'}}>
+                            <CardContent sx={{textAlign: 'center', py: 4}}>
                                 <Avatar
                                     src={user?.profileImageUrl || ""}
                                     sx={{
@@ -230,7 +227,7 @@ export const Profile = () => {
                                     type="file"
                                     id="profilePicInput"
                                     accept="image/*"
-                                    style={{ display: 'none' }}
+                                    style={{display: 'none'}}
                                     onChange={handleProfilePicUpload}
                                 />
 
@@ -239,46 +236,71 @@ export const Profile = () => {
                                     variant="contained"
                                     disabled={isUploading}
                                     startIcon={
-                                        isUploading ? <CircularProgress size={18} /> : <UploadIcon />
+                                        isUploading ? <CircularProgress size={18}/> : <UploadIcon/>
                                     }
                                 >
                                     {isUploading ? "Uploading..." : "Upload Picture"}
-                                    <input type="file" hidden onChange={handleProfilePicUpload} />
+                                    <input type="file" hidden onChange={handleProfilePicUpload}/>
                                 </Button>
 
 
-                                <Typography variant="h5" sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, color: '#1E293B', mb: 0.5 }}>
+                                <Typography variant="h5" sx={{
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: 700,
+                                    color: '#1E293B',
+                                    mb: 0.5
+                                }}>
                                     {user?.fullName}
                                 </Typography>
-                                <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#0056D2', fontWeight: 600, mb: 3 }}>
+                                <Typography variant="body2" sx={{
+                                    fontFamily: 'Poppins, sans-serif',
+                                    color: '#0056D2',
+                                    fontWeight: 600,
+                                    mb: 3
+                                }}>
                                     {user?.roleName}
                                 </Typography>
-                                <Divider sx={{ mb: 3 }} />
+                                <Divider sx={{mb: 3}}/>
 
-                                <Box sx={{ textAlign: 'left' }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
-                                        <EmailIcon sx={{ color: '#64748B', fontSize: 20 }} />
-                                        <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user?.email}</Typography>
+                                <Box sx={{textAlign: 'left'}}>
+                                    <Box sx={{display: 'flex', alignItems: 'center', mb: 2, gap: 1.5}}>
+                                        <EmailIcon sx={{color: '#64748B', fontSize: 20}}/>
+                                        <Typography variant="body2" sx={{
+                                            fontFamily: 'Poppins, sans-serif',
+                                            color: '#475569'
+                                        }}>{user?.email}</Typography>
                                     </Box>
                                     {user?.username && (
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
-                                            <PersonIcon sx={{ color: '#64748B', fontSize: 20 }} />
-                                            <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user.username}</Typography>
+                                        <Box sx={{display: 'flex', alignItems: 'center', mb: 2, gap: 1.5}}>
+                                            <PersonIcon sx={{color: '#64748B', fontSize: 20}}/>
+                                            <Typography variant="body2" sx={{
+                                                fontFamily: 'Poppins, sans-serif',
+                                                color: '#475569'
+                                            }}>{user.username}</Typography>
                                         </Box>
                                     )}
                                     {user?.phoneNumber && (
-                                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
-                                            <PhoneIcon sx={{ color: '#64748B', fontSize: 20 }} />
-                                            <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user.phoneNumber}</Typography>
+                                        <Box sx={{display: 'flex', alignItems: 'center', mb: 2, gap: 1.5}}>
+                                            <PhoneIcon sx={{color: '#64748B', fontSize: 20}}/>
+                                            <Typography variant="body2" sx={{
+                                                fontFamily: 'Poppins, sans-serif',
+                                                color: '#475569'
+                                            }}>{user.phoneNumber}</Typography>
                                         </Box>
                                     )}
-                                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1.5 }}>
-                                        <BusinessIcon sx={{ color: '#64748B', fontSize: 20 }} />
-                                        <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user?.departmentName}</Typography>
+                                    <Box sx={{display: 'flex', alignItems: 'center', mb: 2, gap: 1.5}}>
+                                        <BusinessIcon sx={{color: '#64748B', fontSize: 20}}/>
+                                        <Typography variant="body2" sx={{
+                                            fontFamily: 'Poppins, sans-serif',
+                                            color: '#475569'
+                                        }}>{user?.departmentName}</Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <SecurityIcon sx={{ color: '#64748B', fontSize: 20 }} />
-                                        <Typography variant="body2" sx={{ fontFamily: 'Poppins, sans-serif', color: '#475569' }}>{user?.roleName}</Typography>
+                                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1.5}}>
+                                        <SecurityIcon sx={{color: '#64748B', fontSize: 20}}/>
+                                        <Typography variant="body2" sx={{
+                                            fontFamily: 'Poppins, sans-serif',
+                                            color: '#475569'
+                                        }}>{user?.roleName}</Typography>
                                     </Box>
                                 </Box>
                             </CardContent>
@@ -287,11 +309,21 @@ export const Profile = () => {
 
                     {/* Edit Profile Form */}
                     <Grid item xs={12} md={8}>
-                        <Card sx={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', mb: 3 }}>
+                        <Card sx={{borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)', mb: 3}}>
                             <CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                    <Typography variant="h6" sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, color: '#1E293B' }}>Profile Information</Typography>
-                                    {!editMode && <Button variant="outlined" startIcon={<EditIcon />} onClick={() => setEditMode(true)}>Edit</Button>}
+                                <Box sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    mb: 3
+                                }}>
+                                    <Typography variant="h6" sx={{
+                                        fontFamily: 'Inter, sans-serif',
+                                        fontWeight: 700,
+                                        color: '#1E293B'
+                                    }}>Profile Information</Typography>
+                                    {!editMode && <Button variant="outlined" startIcon={<EditIcon/>}
+                                                          onClick={() => setEditMode(true)}>Edit</Button>}
                                 </Box>
 
                                 <form onSubmit={handleProfileSubmit(onProfileSubmit)}>
@@ -413,9 +445,11 @@ export const Profile = () => {
 
 
                                     {editMode && (
-                                        <Box sx={{ display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end' }}>
-                                            <Button variant="outlined" onClick={() => setEditMode(false)} disabled={loading}>Cancel</Button>
-                                            <Button type="submit" variant="contained" loading={loading}>Save Changes</Button>
+                                        <Box sx={{display: 'flex', gap: 2, mt: 3, justifyContent: 'flex-end'}}>
+                                            <Button variant="outlined" onClick={() => setEditMode(false)}
+                                                    disabled={loading}>Cancel</Button>
+                                            <Button type="submit" variant="contained" loading={loading}>Save
+                                                Changes</Button>
                                         </Box>
                                     )}
                                 </form>
@@ -423,25 +457,42 @@ export const Profile = () => {
                         </Card>
 
                         {/* Change Password */}
-                        <Card sx={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)' }}>
+                        <Card sx={{borderRadius: '12px', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)'}}>
                             <CardContent>
-                                <Typography variant="h6" sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, color: '#1E293B', mb: 3 }}>Change Password</Typography>
+                                <Typography variant="h6" sx={{
+                                    fontFamily: 'Inter, sans-serif',
+                                    fontWeight: 700,
+                                    color: '#1E293B',
+                                    mb: 3
+                                }}>Change Password</Typography>
 
                                 <form onSubmit={handlePasswordSubmit(onPasswordSubmit)}>
                                     <Grid container spacing={2}>
                                         <Grid item xs={12}>
-                                            <Input label="Current Password" type="password" {...registerPassword('currentPassword')} error={!!passwordErrors.currentPassword} helperText={passwordErrors.currentPassword?.message} disabled={loading} />
+                                            <Input label="Current Password"
+                                                   type="password" {...registerPassword('currentPassword')}
+                                                   error={!!passwordErrors.currentPassword}
+                                                   helperText={passwordErrors.currentPassword?.message}
+                                                   disabled={loading}/>
                                         </Grid>
                                         <Grid item xs={12} sm={6}>
-                                            <Input label="New Password" type="password" {...registerPassword('newPassword')} error={!!passwordErrors.newPassword} helperText={passwordErrors.newPassword?.message} disabled={loading} />
+                                            <Input label="New Password"
+                                                   type="password" {...registerPassword('newPassword')}
+                                                   error={!!passwordErrors.newPassword}
+                                                   helperText={passwordErrors.newPassword?.message} disabled={loading}/>
                                         </Grid>
                                         <Grid item xs={12} sm={6}>
-                                            <Input label="Confirm New Password" type="password" {...registerPassword('confirmPassword')} error={!!passwordErrors.confirmPassword} helperText={passwordErrors.confirmPassword?.message} disabled={loading} />
+                                            <Input label="Confirm New Password"
+                                                   type="password" {...registerPassword('confirmPassword')}
+                                                   error={!!passwordErrors.confirmPassword}
+                                                   helperText={passwordErrors.confirmPassword?.message}
+                                                   disabled={loading}/>
                                         </Grid>
                                     </Grid>
 
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-                                        <Button type="submit" variant="contained" loading={loading}>Change Password</Button>
+                                    <Box sx={{display: 'flex', justifyContent: 'flex-end', mt: 3}}>
+                                        <Button type="submit" variant="contained" loading={loading}>Change
+                                            Password</Button>
                                     </Box>
                                 </form>
                             </CardContent>

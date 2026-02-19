@@ -1,15 +1,23 @@
-import { useEffect, useState } from 'react';
-import { Box, Typography, IconButton, Alert } from '@mui/material';
+import {useEffect, useMemo, useState} from 'react';
+import {
+    Box,
+    Typography,
+    IconButton,
+    Alert,
+    TextField,
+    CircularProgress
+} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import debounce from 'lodash.debounce';
 
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
-import { Table, Column } from '../../components/UI/Table';
-import { Button } from '../../components/UI/Button';
-import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import {DashboardLayout} from '../../components/Layout/DashboardLayout';
+import {Table, Column} from '../../components/UI/Table';
+import {Button} from '../../components/UI/Button';
+import {ConfirmDialog} from '../../components/UI/ConfirmDialog';
 
-import { TotalAmountRiskScoreForm } from '../../components/Approval/TotalAmountRiskScoreForm';
+import {TotalAmountRiskScoreForm} from '../../components/Approval/TotalAmountRiskScoreForm';
 import {
     getTotalAmountRiskScores,
     createTotalAmountRiskScore,
@@ -25,11 +33,13 @@ import {
 export const TotalAmountRiskScores = () => {
     const [data, setData] = useState<TotalAmountRiskScore[]>([]);
     const [loading, setLoading] = useState(true);
-    const [formOpen, setFormOpen] = useState(false);
-    const [selected, setSelected] = useState<TotalAmountRiskScore | undefined>();
-    const [deleteTarget, setDeleteTarget] = useState<TotalAmountRiskScore | undefined>();
-    const [deleteOpen, setDeleteOpen] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
+
+    const [search, setSearch] = useState('');
+    const [formOpen, setFormOpen] = useState(false);
+    const [selected, setSelected] = useState<TotalAmountRiskScore>();
+    const [deleteTarget, setDeleteTarget] = useState<TotalAmountRiskScore>();
+
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
@@ -44,10 +54,29 @@ export const TotalAmountRiskScores = () => {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    // Debounced search input
+    const handleSearchChange = debounce((value: string) => {
+        setSearch(value);
+    }, 300);
+
+    const filteredData = useMemo(() => {
+        if (!search) return data;
+        return data.filter(d =>
+            `${d.minAmount} ${d.maxAmount} ${d.riskPoints}`
+                .toLowerCase()
+                .includes(search.toLowerCase())
+        );
+    }, [search, data]);
 
     const handleSubmit = async (req: TotalAmountRiskScoreRequest) => {
         setActionLoading(true);
+        setError('');
+        setSuccess('');
+
         try {
             selected
                 ? await updateTotalAmountRiskScore(selected.id, req)
@@ -66,11 +95,12 @@ export const TotalAmountRiskScores = () => {
 
     const handleDelete = async () => {
         if (!deleteTarget) return;
+
         setActionLoading(true);
         try {
             await deleteTotalAmountRiskScore(deleteTarget.id);
             setSuccess('Deleted successfully');
-            setDeleteOpen(false);
+            setDeleteTarget(undefined);
             fetchData();
         } catch (err: any) {
             setError(err.response?.data?.message || 'Delete failed');
@@ -80,20 +110,43 @@ export const TotalAmountRiskScores = () => {
     };
 
     const columns: Column<TotalAmountRiskScore>[] = [
-        { id: 'minAmount', label: 'Min Amount' },
-        { id: 'maxAmount', label: 'Max Amount' },
-        { id: 'riskPoints', label: 'Risk Points' },
+        {
+            id: 'minAmount',
+            label: 'Min Amount',
+            format: (value) => value !== null && value !== undefined ? value : '-'
+        },
+        {
+            id: 'maxAmount',
+            label: 'Max Amount',
+            format: (value) => value !== null && value !== undefined ? value : '-'
+        },
+        {
+            id: 'riskPoints',
+            label: 'Risk Points',
+            format: (value) => value !== null && value !== undefined ? value : '-'
+        },
         {
             id: 'actions',
             label: 'Actions',
             align: 'center',
             format: (_, row) => (
                 <Box display="flex" gap={1} justifyContent="center">
-                    <IconButton size="small" onClick={() => { setSelected(row); setFormOpen(true); }}>
-                        <EditIcon fontSize="small" />
+                    <IconButton
+                        size="small"
+                        onClick={() => {
+                            setSelected(row);
+                            setFormOpen(true);
+                        }}
+                    >
+                        <EditIcon fontSize="small"/>
                     </IconButton>
-                    <IconButton size="small" color="error" onClick={() => { setDeleteTarget(row); setDeleteOpen(true); }}>
-                        <DeleteIcon fontSize="small" />
+
+                    <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => setDeleteTarget(row)}
+                    >
+                        <DeleteIcon fontSize="small"/>
                     </IconButton>
                 </Box>
             )
@@ -103,37 +156,62 @@ export const TotalAmountRiskScores = () => {
     return (
         <DashboardLayout>
             <Box>
-                <Box display="flex" justifyContent="space-between" mb={3}>
-                    <Box>
-                        <Typography variant="h4" fontWeight={700}>Total Amount Risk Scores</Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            Configure risk points based on requisition amount
-                        </Typography>
-                    </Box>
-                    <Button startIcon={<AddIcon />} onClick={() => setFormOpen(true)}>
+                <Box display="flex" justifyContent="space-between" mb={2}>
+                    <Typography variant="h4" fontWeight={700}>
+                        Total Amount Risk Scores
+                    </Typography>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<AddIcon/>}
+                        onClick={() => {
+                            setFormOpen(true);
+                        }}
+                    >
                         Add Rule
                     </Button>
                 </Box>
 
-                {error && <Alert severity="error">{error}</Alert>}
-                {success && <Alert severity="success">{success}</Alert>}
+                <TextField
+                    size="small"
+                    placeholder="Search by min/max amount or risk points"
+                    fullWidth
+                    sx={{mb: 2}}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                />
 
-                <Table data={data} columns={columns} loading={loading} />
+                {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}
+                {success && <Alert severity="success" sx={{mb: 2}}>{success}</Alert>}
+
+                {loading ? (
+                    <Box display="flex" justifyContent="center" mt={4}>
+                        <CircularProgress/>
+                    </Box>
+                ) : (
+                    <Table
+                        data={filteredData}
+                        columns={columns}
+                        loading={loading}
+                    />
+                )}
 
                 <TotalAmountRiskScoreForm
                     open={formOpen}
-                    onClose={() => { setFormOpen(false); setSelected(undefined); }}
+                    onClose={() => {
+                        setFormOpen(false);
+                        setSelected(undefined);
+                    }}
                     riskScore={selected}
                     onSubmit={handleSubmit}
                     loading={actionLoading}
                 />
 
                 <ConfirmDialog
-                    open={deleteOpen}
+                    open={!!deleteTarget}
                     title="Delete Rule"
                     message="Are you sure you want to delete this risk rule?"
                     onConfirm={handleDelete}
-                    onCancel={() => setDeleteOpen(false)}
+                    onCancel={() => setDeleteTarget(undefined)}
                     confirmColor="error"
                     loading={actionLoading}
                 />

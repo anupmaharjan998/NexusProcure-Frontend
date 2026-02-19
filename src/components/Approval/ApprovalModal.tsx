@@ -1,7 +1,7 @@
 // src/components/Approval/ApprovalModal.tsx
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem } from '@mui/material';
-import { Controller, useForm } from 'react-hook-form';
-import { ApprovalRequest } from '../../types/approval';
+import {Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem} from '@mui/material';
+import {Controller, useForm} from 'react-hook-form';
+import {ApprovalRequest} from '../../types/approval';
 
 interface Props {
     open: boolean;
@@ -9,9 +9,9 @@ interface Props {
     onSubmit: (data: ApprovalRequest) => Promise<void>;
 }
 
-export const ApprovalModal = ({ open, onClose, onSubmit }: Props) => {
-    const { control, handleSubmit } = useForm<ApprovalRequest>({
-        defaultValues: { decision: 'Approved', approverId: '', roleId: '', comments: '' },
+export const ApprovalModal = ({open, onClose, onSubmit}: Props) => {
+    const {control, handleSubmit} = useForm<ApprovalRequest>({
+        defaultValues: {decision: 'Approved', approverId: '', roleId: '', comments: ''},
     });
 
     return (
@@ -21,7 +21,7 @@ export const ApprovalModal = ({ open, onClose, onSubmit }: Props) => {
                 <Controller
                     name="decision"
                     control={control}
-                    render={({ field }) => (
+                    render={({field}) => (
                         <TextField select label="Decision" fullWidth margin="normal" {...field}>
                             <MenuItem value="Approved">Approve</MenuItem>
                             <MenuItem value="Rejected">Reject</MenuItem>
@@ -31,7 +31,7 @@ export const ApprovalModal = ({ open, onClose, onSubmit }: Props) => {
                 <Controller
                     name="comments"
                     control={control}
-                    render={({ field }) => (
+                    render={({field}) => (
                         <TextField label="Comments" fullWidth multiline rows={3} margin="normal" {...field} />
                     )}
                 />

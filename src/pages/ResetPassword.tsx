@@ -1,13 +1,13 @@
 // src/pages/ResetPassword.tsx
-import { Box, Card, Typography, Alert } from '@mui/material';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {Box, Card, Typography, Alert} from '@mui/material';
+import {useForm} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { Input } from '../components/UI/Input';
-import { Button } from '../components/UI/Button';
-import { resetPassword } from '../services/authService';
+import {useParams, useNavigate} from 'react-router-dom';
+import {useState} from 'react';
+import {Input} from '../components/UI/Input';
+import {Button} from '../components/UI/Button';
+import {resetPassword} from '../services/authService';
 
 const schema = yup.object({
     password: yup.string().min(6, 'Minimum 6 characters').required('Password is required'),
@@ -18,7 +18,7 @@ const schema = yup.object({
 });
 
 export const ResetPassword = () => {
-    const { token } = useParams();
+    const {token} = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -27,7 +27,7 @@ export const ResetPassword = () => {
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: {errors},
     } = useForm<{ password: string; confirmPassword: string }>({
         resolver: yupResolver(schema),
     });
@@ -73,20 +73,20 @@ export const ResetPassword = () => {
             >
                 <Typography
                     variant="h4"
-                    sx={{ textAlign: 'center', mb: 1, fontFamily: 'Inter', fontWeight: 700 }}
+                    sx={{textAlign: 'center', mb: 1, fontFamily: 'Inter', fontWeight: 700}}
                 >
                     Reset Password
                 </Typography>
 
-                <Typography sx={{ textAlign: 'center', color: '#64748B', mb: 3, fontFamily: 'Poppins' }}>
+                <Typography sx={{textAlign: 'center', color: '#64748B', mb: 3, fontFamily: 'Poppins'}}>
                     Enter your new password below.
                 </Typography>
 
-                {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-                {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
+                {error && <Alert severity="error" sx={{mb: 3}}>{error}</Alert>}
+                {success && <Alert severity="success" sx={{mb: 3}}>{success}</Alert>}
 
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{mb: 3}}>
                         <Input
                             label="New Password"
                             type="password"
@@ -97,7 +97,7 @@ export const ResetPassword = () => {
                         />
                     </Box>
 
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{mb: 3}}>
                         <Input
                             label="Confirm Password"
                             type="password"

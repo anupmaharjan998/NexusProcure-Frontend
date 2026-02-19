@@ -1,6 +1,6 @@
-import { createContext, useContext, ReactNode } from 'react';
-import { useAuthStore } from '../store/authStore';
-import { User } from '../types/User';
+import {createContext, useContext, ReactNode} from 'react';
+import {useAuthStore} from '../store/authStore';
+import {User} from '../types/User';
 
 interface AuthContextType {
     user: User | null;
@@ -14,8 +14,8 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const { user, token, isAuthenticated, setAuth, logout, updateUser } = useAuthStore();
+export const AuthProvider = ({children}: { children: ReactNode }) => {
+    const {user, token, isAuthenticated, setAuth, logout, updateUser} = useAuthStore();
 
     const hasPermission = (required: string | string[]) => {
         const perms = user?.permissions || [];

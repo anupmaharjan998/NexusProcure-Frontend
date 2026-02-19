@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Box, Typography, IconButton, Alert } from '@mui/material';
+import {useEffect, useState} from 'react';
+import {Box, Typography, IconButton, Alert} from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { DashboardLayout } from '../components/Layout/DashboardLayout';
-import { Table, Column } from '../components/UI/Table';
-import { Button } from '../components/UI/Button';
-import { ConfirmDialog } from '../components/UI/ConfirmDialog';
-import { CategoryForm } from '../components/Category/CategoryForm';
-import { getAllCategories, createCategory, updateCategory, deleteCategory } from '../services/categoryService';
+import {DashboardLayout} from '../components/Layout/DashboardLayout';
+import {Table, Column} from '../components/UI/Table';
+import {Button} from '../components/UI/Button';
+import {ConfirmDialog} from '../components/UI/ConfirmDialog';
+import {CategoryForm} from '../components/Category/CategoryForm';
+import {getAllCategories, createCategory, updateCategory, deleteCategory} from '../services/categoryService';
 import {Category, CategoryRequest} from '../types/Category';
 
 export const Categories = () => {
@@ -34,7 +34,9 @@ export const Categories = () => {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const handleAdd = () => {
         setSelectedCategory(undefined);
@@ -88,22 +90,22 @@ export const Categories = () => {
     };
 
     const columns: Column<Category>[] = [
-        { id: 'name', label: 'Category Name', minWidth: 150 },
-        { id: 'description', label: 'Description', minWidth: 200 },
-        { id: 'riskWeight', label: 'Risk Weight', minWidth: 120 },
-        { id: 'type', label: 'Type', minWidth: 120 },
+        {id: 'name', label: 'Category Name', minWidth: 150},
+        {id: 'description', label: 'Description', minWidth: 200},
+        {id: 'riskWeight', label: 'Risk Weight', minWidth: 120},
+        {id: 'type', label: 'Type', minWidth: 120},
         {
             id: 'actions',
             label: 'Actions',
             minWidth: 120,
             align: 'center',
             format: (_, category) => (
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                    <IconButton size="small" onClick={() => handleEdit(category)} sx={{ color: '#0056D2' }}>
-                        <EditIcon fontSize="small" />
+                <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
+                    <IconButton size="small" onClick={() => handleEdit(category)} sx={{color: '#0056D2'}}>
+                        <EditIcon fontSize="small"/>
                     </IconButton>
-                    <IconButton size="small" onClick={() => handleDeleteClick(category)} sx={{ color: '#E63946' }}>
-                        <DeleteIcon fontSize="small" />
+                    <IconButton size="small" onClick={() => handleDeleteClick(category)} sx={{color: '#E63946'}}>
+                        <DeleteIcon fontSize="small"/>
                     </IconButton>
                 </Box>
             ),
@@ -113,22 +115,25 @@ export const Categories = () => {
     return (
         <DashboardLayout>
             <Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                <Box sx={{display: 'flex', justifyContent: 'space-between', mb: 3}}>
                     <Box>
-                        <Typography variant="h4" sx={{ fontWeight: 700 }}>Categories</Typography>
-                        <Typography variant="body2" sx={{ color: '#64748B' }}>Manage global categories</Typography>
+                        <Typography variant="h4" sx={{fontWeight: 700}}>Categories</Typography>
+                        <Typography variant="body2" sx={{color: '#64748B'}}>Manage global categories</Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<AddIcon />} onClick={handleAdd}>Add Category</Button>
+                    <Button variant="contained" startIcon={<AddIcon/>} onClick={handleAdd}>Add Category</Button>
                 </Box>
 
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+                {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}
+                {success && <Alert severity="success" sx={{mb: 2}}>{success}</Alert>}
 
-                <Table data={categories} columns={columns} loading={loading} />
+                <Table data={categories} columns={columns} loading={loading}/>
 
                 <CategoryForm
                     open={formOpen}
-                    onClose={() => { setFormOpen(false); setSelectedCategory(undefined); }}
+                    onClose={() => {
+                        setFormOpen(false);
+                        setSelectedCategory(undefined);
+                    }}
                     category={selectedCategory}
                     onSubmit={handleFormSubmit}
                     loading={actionLoading}

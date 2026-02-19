@@ -1,4 +1,4 @@
-import { Approval, RequisitionPendingApproval } from '../types/approval';
+import {Approval, RequisitionPendingApproval} from '../types/approval';
 import api from "../services/api.ts";
 
 export const getPendingRequisitions = async (): Promise<RequisitionPendingApproval[]> => {
@@ -6,7 +6,10 @@ export const getPendingRequisitions = async (): Promise<RequisitionPendingApprov
     return res.data;
 };
 
-export const approveRequisition = async (id: string, payload: { decision: 'Approved' | 'Rejected', comments : string }) => {
+export const approveRequisition = async (id: string, payload: {
+    decision: 'Approved' | 'Rejected',
+    comments: string
+}) => {
     const res = await api.post(`/RequisitionApproval/${id}/approve`, payload);
     return res.data;
 };

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import {useEffect, useState} from "react";
+import {useParams} from "react-router-dom";
 import {
     Box,
     Typography,
@@ -24,8 +24,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
 
-import { Vendor, VendorDocument } from "../types/Vendor";
-import { VendorForm } from "../components/Vendor/VendorForm";
+import {Vendor, VendorDocument} from "../types/Vendor";
+import {VendorForm} from "../components/Vendor/VendorForm";
 import {
     getVendorById,
     updateVendor,
@@ -34,15 +34,15 @@ import {
     getAllCategories,
     getAllPaymentTerms, downloadDocument
 } from "../services/vendorService";
-import { DashboardLayout } from "../components/Layout/DashboardLayout";
-import { TaxType } from "../types/TaxType";
-import { Category } from "../types/Category";
+import {DashboardLayout} from "../components/Layout/DashboardLayout";
+import {TaxType} from "../types/TaxType";
+import {Category} from "../types/Category";
 import {PaymentTerms} from "@/types/PaymentTerms.ts";
 
 /* ---------------------------------- */
 
 export const VendorDetails = () => {
-    const { id } = useParams<{ id: string }>();
+    const {id} = useParams<{ id: string }>();
     const [vendor, setVendor] = useState<Vendor | null>(null);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
@@ -225,7 +225,7 @@ export const VendorDetails = () => {
 
     /* ---------------- RENDER ---------------- */
 
-    if (loading) return <CircularProgress />;
+    if (loading) return <CircularProgress/>;
     if (!vendor) return <Typography>Vendor not found</Typography>;
 
     return (
@@ -239,7 +239,7 @@ export const VendorDetails = () => {
 
                     <Button
                         variant="contained"
-                        startIcon={<EditIcon />}
+                        startIcon={<EditIcon/>}
                         onClick={() => setEditOpen(true)}
                     >
                         Edit
@@ -248,7 +248,7 @@ export const VendorDetails = () => {
 
                 {/* Approval */}
                 {/*{vendor.status === "Pending" && hasPermission("APPROVE_VENDOR") &&(*/}
-                {vendor.status === "Pending" &&(
+                {vendor.status === "Pending" && (
                     <Box display="flex" gap={2} mb={3}>
                         <Button
                             color="success"
@@ -268,20 +268,20 @@ export const VendorDetails = () => {
                 )}
 
                 {/* Basic Info */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Section title="Basic Information">
-                        <Info label="Vendor Name" value={vendor.vendorName} />
-                        <Info label="Company Name" value={vendor.companyName} />
-                        <Info label="Email" value={vendor.email} />
-                        <Info label="Phone" value={vendor.phoneNumber} />
-                        <Info label="Address" value={vendor.address} />
-                        <Info label="Category" value={getCategoryName()} />
-                        <Info label="Status" value={vendor.status} />
+                        <Info label="Vendor Name" value={vendor.vendorName}/>
+                        <Info label="Company Name" value={vendor.companyName}/>
+                        <Info label="Email" value={vendor.email}/>
+                        <Info label="Phone" value={vendor.phoneNumber}/>
+                        <Info label="Address" value={vendor.address}/>
+                        <Info label="Category" value={getCategoryName()}/>
+                        <Info label="Status" value={vendor.status}/>
                     </Section>
                 </Paper>
 
                 {/* Company & Payment */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Section title="Company & Payment Information">
                         <Info
                             label="Tax Type"
@@ -291,10 +291,10 @@ export const VendorDetails = () => {
                                     : "PAN"
                             }
                         />
-                        <Info label="Tax ID" value={vendor.taxId} />
-                        <Info label="Bank Name" value={vendor.bankName} />
-                        <Info label="Bank Branch" value={vendor.bankBranch} />
-                        <Info label="Bank Account" value={vendor.bankAccount} />
+                        <Info label="Tax ID" value={vendor.taxId}/>
+                        <Info label="Bank Name" value={vendor.bankName}/>
+                        <Info label="Bank Branch" value={vendor.bankBranch}/>
+                        <Info label="Bank Account" value={vendor.bankAccount}/>
                         <Info
                             label="Payment Terms"
                             value={getPaymentTermsName()}
@@ -303,16 +303,16 @@ export const VendorDetails = () => {
                 </Paper>
 
                 {/* Documents */}
-                <Paper sx={{ p: 3 }}>
+                <Paper sx={{p: 3}}>
                     <Box display="flex" justifyContent="space-between" mb={2}>
                         <Typography variant="h6">Documents</Typography>
 
                         <label>
-                            <input hidden type="file" onChange={handleFileUpload} />
+                            <input hidden type="file" onChange={handleFileUpload}/>
                             <Button
                                 variant="contained"
                                 component="span"
-                                startIcon={<UploadFileIcon />}
+                                startIcon={<UploadFileIcon/>}
                                 disabled={uploading}
                             >
                                 Upload
@@ -320,7 +320,7 @@ export const VendorDetails = () => {
                         </label>
                     </Box>
 
-                    <Divider sx={{ mb: 2 }} />
+                    <Divider sx={{mb: 2}}/>
 
                     {vendor.documents?.length ? (
                         <List>
@@ -331,7 +331,7 @@ export const VendorDetails = () => {
                                         <IconButton
                                             onClick={() => handleDownload(doc)}
                                         >
-                                            <DownloadIcon />
+                                            <DownloadIcon/>
                                         </IconButton>
                                     }
                                 >
@@ -389,7 +389,7 @@ export const VendorDetails = () => {
                     open={snackbar.open}
                     autoHideDuration={4000}
                     onClose={() =>
-                        setSnackbar({ ...snackbar, open: false })
+                        setSnackbar({...snackbar, open: false})
                     }
                 >
                     <Alert severity={snackbar.severity} variant="filled">
@@ -403,19 +403,19 @@ export const VendorDetails = () => {
 
 /* ---------------- HELPERS ---------------- */
 
-const Section = ({ title, children }: any) => (
+const Section = ({title, children}: any) => (
     <>
         <Typography variant="h6" fontWeight={600} mb={2}>
             {title}
         </Typography>
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{mb: 2}}/>
         <Grid container spacing={2}>
             {children}
         </Grid>
     </>
 );
 
-const Info = ({ label, value }: { label: string; value?: any }) => (
+const Info = ({label, value}: { label: string; value?: any }) => (
     <Grid item xs={12} sm={6}>
         <Typography fontWeight={600}>{label}</Typography>
         <Typography color="text.secondary">{value || "-"}</Typography>

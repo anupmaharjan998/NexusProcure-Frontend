@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import {useEffect, useState} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
 import {
     Box,
     Typography,
@@ -15,12 +15,12 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonIcon from '@mui/icons-material/Person';
 
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
-import { getRequisitionById } from '../../services/requisitionService';
-import { RequisitionDto } from '../../types/requisition';
+import {DashboardLayout} from '../../components/Layout/DashboardLayout';
+import {getRequisitionById} from '../../services/requisitionService';
+import {RequisitionDto} from '../../types/requisition';
 
 export default function RequisitionDetailsPage() {
-    const { id } = useParams<{ id: string }>();
+    const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
 
     const [requisition, setRequisition] = useState<RequisitionDto | null>(null);
@@ -71,9 +71,9 @@ export default function RequisitionDetailsPage() {
     if (loading) {
         return (
             <DashboardLayout>
-                <Skeleton variant="rectangular" height={180} sx={{ mb: 3 }} />
-                <Skeleton variant="rectangular" height={220} sx={{ mb: 3 }} />
-                <Skeleton variant="rectangular" height={220} />
+                <Skeleton variant="rectangular" height={180} sx={{mb: 3}}/>
+                <Skeleton variant="rectangular" height={220} sx={{mb: 3}}/>
+                <Skeleton variant="rectangular" height={220}/>
             </DashboardLayout>
         );
     }
@@ -94,7 +94,7 @@ export default function RequisitionDetailsPage() {
                 {/* Header */}
                 <Box display="flex" alignItems="center" mb={3}>
                     <Button
-                        startIcon={<ArrowBackIcon />}
+                        startIcon={<ArrowBackIcon/>}
                         onClick={() => navigate('/procurement/requisitions')}
                     >
                         Back
@@ -111,7 +111,7 @@ export default function RequisitionDetailsPage() {
                 </Box>
 
                 {/* Summary */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Grid container spacing={3}>
                         <Grid item xs={12} md={4}>
                             <Typography variant="subtitle2">Requested By</Typography>
@@ -119,7 +119,7 @@ export default function RequisitionDetailsPage() {
                                 <Avatar
                                     src={requisition.requestedBy?.profileImageUrl || ''}
                                 >
-                                    <PersonIcon />
+                                    <PersonIcon/>
                                 </Avatar>
                                 <Box>
                                     <Typography>
@@ -164,7 +164,7 @@ export default function RequisitionDetailsPage() {
                 </Paper>
 
                 {/* Items */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Typography variant="h6" mb={2}>
                         Items
                     </Typography>
@@ -176,7 +176,7 @@ export default function RequisitionDetailsPage() {
                         <Grid item xs={2}>Total</Grid>
                     </Grid>
 
-                    <Divider sx={{ mb: 2 }} />
+                    <Divider sx={{mb: 2}}/>
 
                     {requisition.items.map((item) => (
                         <Grid container key={item.id} mb={1}>
@@ -193,7 +193,7 @@ export default function RequisitionDetailsPage() {
                 </Paper>
 
                 {/* Approval History */}
-                <Paper sx={{ p: 3 }}>
+                <Paper sx={{p: 3}}>
                     <Typography variant="h6" mb={2}>
                         Approval History
                     </Typography>
@@ -207,7 +207,7 @@ export default function RequisitionDetailsPage() {
                             <Paper
                                 key={a.id}
                                 variant="outlined"
-                                sx={{ p: 2, mb: 2 }}
+                                sx={{p: 2, mb: 2}}
                             >
                                 <Box
                                     display="flex"

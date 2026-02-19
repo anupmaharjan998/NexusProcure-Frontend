@@ -10,8 +10,8 @@ import {
     Switch,
     FormControlLabel
 } from '@mui/material';
-import { Controller, useForm } from 'react-hook-form';
-import { useEffect, useState } from 'react';
+import {Controller, useForm} from 'react-hook-form';
+import {useEffect, useState} from 'react';
 
 import {
     createApprovalPolicy
@@ -20,7 +20,7 @@ import {
     getAllCategories
 } from '../../services/vendorService';
 import {Role} from "../../types/Role.ts";
-import { getRoles } from '../../services/roleService.ts';
+import {getRoles} from '../../services/roleService.ts';
 import {getUsers} from "@/services/userService.ts";
 import {getDepartments} from "@/services/departmentService.ts";
 
@@ -29,8 +29,8 @@ interface CategoryDto {
     name: string;
 }
 
-export const ApprovalPolicyForm = ({ open, onClose, defaultValues, onSaved }: any) => {
-    const { control, handleSubmit, reset } = useForm({
+export const ApprovalPolicyForm = ({open, onClose, defaultValues, onSaved}: any) => {
+    const {control, handleSubmit, reset} = useForm({
         defaultValues: defaultValues || {
             categoryId: '',
             riskLevel: 'Low',
@@ -94,8 +94,8 @@ export const ApprovalPolicyForm = ({ open, onClose, defaultValues, onSaved }: an
                         <Controller
                             name="categoryId"
                             control={control}
-                            rules={{ required: true }}
-                            render={({ field }) => (
+                            rules={{required: true}}
+                            render={({field}) => (
                                 <TextField {...field} select label="Category" fullWidth>
                                     {categories.map((c: any) => (
                                         <MenuItem key={c.id} value={c.id}>
@@ -111,7 +111,7 @@ export const ApprovalPolicyForm = ({ open, onClose, defaultValues, onSaved }: an
                         <Controller
                             name="roleId"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField {...field} select label="Assign to Role" fullWidth>
                                     {roles.map((l: any) => (
                                         <MenuItem key={l.id} value={l.id}>
@@ -127,7 +127,7 @@ export const ApprovalPolicyForm = ({ open, onClose, defaultValues, onSaved }: an
                         <Controller
                             name="riskLevel"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField {...field} select label="Risk Level" fullWidth>
                                     {['Low', 'Medium', 'High'].map(r => (
                                         <MenuItem key={r} value={r}>{r}</MenuItem>
@@ -141,8 +141,8 @@ export const ApprovalPolicyForm = ({ open, onClose, defaultValues, onSaved }: an
                         <Controller
                             name="sequenceOrder"
                             control={control}
-                            render={({ field }) => (
-                                <TextField {...field} type="number" label="Order" fullWidth />
+                            render={({field}) => (
+                                <TextField {...field} type="number" label="Order" fullWidth/>
                             )}
                         />
                     </Grid>
@@ -151,8 +151,8 @@ export const ApprovalPolicyForm = ({ open, onClose, defaultValues, onSaved }: an
                         <Controller
                             name="escalationHours"
                             control={control}
-                            render={({ field }) => (
-                                <TextField {...field} type="number" label="Escalation Hrs" fullWidth />
+                            render={({field}) => (
+                                <TextField {...field} type="number" label="Escalation Hrs" fullWidth/>
                             )}
                         />
                     </Grid>
@@ -161,9 +161,9 @@ export const ApprovalPolicyForm = ({ open, onClose, defaultValues, onSaved }: an
                         <Controller
                             name="isActive"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <FormControlLabel
-                                    control={<Switch {...field} checked={field.value} />}
+                                    control={<Switch {...field} checked={field.value}/>}
                                     label="Active"
                                 />
                             )}

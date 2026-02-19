@@ -2,7 +2,6 @@ import api from './api';
 import {TotalAmountRiskScore, TotalAmountRiskScoreRequest} from "../types/TotalAmountRiskScore.ts";
 
 
-
 export const getTotalAmountRiskScores = async () => {
     const res = await api.get<TotalAmountRiskScore[]>('/TotalAmountRiskScore');
     return res.data;

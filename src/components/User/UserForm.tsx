@@ -8,16 +8,16 @@ import {
     FormControlLabel,
     Radio
 } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {useForm, Controller} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Input } from '../UI/Input.tsx';
-import { Button } from '../UI/Button.tsx';
-import { Modal } from '../UI/Modal.tsx';
-import { User, UserFormData } from '../../types/User.ts';
-import { Role } from '../../types/Role.ts';
-import { Department } from '../../types/Department.ts';
-import { useEffect } from 'react';
+import {Input} from '../UI/Input.tsx';
+import {Button} from '../UI/Button.tsx';
+import {Modal} from '../UI/Modal.tsx';
+import {User, UserFormData} from '../../types/User.ts';
+import {Role} from '../../types/Role.ts';
+import {Department} from '../../types/Department.ts';
+import {useEffect} from 'react';
 
 const schema = yup.object({
     name: yup.string().trim().required('Name is required').matches(/.*\S.*/, 'Please enter a name'),
@@ -55,10 +55,10 @@ export const UserForm = ({
         handleSubmit,
         control,
         reset,
-        formState: { errors, isValid },
+        formState: {errors, isValid},
     } = useForm<UserFormData>({
         resolver: yupResolver(schema),
-        context: { isEdit },
+        context: {isEdit},
         mode: 'onChange',
         defaultValues: {
             name: '',
@@ -161,7 +161,7 @@ export const UserForm = ({
                         <Controller
                             name="roleId"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <Input
                                     {...field}
                                     select
@@ -184,7 +184,7 @@ export const UserForm = ({
                         <Controller
                             name="departmentId"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <Input
                                     {...field}
                                     select
@@ -208,7 +208,7 @@ export const UserForm = ({
                         <Controller
                             name="isActive"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <FormControl component="fieldset" disabled={loading}>
                                     <FormLabel>Status</FormLabel>
 
@@ -218,12 +218,12 @@ export const UserForm = ({
                                         value={field.value ? "true" : "false"}
                                         onChange={(e) => field.onChange(e.target.value === "true")}
                                     >
-                                        <FormControlLabel value="true" control={<Radio />} label="Active" />
-                                        <FormControlLabel value="false" control={<Radio />} label="Inactive" />
+                                        <FormControlLabel value="true" control={<Radio/>} label="Active"/>
+                                        <FormControlLabel value="false" control={<Radio/>} label="Inactive"/>
                                     </RadioGroup>
 
                                     {errors.isActive && (
-                                        <Box sx={{ color: "error.main", fontSize: 12, mt: 0.5 }}>
+                                        <Box sx={{color: "error.main", fontSize: 12, mt: 0.5}}>
                                             {errors.isActive.message}
                                         </Box>
                                     )}

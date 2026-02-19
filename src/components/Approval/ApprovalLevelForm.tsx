@@ -8,8 +8,8 @@ import {
     MenuItem,
     Button
 } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import { useEffect } from 'react';
+import {useForm, Controller} from 'react-hook-form';
+import {useEffect} from 'react';
 
 export default function ApprovalLevelForm({
                                               open,
@@ -57,7 +57,7 @@ export default function ApprovalLevelForm({
                         <Controller
                             name="levelName"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     label="Level Name"
@@ -71,7 +71,7 @@ export default function ApprovalLevelForm({
                         <Controller
                             name="minAmount"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     label="Min Amount"
@@ -86,7 +86,7 @@ export default function ApprovalLevelForm({
                         <Controller
                             name="maxAmount"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     label="Max Amount"
@@ -101,7 +101,7 @@ export default function ApprovalLevelForm({
                         <Controller
                             name="roleId"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     select
                                     {...field}

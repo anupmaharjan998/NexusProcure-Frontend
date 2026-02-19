@@ -1,5 +1,5 @@
 import api from './api.ts';
-import { LoginCredentials, LoginResponse } from '../types/User.ts';
+import {LoginCredentials, LoginResponse} from '../types/User.ts';
 import {ResetPasswordRequest} from "@/types/ResetPasswordRequest.ts";
 
 
@@ -23,7 +23,7 @@ export const logout = async (): Promise<void> => {
 };
 
 export const sendResetEmail = async (email: string) => {
-    const response = await api.post(`/auth/forgot-password`, { email });
+    const response = await api.post(`/auth/forgot-password`, {email});
     return response.data;
 };
 

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import {useEffect, useState} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
 import {
     Box,
     Typography,
@@ -22,10 +22,10 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
-import { getRequisitionById } from '../../services/requisitionService';
-import { approveRequisition } from '../../services/approvalService';
-import { RequisitionDto } from '../../types/requisition';
+import {DashboardLayout} from '../../components/Layout/DashboardLayout';
+import {getRequisitionById} from '../../services/requisitionService';
+import {approveRequisition} from '../../services/approvalService';
+import {RequisitionDto} from '../../types/requisition';
 
 type DecisionType = 'Approved' | 'Rejected';
 
@@ -36,15 +36,19 @@ const formatDate = (date?: string) => {
 
 const statusColor = (status: string) => {
     switch (status) {
-        case 'Approved': return 'success';
-        case 'Rejected': return 'error';
-        case 'Pending': return 'warning';
-        default: return 'default';
+        case 'Approved':
+            return 'success';
+        case 'Rejected':
+            return 'error';
+        case 'Pending':
+            return 'warning';
+        default:
+            return 'default';
     }
 };
 
 export default function RequisitionDetailsPage() {
-    const { id } = useParams<{ id: string }>();
+    const {id} = useParams<{ id: string }>();
     const navigate = useNavigate();
 
     const [requisition, setRequisition] = useState<RequisitionDto | null>(null);
@@ -112,7 +116,7 @@ export default function RequisitionDetailsPage() {
         return (
             <DashboardLayout>
                 <Box display="flex" justifyContent="center" mt={6}>
-                    <CircularProgress />
+                    <CircularProgress/>
                 </Box>
             </DashboardLayout>
         );
@@ -138,7 +142,7 @@ export default function RequisitionDetailsPage() {
             <Box>
                 {/* Header */}
                 <Box display="flex" alignItems="center" mb={3}>
-                    <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)}>
+                    <Button startIcon={<ArrowBackIcon/>} onClick={() => navigate(-1)}>
                         Back
                     </Button>
 
@@ -147,10 +151,10 @@ export default function RequisitionDetailsPage() {
                     </Typography>
                 </Box>
 
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}
 
                 {/* ================= Summary ================= */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Grid container spacing={3}>
                         <Grid item xs={12} md={4}>
                             <Typography variant="subtitle2">Requested By</Typography>
@@ -192,7 +196,7 @@ export default function RequisitionDetailsPage() {
                 </Paper>
 
                 {/* ================= Items ================= */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Typography variant="h6" mb={2}>Items</Typography>
 
                     {requisition.items.map(item => (
@@ -204,21 +208,21 @@ export default function RequisitionDetailsPage() {
                                     Rs. {(item.quantity * item.estimatedCost).toLocaleString()}
                                 </Grid>
                             </Grid>
-                            <Divider sx={{ mt: 1 }} />
+                            <Divider sx={{mt: 1}}/>
                         </Box>
                     ))}
                 </Paper>
 
                 {/* ================= Actions ================= */}
                 {requisition.status === 'Pending' && (
-                    <Paper sx={{ p: 3 }}>
+                    <Paper sx={{p: 3}}>
                         <Typography variant="h6" mb={2}>Your Decision</Typography>
 
                         <Stack direction="row" spacing={2}>
                             <Button
                                 variant="contained"
                                 color="success"
-                                startIcon={<CheckCircleIcon />}
+                                startIcon={<CheckCircleIcon/>}
                                 onClick={() => openDecisionDialog('Approved')}
                             >
                                 Approve
@@ -227,7 +231,7 @@ export default function RequisitionDetailsPage() {
                             <Button
                                 variant="contained"
                                 color="error"
-                                startIcon={<CancelIcon />}
+                                startIcon={<CancelIcon/>}
                                 onClick={() => openDecisionDialog('Rejected')}
                             >
                                 Reject

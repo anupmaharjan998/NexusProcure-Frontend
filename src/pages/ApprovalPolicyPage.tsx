@@ -1,26 +1,25 @@
-import { useEffect, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
     Box,
     Button,
     Typography,
     IconButton,
-    Switch
+    Switch,
+    TextField
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import {DataGrid, GridColDef} from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-import { DashboardLayout } from '../components/Layout/DashboardLayout';
-import { ApprovalPolicyForm } from '../components/Approval/ApprovalPolicyForm';
-import { ConfirmDialog } from '../components/UI/ConfirmDialog';
-
+import {DashboardLayout} from '../components/Layout/DashboardLayout';
+import {ApprovalPolicyForm} from '../components/Approval/ApprovalPolicyForm';
+import {ConfirmDialog} from '../components/UI/ConfirmDialog';
 
 import {
     getApprovalPolicies,
     deleteApprovalPolicy
 } from '../services/approvalPolicyService';
-import {Role} from "../types/Role.ts";
 
 export default function ApprovalPolicyPage() {
     const [rows, setRows] = useState<any[]>([]);
@@ -28,21 +27,13 @@ export default function ApprovalPolicyPage() {
     const [selected, setSelected] = useState<any | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
-    const [error, setError] = useState('');
+    const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
 
     const loadData = async () => {
         setLoading(true);
-
         try {
-            const [policiesData] = await Promise.all([
-                getApprovalPolicies(),
-
-            ]);
-            setRows(policiesData);
-
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to fetch data');
+            setRows(await getApprovalPolicies());
         } finally {
             setLoading(false);
         }
@@ -52,17 +43,26 @@ export default function ApprovalPolicyPage() {
         loadData();
     }, []);
 
+    const filteredRows = useMemo(() => {
+        if (!search) return rows;
+        return rows.filter(r =>
+            `${r.categoryName} ${r.roleName} ${r.riskLevel}`
+                .toLowerCase()
+                .includes(search.toLowerCase())
+        );
+    }, [search, rows]);
+
     const columns: GridColDef[] = [
-        { field: 'categoryName', headerName: 'Category', flex: 1 },
-        { field: 'riskLevel', headerName: 'Risk', flex: 1 },
-        { field: 'roleName', headerName: 'Approval Role', flex: 1 },
-        { field: 'sequenceOrder', headerName: 'Order', width: 100 },
-        { field: 'escalationHours', headerName: 'Escalation (hrs)', width: 150 },
+        {field: 'categoryName', headerName: 'Category', flex: 1},
+        {field: 'riskLevel', headerName: 'Risk', width: 120},
+        {field: 'roleName', headerName: 'Approval Role', flex: 1},
+        {field: 'sequenceOrder', headerName: 'Order', width: 100},
+        {field: 'escalationHours', headerName: 'Escalation (hrs)', width: 150},
         {
             field: 'isActive',
             headerName: 'Active',
             width: 100,
-            renderCell: (p) => <Switch checked={p.value} disabled />
+            renderCell: (p) => <Switch checked={p.value} disabled/>
         },
         {
             field: 'actions',
@@ -74,11 +74,11 @@ export default function ApprovalPolicyPage() {
                         setSelected(p.row);
                         setOpenForm(true);
                     }}>
-                        <EditIcon />
+                        <EditIcon/>
                     </IconButton>
 
                     <IconButton color="error" onClick={() => setDeleteTarget(p.row)}>
-                        <DeleteIcon />
+                        <DeleteIcon/>
                     </IconButton>
                 </>
             )
@@ -88,14 +88,14 @@ export default function ApprovalPolicyPage() {
     return (
         <DashboardLayout>
             <Box>
-                <Box display="flex" justifyContent="space-between" mb={3}>
+                <Box display="flex" justifyContent="space-between" mb={2}>
                     <Typography variant="h4" fontWeight={700}>
                         Approval Policies
                     </Typography>
 
                     <Button
                         variant="contained"
-                        startIcon={<AddIcon />}
+                        startIcon={<AddIcon/>}
                         onClick={() => {
                             setSelected(null);
                             setOpenForm(true);
@@ -105,21 +105,29 @@ export default function ApprovalPolicyPage() {
                     </Button>
                 </Box>
 
+                <TextField
+                    size="small"
+                    placeholder="Search by category, role or risk"
+                    fullWidth
+                    sx={{mb: 2}}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
+
                 <DataGrid
-                    rows={rows}
+                    rows={filteredRows}
                     columns={columns}
                     autoHeight
+                    loading={loading}
                     getRowId={(r) => r.id}
+                    disableRowSelectionOnClick
                 />
 
                 <ApprovalPolicyForm
                     open={openForm}
                     onClose={() => setOpenForm(false)}
                     defaultValues={selected}
-                    onSaved={() => {
-                        setOpenForm(false);
-                        loadData();
-                    }}
+                    onSaved={loadData}
                 />
 
                 <ConfirmDialog

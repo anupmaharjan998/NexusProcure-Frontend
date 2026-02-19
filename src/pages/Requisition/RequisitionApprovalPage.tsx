@@ -1,5 +1,5 @@
 // src/pages/RequisitionApprovalPage.tsx
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
     Box,
     Typography,
@@ -8,16 +8,16 @@ import {
     MenuItem,
     InputAdornment
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import {DataGrid, GridColDef} from '@mui/x-data-grid';
 import CheckIcon from '@mui/icons-material/Check';
 import SearchIcon from '@mui/icons-material/Search';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
+import {DashboardLayout} from '../../components/Layout/DashboardLayout';
 import {
     getPendingRequisitions
 } from '../../services/approvalService';
-import { RequisitionPendingApproval } from '../../types/approval';
+import {RequisitionPendingApproval} from '../../types/approval';
 
 export default function RequisitionApprovalPage() {
     const [pending, setPending] = useState<RequisitionPendingApproval[]>([]);
@@ -55,11 +55,11 @@ export default function RequisitionApprovalPage() {
     }, [pending, search, status]);
 
     const columns: GridColDef[] = [
-        { field: 'requisitionNumber', headerName: 'Req No', flex: 1 },
-        { field: 'requestedByName', headerName: 'Requested By', flex: 1 },
-        { field: 'requestedDate', headerName: 'Date', flex: 1 },
-        { field: 'totalAmount', headerName: 'Amount', flex: 1 },
-        { field: 'status', headerName: 'Status', flex: 1 },
+        {field: 'requisitionNumber', headerName: 'Req No', flex: 1},
+        {field: 'requestedByName', headerName: 'Requested By', flex: 1},
+        {field: 'requestedDate', headerName: 'Date', flex: 1},
+        {field: 'totalAmount', headerName: 'Amount', flex: 1},
+        {field: 'status', headerName: 'Status', flex: 1},
         {
             field: 'actions',
             headerName: 'Action',
@@ -73,7 +73,7 @@ export default function RequisitionApprovalPage() {
                         navigate(`/procurement/requisitions/${params.row.id}/approval`);
                     }}
                 >
-                    <CheckIcon />
+                    <CheckIcon/>
                 </IconButton>
             ),
         },
@@ -95,7 +95,7 @@ export default function RequisitionApprovalPage() {
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <SearchIcon />
+                                    <SearchIcon/>
                                 </InputAdornment>
                             )
                         }}
