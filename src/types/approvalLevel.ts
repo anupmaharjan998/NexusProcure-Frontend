@@ -1,4 +1,4 @@
-export interface ApprovalLevel{
+export interface ApprovalLevel {
     id: string;
     levelName: string;
     minAmount: number;

@@ -1,8 +1,8 @@
-import { useAuthStore } from '../store/authStore.ts';
-import { ROLE_TYPES } from '../types/Role.ts';
+import {useAuthStore} from '../store/authStore.ts';
+import {ROLE_TYPES} from '../types/Role.ts';
 
 export const useAuth = () => {
-  const { user, token, permissions, isAuthenticated, setAuth, logout, updateUser } = useAuthStore();
+    const {user, token, permissions, isAuthenticated, setAuth, logout, updateUser} = useAuthStore();
 
     const hasPermission = (required: string | string[]) => {
         if (!permissions.length) return false;
@@ -15,7 +15,7 @@ export const useAuth = () => {
         return norm.includes(required.toLowerCase());
     };
 
-    return { user, token, isAuthenticated, setAuth, logout, updateUser, hasPermission };
+    return {user, token, isAuthenticated, setAuth, logout, updateUser, hasPermission};
 };
 
 

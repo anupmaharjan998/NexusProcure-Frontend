@@ -1,5 +1,4 @@
-
-import { RequisitionDto, RequisitionRequest } from '../types/requisition';
+import {RequisitionDto, RequisitionRequest} from '../types/requisition';
 
 import api from "../services/api.ts";
 

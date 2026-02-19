@@ -4,7 +4,7 @@ import {Category, CategoryRequest} from "../types/Category.ts";
 import {PaymentTerms} from "@/types/PaymentTerms.ts";
 
 export const getVendors = async (params?: any) => {
-    const res = await api.get< Vendor[]>('/vendors');
+    const res = await api.get<Vendor[]>('/vendors');
     return res.data;
 };
 
@@ -46,7 +46,7 @@ export const rejectVendor = async (id: string) => {
     return res.data;
 };
 
-export const updateVendorStatus = async (id: string, status : string) => {
+export const updateVendorStatus = async (id: string, status: string) => {
     const res = await api.patch(`/vendors/${id}/status`, status);
     return res.data;
 };
@@ -70,7 +70,7 @@ export const getAllCategories = async () => {
 };
 
 export const addCategory = async (name: string) => {
-    const categoryRequest: CategoryRequest = { name: name, type: "Vendor" };
+    const categoryRequest: CategoryRequest = {name: name, type: "Vendor"};
     const res = await api.post('/common/addCategory', categoryRequest);
     return res.data;
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
     Box,
     Button,
@@ -14,12 +14,12 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { useNavigate } from 'react-router-dom';
+import {DataGrid, GridColDef} from '@mui/x-data-grid';
+import {useNavigate} from 'react-router-dom';
 
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
-import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
-import { RequisitionForm } from '../../components/Requisition/RequisitionForm';
+import {DashboardLayout} from '../../components/Layout/DashboardLayout';
+import {ConfirmDialog} from '../../components/UI/ConfirmDialog';
+import {RequisitionForm} from '../../components/Requisition/RequisitionForm';
 
 import {
     getRequisitions,
@@ -28,7 +28,7 @@ import {
     deleteRequisition
 } from '../../services/requisitionService';
 
-import { RequisitionDto, RequisitionRequest } from '../../types/requisition';
+import {RequisitionDto, RequisitionRequest} from '../../types/requisition';
 
 export default function RequisitionPage() {
     const navigate = useNavigate();
@@ -124,9 +124,9 @@ export default function RequisitionPage() {
        DataGrid Columns
     ============================ */
     const columns: GridColDef[] = [
-        { field: 'requisitionNumber', headerName: 'Req No.', flex: 1 },
-        { field: 'requestedByName', headerName: 'Requested By', flex: 1 },
-        { field: 'categoryName', headerName: 'Category', flex: 1 },
+        {field: 'requisitionNumber', headerName: 'Req No.', flex: 1},
+        {field: 'requestedByName', headerName: 'Requested By', flex: 1},
+        {field: 'categoryName', headerName: 'Category', flex: 1},
         {
             field: 'requestedDate',
             headerName: 'Requested Date',
@@ -152,7 +152,7 @@ export default function RequisitionPage() {
                             ? 'error'
                             : 'warning';
 
-                return <Chip label={params.value} color={color} size="small" />;
+                return <Chip label={params.value} color={color} size="small"/>;
             }
         },
         {
@@ -190,7 +190,7 @@ export default function RequisitionPage() {
                             setDeleteDialogOpen(true);
                         }}
                     >
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon fontSize="small"/>
                     </IconButton>
                 </Box>
             )
@@ -226,8 +226,8 @@ export default function RequisitionPage() {
                         placeholder="Search requisitions..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        InputProps={{ startAdornment: <SearchIcon sx={{ mr: 1 }} /> }}
-                        sx={{ minWidth: 260 }}
+                        InputProps={{startAdornment: <SearchIcon sx={{mr: 1}}/>}}
+                        sx={{minWidth: 260}}
                     />
 
                     <TextField
@@ -236,7 +236,7 @@ export default function RequisitionPage() {
                         label="Status"
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        sx={{ width: 160 }}
+                        sx={{width: 160}}
                     >
                         {['All', 'Pending', 'Approved', 'Rejected'].map((s) => (
                             <MenuItem key={s} value={s}>
@@ -245,11 +245,11 @@ export default function RequisitionPage() {
                         ))}
                     </TextField>
 
-                    <Box flexGrow={1} />
+                    <Box flexGrow={1}/>
 
                     <Button
                         variant="contained"
-                        startIcon={<AddIcon />}
+                        startIcon={<AddIcon/>}
                         onClick={() => {
                             setSelected(null);
                             setFormOpen(true);
@@ -262,14 +262,14 @@ export default function RequisitionPage() {
 
                 {/* Errors */}
                 {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
+                    <Alert severity="error" sx={{mb: 2}}>
                         {error}
                     </Alert>
                 )}
 
                 {/* Loader */}
                 {loading ? (
-                    <Skeleton variant="rectangular" height={400} />
+                    <Skeleton variant="rectangular" height={400}/>
                 ) : filteredRows.length === 0 ? (
                     <Box textAlign="center" py={6}>
                         <Typography variant="h6">
@@ -280,7 +280,7 @@ export default function RequisitionPage() {
                         </Typography>
                         <Button
                             variant="contained"
-                            startIcon={<AddIcon />}
+                            startIcon={<AddIcon/>}
                             onClick={() => setFormOpen(true)}
                         >
                             Add Requisition

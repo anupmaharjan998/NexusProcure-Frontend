@@ -10,22 +10,22 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import {DataGrid, GridColDef} from '@mui/x-data-grid';
+import {useEffect, useState} from 'react';
 
 import ApprovalLevelForm from '../components/Approval/ApprovalLevelForm';
-import { ConfirmDialog } from '../components/UI/ConfirmDialog';
+import {ConfirmDialog} from '../components/UI/ConfirmDialog';
 import {
     getApprovalLevels,
     createApprovalLevel,
     updateApprovalLevel,
     deleteApprovalLevel
 } from '../services/approvalLevelService';
-import { getRoles } from '../services/roleService';
+import {getRoles} from '../services/roleService';
 
-import { Role } from '../types/Role';
-import { ApprovalLevel } from '../types/approvalLevel';
-import { DashboardLayout } from '../components/Layout/DashboardLayout';
+import {Role} from '../types/Role';
+import {ApprovalLevel} from '../types/approvalLevel';
+import {DashboardLayout} from '../components/Layout/DashboardLayout';
 
 export default function ApprovalFlowPage() {
     const [levels, setLevels] = useState<ApprovalLevel[]>([]);
@@ -105,10 +105,10 @@ export default function ApprovalFlowPage() {
     };
 
     const columns: GridColDef[] = [
-        { field: 'levelName', headerName: 'Approval Level', flex: 1 },
-        { field: 'minAmount', headerName: 'Min Amount', flex: 1 },
-        { field: 'maxAmount', headerName: 'Max Amount', flex: 1 },
-        { field: 'roleName', headerName: 'Approver Role', flex: 1 },
+        {field: 'levelName', headerName: 'Approval Level', flex: 1},
+        {field: 'minAmount', headerName: 'Min Amount', flex: 1},
+        {field: 'maxAmount', headerName: 'Max Amount', flex: 1},
+        {field: 'roleName', headerName: 'Approver Role', flex: 1},
         {
             field: 'actions',
             headerName: 'Actions',
@@ -122,14 +122,14 @@ export default function ApprovalFlowPage() {
                             setOpen(true);
                         }}
                     >
-                        <EditIcon />
+                        <EditIcon/>
                     </IconButton>
 
                     <IconButton
                         onClick={() => handleDeleteClick(params.row as ApprovalLevel)}
-                        sx={{ color: '#E63946' }}
+                        sx={{color: '#E63946'}}
                     >
-                        <DeleteIcon />
+                        <DeleteIcon/>
                     </IconButton>
                 </>
             )
@@ -152,7 +152,7 @@ export default function ApprovalFlowPage() {
                             </Typography>
 
                             <Button
-                                startIcon={<AddIcon />}
+                                startIcon={<AddIcon/>}
                                 variant="contained"
                                 onClick={() => setOpen(true)}
                                 disabled={loading}
@@ -161,7 +161,7 @@ export default function ApprovalFlowPage() {
                             </Button>
                         </Box>
 
-                        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                        {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}
 
                         <DataGrid
                             rows={levels}

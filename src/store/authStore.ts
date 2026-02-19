@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { User } from '../types/User.ts';
+import {create} from 'zustand';
+import {User} from '../types/User.ts';
 
 interface AuthState {
     user: User | null;
@@ -73,6 +73,6 @@ export const useAuthStore = create<AuthState>((set) => ({
             roleName: (user as any).roleName || (user as any).role?.name || ''
         };
         localStorage.setItem('user', JSON.stringify(normalized));
-        set({ user: normalized });
+        set({user: normalized});
     }
 }));

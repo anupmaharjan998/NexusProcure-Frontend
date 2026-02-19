@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
     Box,
     Typography,
@@ -12,12 +12,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import debounce from 'lodash.debounce';
 
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
-import { Table, Column } from '../../components/UI/Table';
-import { Button } from '../../components/UI/Button';
-import { ConfirmDialog } from '../../components/UI/ConfirmDialog';
+import {DashboardLayout} from '../../components/Layout/DashboardLayout';
+import {Table, Column} from '../../components/UI/Table';
+import {Button} from '../../components/UI/Button';
+import {ConfirmDialog} from '../../components/UI/ConfirmDialog';
 
-import { TotalAmountRiskScoreForm } from '../../components/Approval/TotalAmountRiskScoreForm';
+import {TotalAmountRiskScoreForm} from '../../components/Approval/TotalAmountRiskScoreForm';
 import {
     getTotalAmountRiskScores,
     createTotalAmountRiskScore,
@@ -54,7 +54,9 @@ export const TotalAmountRiskScores = () => {
         }
     };
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     // Debounced search input
     const handleSearchChange = debounce((value: string) => {
@@ -136,7 +138,7 @@ export const TotalAmountRiskScores = () => {
                             setFormOpen(true);
                         }}
                     >
-                        <EditIcon fontSize="small" />
+                        <EditIcon fontSize="small"/>
                     </IconButton>
 
                     <IconButton
@@ -144,7 +146,7 @@ export const TotalAmountRiskScores = () => {
                         color="error"
                         onClick={() => setDeleteTarget(row)}
                     >
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon fontSize="small"/>
                     </IconButton>
                 </Box>
             )
@@ -161,7 +163,7 @@ export const TotalAmountRiskScores = () => {
 
                     <Button
                         variant="contained"
-                        startIcon={<AddIcon />}
+                        startIcon={<AddIcon/>}
                         onClick={() => {
                             setFormOpen(true);
                         }}
@@ -174,16 +176,16 @@ export const TotalAmountRiskScores = () => {
                     size="small"
                     placeholder="Search by min/max amount or risk points"
                     fullWidth
-                    sx={{ mb: 2 }}
+                    sx={{mb: 2}}
                     onChange={(e) => handleSearchChange(e.target.value)}
                 />
 
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+                {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}
+                {success && <Alert severity="success" sx={{mb: 2}}>{success}</Alert>}
 
                 {loading ? (
                     <Box display="flex" justifyContent="center" mt={4}>
-                        <CircularProgress />
+                        <CircularProgress/>
                     </Box>
                 ) : (
                     <Table
@@ -195,7 +197,10 @@ export const TotalAmountRiskScores = () => {
 
                 <TotalAmountRiskScoreForm
                     open={formOpen}
-                    onClose={() => { setFormOpen(false); setSelected(undefined); }}
+                    onClose={() => {
+                        setFormOpen(false);
+                        setSelected(undefined);
+                    }}
                     riskScore={selected}
                     onSubmit={handleSubmit}
                     loading={actionLoading}

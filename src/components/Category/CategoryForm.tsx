@@ -1,8 +1,8 @@
 // src/components/Category/CategoryForm.tsx
-import { Box, Grid, TextField } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import { Button } from '../UI/Button';
-import { Modal } from '../UI/Modal';
+import {Box, Grid, TextField} from '@mui/material';
+import {useForm, Controller} from 'react-hook-form';
+import {Button} from '../UI/Button';
+import {Modal} from '../UI/Modal';
 import {Category, CategoryRequest} from '../../types/Category';
 import {useEffect} from "react";
 
@@ -14,14 +14,14 @@ interface CategoryFormProps {
     loading?: boolean;
 }
 
-export const CategoryForm = ({ open, onClose, onSubmit, category, loading = false }: CategoryFormProps) => {
-    const { register, handleSubmit, control, reset } = useForm<CategoryRequest>({
-        defaultValues: category || { name: '', description: '', type: 'vendor' },
+export const CategoryForm = ({open, onClose, onSubmit, category, loading = false}: CategoryFormProps) => {
+    const {register, handleSubmit, control, reset} = useForm<CategoryRequest>({
+        defaultValues: category || {name: '', description: '', type: 'vendor'},
     });
 
     // Reset form when category changes
     useEffect(() => {
-        reset(category || { name: '', description: '', type: 'vendor' });
+        reset(category || {name: '', description: '', type: 'vendor'});
     }, [category, reset]);
 
     const handleFormSubmit = async (data: CategoryRequest) => {
@@ -50,7 +50,7 @@ export const CategoryForm = ({ open, onClose, onSubmit, category, loading = fals
                         <TextField
                             label="Category Name"
                             fullWidth
-                            {...register('name', { required: true })}
+                            {...register('name', {required: true})}
                         />
                     </Grid>
                     <Grid item xs={12}>
@@ -73,13 +73,13 @@ export const CategoryForm = ({ open, onClose, onSubmit, category, loading = fals
                         <Controller
                             name="type"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     select
                                     fullWidth
                                     label="Type"
                                     {...field}
-                                    SelectProps={{ native: true }}
+                                    SelectProps={{native: true}}
                                 >
                                     <option value="vendor">Vendor</option>
                                     <option value="inventory">Inventory</option>

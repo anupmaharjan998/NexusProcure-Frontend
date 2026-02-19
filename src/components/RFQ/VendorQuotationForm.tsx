@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {
     Box,
     Button,
@@ -22,7 +22,7 @@ import {
     Controller,
     useWatch
 } from 'react-hook-form';
-import { getRfq, submitQuotation } from '../../services/rfqService';
+import {getRfq, submitQuotation} from '../../services/rfqService';
 
 /* ================= TYPES ================= */
 
@@ -49,12 +49,16 @@ interface QuotationFormData {
     deliveryTime: string;
     notes: string;
 
+    signature: string;
+
     items: QuotationItem[];
 }
+type FormState = 'loading' | 'editable' | 'submitted' | 'locked';
+
 
 /* ================= COMPONENT ================= */
 
-export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) {
+export default function VendorQuotationForm({rfqToken}: { rfqToken: string }) {
     const [loading, setLoading] = useState(true);
     const [accepted, setAccepted] = useState(false);
     const [error, setError] = useState('');
@@ -62,16 +66,18 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
     /* ✅ ADDED */
     const [success, setSuccess] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [formState, setFormState] = useState<FormState>('loading');
 
-    const { control, handleSubmit, setValue } =
+    const {control, handleSubmit, setValue} =
         useForm<QuotationFormData>({
             defaultValues: {
                 quotationDate: new Date().toISOString().split('T')[0],
-                items: []
+                items: [],
+                signature: ''
             }
         });
 
-    const { fields } = useFieldArray({
+    const {fields} = useFieldArray({
         control,
         name: 'items'
     });
@@ -82,6 +88,11 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
         getRfq(rfqToken)
             .then(res => {
                 const rfq = res.data;
+
+                if (rfq == null) {
+                    setFormState('submitted');
+                    return;
+                }
 
                 setValue('quotationNumber', rfq.rfqNumber);
                 setValue('validUntil', rfq.submissionDeadline.split('T')[0]);
@@ -105,6 +116,7 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                 );
 
                 setLoading(false);
+                setFormState('editable');
             })
             .catch(() => {
                 setError('Failed to load RFQ');
@@ -165,9 +177,14 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
         }
 
         const payload = {
+            deliveryTime: control._formValues.deliveryTime,
+            notes: control._formValues.notes,
+            signature: control._formValues.signature,
+
             items: items.map(i => ({
                 rfqItemId: i.rfqItemId,
                 itemName: i.description,
+                quantity: i.quantity,
                 unitPrice: i.unitPrice,
                 taxPercentage: i.vatPercentage
             }))
@@ -177,7 +194,7 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
             setSubmitting(true);
             await submitQuotation(rfqToken, payload);
             setSuccess('Quotation submitted successfully');
-
+            setFormState('submitted');
         } catch (err: any) {
             setError(
                 err?.response?.data?.message ||
@@ -188,11 +205,46 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
         }
     };
 
+    debugger;
     if (loading) {
-        return <Skeleton variant="rectangular" height={600} />;
+        return <Skeleton variant="rectangular" height={600}/>;
     }
 
     /* ================= RENDER ================= */
+    if (formState === 'loading') {
+        return <Skeleton variant="rectangular" height={600} />;
+    }
+
+    if (formState === 'submitted') {
+        return (
+            <Box maxWidth="sm" mx="auto" mt={6}>
+                <Alert severity="success">
+                    <Typography fontWeight={600}>
+                        Quotation Already Submitted
+                    </Typography>
+                    <Typography variant="body2" mt={1}>
+                        Your quotation has already been submitted and cannot be modified.
+                    </Typography>
+                </Alert>
+            </Box>
+        );
+    }
+
+
+    if (formState === 'locked') {
+        return (
+            <Box maxWidth="sm" mx="auto" mt={6}>
+                <Alert severity="warning">
+                    <Typography fontWeight={600}>
+                        Quotation Not Available
+                    </Typography>
+                    <Typography variant="body2" mt={1}>
+                        This RFQ is no longer accepting quotations.
+                    </Typography>
+                </Alert>
+            </Box>
+        );
+    }
 
     return (
         <Box maxWidth="lg" mx="auto">
@@ -205,20 +257,20 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
 
             {/* ✅ ADDED */}
             {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{mb: 2}}>
                     {error}
                 </Alert>
             )}
 
             {success && (
-                <Alert severity="success" sx={{ mb: 2 }}>
+                <Alert severity="success" sx={{mb: 2}}>
                     {success}
                 </Alert>
             )}
 
             <form onSubmit={handleSubmit(submit)}>
                 {/* ================= Vendor Info ================= */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Typography fontWeight={600} mb={2}>
                         Vendor Information
                     </Typography>
@@ -234,8 +286,8 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                                 key={name}
                                 name={name as keyof QuotationFormData}
                                 control={control}
-                                render={({ field }) => (
-                                    <TextField {...field} label={label} disabled />
+                                render={({field}) => (
+                                    <TextField {...field} label={label} disabled/>
                                 )}
                             />
                         ))}
@@ -243,14 +295,14 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                         <Controller
                             name="address"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     label="Business Address"
                                     multiline
                                     rows={2}
                                     disabled
-                                    sx={{ gridColumn: '1 / -1' }}
+                                    sx={{gridColumn: '1 / -1'}}
                                 />
                             )}
                         />
@@ -258,7 +310,7 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                 </Paper>
 
                 {/* ================= Quotation Details ================= */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Typography fontWeight={600} mb={2}>
                         Quotation Details
                     </Typography>
@@ -273,12 +325,12 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                                 key={name}
                                 name={name as keyof QuotationFormData}
                                 control={control}
-                                render={({ field }) => (
+                                render={({field}) => (
                                     <TextField
                                         {...field}
                                         label={label}
                                         type={name === 'quotationNumber' ? 'text' : 'date'}
-                                        InputLabelProps={{ shrink: true }}
+                                        InputLabelProps={{shrink: true}}
                                         disabled
                                     />
                                 )}
@@ -288,7 +340,7 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                 </Paper>
 
                 {/* ================= Items ================= */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Typography fontWeight={600} mb={2}>
                         Items & Pricing
                     </Typography>
@@ -322,12 +374,12 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                                             <Controller
                                                 name={`items.${i}.unitPrice`}
                                                 control={control}
-                                                render={({ field }) => (
+                                                render={({field}) => (
                                                     <TextField
                                                         {...field}
                                                         size="small"
                                                         type="number"
-                                                        inputProps={{ min: 0.01, step: 0.01 }}
+                                                        inputProps={{min: 0.01, step: 0.01}}
                                                         onChange={e =>
                                                             field.onChange(
                                                                 Math.max(Number(e.target.value), 0.01)
@@ -342,12 +394,12 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                                             <Controller
                                                 name={`items.${i}.vatPercentage`}
                                                 control={control}
-                                                render={({ field }) => (
+                                                render={({field}) => (
                                                     <TextField
                                                         {...field}
                                                         size="small"
                                                         type="number"
-                                                        inputProps={{ min: 0, max: 100, step: 1 }}
+                                                        inputProps={{min: 0, max: 100, step: 1}}
                                                     />
                                                 )}
                                             />
@@ -362,7 +414,7 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                         </TableBody>
                     </Table>
 
-                    <Divider sx={{ my: 2 }} />
+                    <Divider sx={{my: 2}}/>
 
                     <Box textAlign="right">
                         <Typography>Subtotal: {subtotal.toFixed(2)}</Typography>
@@ -374,7 +426,7 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                 </Paper>
 
                 {/* ================= Additional ================= */}
-                <Paper sx={{ p: 3, mb: 3 }}>
+                <Paper sx={{p: 3, mb: 3}}>
                     <Typography fontWeight={600} mb={2}>
                         Additional Information
                     </Typography>
@@ -383,20 +435,20 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                         <Controller
                             name="paymentTerms"
                             control={control}
-                            render={({ field }) => (
-                                <TextField {...field} label="Payment Terms" disabled />
+                            render={({field}) => (
+                                <TextField {...field} label="Payment Terms" disabled/>
                             )}
                         />
 
                         <Controller
                             name="deliveryTime"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     label="Delivery Date"
                                     type="date"
-                                    InputLabelProps={{ shrink: true }}
+                                    InputLabelProps={{shrink: true}}
                                 />
                             )}
                         />
@@ -404,21 +456,49 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                         <Controller
                             name="notes"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     label="Additional Notes"
                                     multiline
                                     rows={3}
-                                    sx={{ gridColumn: '1 / -1' }}
+                                    sx={{gridColumn: '1 / -1'}}
                                 />
                             )}
                         />
                     </Box>
                 </Paper>
 
+                {/* ================= Signature ================= */}
+                <Paper sx={{p: 3, mb: 3}}>
+                    <Typography fontWeight={600} mb={2}>
+                        Signature
+                    </Typography>
+
+                    <Controller
+                        name="signature"
+                        control={control}
+                        rules={{required: 'Signature is required'}}
+                        render={({field, fieldState}) => (
+                            <TextField
+                                {...field}
+                                label="Signed By (Full Name)"
+                                placeholder="Enter your full legal name"
+                                error={!!fieldState.error}
+                                helperText={fieldState.error?.message}
+                                fullWidth
+                            />
+                        )}
+                    />
+
+                    <Typography variant="caption" color="text.secondary" mt={1} display="block">
+                        By typing your name, you confirm this quotation is legally binding.
+                    </Typography>
+                </Paper>
+
+
                 {/* ================= Confirm ================= */}
-                <Paper sx={{ p: 2, mb: 3 }}>
+                <Paper sx={{p: 2, mb: 3}}>
                     <FormControlLabel
                         control={
                             <Checkbox
@@ -431,14 +511,27 @@ export default function VendorQuotationForm({ rfqToken }: { rfqToken: string }) 
                 </Paper>
 
                 <Box textAlign="right">
+                    {/*<Button*/}
+                    {/*    type="submit"*/}
+                    {/*    variant="contained"*/}
+                    {/*    size="large"*/}
+                    {/*    disabled={!accepted || submitting}*/}
+                    {/*>*/}
+                    {/*    {submitting ? 'Submitting...' : 'Submit Quotation'}*/}
+                    {/*</Button>*/}
                     <Button
                         type="submit"
                         variant="contained"
                         size="large"
-                        disabled={!accepted || submitting}
+                        disabled={
+                            !accepted ||
+                            submitting ||
+                            formState !== 'editable'
+                        }
                     >
                         {submitting ? 'Submitting...' : 'Submit Quotation'}
                     </Button>
+
                 </Box>
             </form>
         </Box>

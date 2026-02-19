@@ -12,20 +12,20 @@ import {
     Autocomplete,
     MenuItem
 } from '@mui/material';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {useForm, Controller} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Input } from '../UI/Input';
-import { Button } from '../UI/Button';
-import { Modal } from '../UI/Modal';
-import { useEffect, useState } from 'react';
-import { Vendor, VendorFormData } from '../../types/Vendor';
+import {Input} from '../UI/Input';
+import {Button} from '../UI/Button';
+import {Modal} from '../UI/Modal';
+import {useEffect, useState} from 'react';
+import {Vendor, VendorFormData} from '../../types/Vendor';
 import {
     getAllCategories,
     addCategory,
     getAllPaymentTerms
 } from '../../services/vendorService';
-import { Category } from '../../types/Category';
+import {Category} from '../../types/Category';
 import {PaymentTerms} from "../../types/PaymentTerms.ts";
 import {TaxType} from "../../types/TaxType.ts";
 import {useAuth} from "../../hooks/useAuth.ts";
@@ -77,7 +77,7 @@ export const VendorForm = ({
     const [paymentTermsList, setPaymentTermsList] = useState<PaymentTerms[]>([]);
     const [categoryInput, setCategoryInput] = useState('');
     const [addingCategory, setAddingCategory] = useState(false);
-    const { hasPermission } = useAuth();
+    const {hasPermission} = useAuth();
 
     const {
         register,
@@ -85,7 +85,7 @@ export const VendorForm = ({
         control,
         reset,
         setValue,
-        formState: { errors }
+        formState: {errors}
     } = useForm<VendorFormData>({
         resolver: yupResolver(schema),
         defaultValues: {
@@ -182,7 +182,7 @@ export const VendorForm = ({
                     {/* ---------------- BASIC INFO ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Vendor Information</Typography>
-                        <Divider />
+                        <Divider/>
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
@@ -206,7 +206,7 @@ export const VendorForm = ({
                     {/* ---------------- CONTACT ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Contact Information</Typography>
-                        <Divider />
+                        <Divider/>
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
@@ -241,14 +241,14 @@ export const VendorForm = ({
                     {/* ---------------- TAX DETAILS ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Tax Details</Typography>
-                        <Divider />
+                        <Divider/>
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
                         <Controller
                             name="taxType"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     select
@@ -278,7 +278,7 @@ export const VendorForm = ({
                         <Controller
                             name="category"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <Autocomplete
                                     freeSolo
                                     options={categories.map(c => c.name)}
@@ -336,7 +336,7 @@ export const VendorForm = ({
                     {/* ---------------- BANK DETAILS ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Bank Details</Typography>
-                        <Divider />
+                        <Divider/>
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
@@ -371,7 +371,7 @@ export const VendorForm = ({
                         <Controller
                             name="paymentTerms"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <TextField
                                     {...field}
                                     select
@@ -399,18 +399,18 @@ export const VendorForm = ({
                             <Controller
                                 name="status"
                                 control={control}
-                                render={({ field }) => (
+                                render={({field}) => (
                                     <FormControl>
                                         <FormLabel>Status</FormLabel>
                                         <RadioGroup row {...field}>
                                             <FormControlLabel
                                                 value="Active"
-                                                control={<Radio color="success" />}
+                                                control={<Radio color="success"/>}
                                                 label="Active"
                                             />
                                             <FormControlLabel
                                                 value="Inactive"
-                                                control={<Radio color="warning" />}
+                                                control={<Radio color="warning"/>}
                                                 label="Inactive"
                                             />
                                         </RadioGroup>

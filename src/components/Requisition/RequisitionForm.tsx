@@ -16,15 +16,15 @@ import {
     CircularProgress,
     InputAdornment
 } from '@mui/material';
-import { Controller, useForm, useFieldArray } from 'react-hook-form';
+import {Controller, useForm, useFieldArray} from 'react-hook-form';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import * as yup from 'yup';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {yupResolver} from '@hookform/resolvers/yup';
 
-import { RequisitionDto, RequisitionRequest } from '../../types/requisition';
-import { getAllCategories } from '../../services/vendorService';
+import {RequisitionDto, RequisitionRequest} from '../../types/requisition';
+import {getAllCategories} from '../../services/vendorService';
 
 /* ---------------- Types ---------------- */
 
@@ -97,11 +97,11 @@ export const RequisitionForm = ({
         defaultValues: defaultValues || {
             categoryId: '',
             isUrgent: false,
-            items: [{ itemName: '', quantity: 1, estimatedCost: 0 }]
+            items: [{itemName: '', quantity: 1, estimatedCost: 0}]
         }
     });
 
-    const { fields, append, remove } = useFieldArray({
+    const {fields, append, remove} = useFieldArray({
         control,
         name: 'items'
     });
@@ -163,7 +163,7 @@ export const RequisitionForm = ({
                         <Controller
                             name="categoryId"
                             control={control}
-                            render={({ field, fieldState }) => (
+                            render={({field, fieldState}) => (
                                 <TextField
                                     {...field}
                                     select
@@ -175,7 +175,7 @@ export const RequisitionForm = ({
                                     InputProps={{
                                         endAdornment: loadingCategories && (
                                             <InputAdornment position="end">
-                                                <CircularProgress size={20} />
+                                                <CircularProgress size={20}/>
                                             </InputAdornment>
                                         )
                                     }}
@@ -194,7 +194,7 @@ export const RequisitionForm = ({
                         <Controller
                             name="isUrgent"
                             control={control}
-                            render={({ field }) => (
+                            render={({field}) => (
                                 <FormControlLabel
                                     control={
                                         <Checkbox
@@ -209,7 +209,7 @@ export const RequisitionForm = ({
                     </Grid>
                 </Grid>
 
-                <Divider sx={{ mb: 3 }} />
+                <Divider sx={{mb: 3}}/>
 
                 {/* Items */}
                 <Typography variant="subtitle1" fontWeight={600} mb={2}>
@@ -229,7 +229,7 @@ export const RequisitionForm = ({
                                         <Controller
                                             name={`items.${index}.itemName`}
                                             control={control}
-                                            render={({ field, fieldState }) => (
+                                            render={({field, fieldState}) => (
                                                 <TextField
                                                     {...field}
                                                     label="Item Name"
@@ -245,7 +245,7 @@ export const RequisitionForm = ({
                                         <Controller
                                             name={`items.${index}.quantity`}
                                             control={control}
-                                            render={({ field, fieldState }) => (
+                                            render={({field, fieldState}) => (
                                                 <TextField
                                                     {...field}
                                                     type="number"
@@ -253,7 +253,7 @@ export const RequisitionForm = ({
                                                     fullWidth
                                                     error={!!fieldState.error}
                                                     helperText={fieldState.error?.message}
-                                                    inputProps={{ min: 1 }}
+                                                    inputProps={{min: 1}}
                                                 />
                                             )}
                                         />
@@ -263,7 +263,7 @@ export const RequisitionForm = ({
                                         <Controller
                                             name={`items.${index}.estimatedCost`}
                                             control={control}
-                                            render={({ field, fieldState }) => (
+                                            render={({field, fieldState}) => (
                                                 <TextField
                                                     {...field}
                                                     type="number"
@@ -271,7 +271,7 @@ export const RequisitionForm = ({
                                                     fullWidth
                                                     error={!!fieldState.error}
                                                     helperText={fieldState.error?.message}
-                                                    inputProps={{ min: 0, step: 0.01 }}
+                                                    inputProps={{min: 0, step: 0.01}}
                                                 />
                                             )}
                                         />
@@ -289,7 +289,7 @@ export const RequisitionForm = ({
                                             onClick={() => remove(index)}
                                             disabled={fields.length === 1 || submitting}
                                         >
-                                            <DeleteIcon />
+                                            <DeleteIcon/>
                                         </IconButton>
                                     </Grid>
                                 </Grid>
@@ -299,17 +299,17 @@ export const RequisitionForm = ({
                 </Grid>
 
                 <Button
-                    startIcon={<AddIcon />}
-                    sx={{ mt: 2 }}
+                    startIcon={<AddIcon/>}
+                    sx={{mt: 2}}
                     onClick={() =>
-                        append({ itemName: '', quantity: 1, estimatedCost: 0 })
+                        append({itemName: '', quantity: 1, estimatedCost: 0})
                     }
                     disabled={submitting}
                 >
                     Add Item
                 </Button>
 
-                <Divider sx={{ my: 3 }} />
+                <Divider sx={{my: 3}}/>
 
                 <Box display="flex" justifyContent="flex-end">
                     <Typography variant="h6">
@@ -326,7 +326,7 @@ export const RequisitionForm = ({
                     variant="contained"
                     onClick={handleSubmit(handleFormSubmit)}
                     disabled={submitting}
-                    startIcon={submitting ? <CircularProgress size={20} /> : null}
+                    startIcon={submitting ? <CircularProgress size={20}/> : null}
                 >
                     {defaultValues ? 'Update Requisition' : 'Create Requisition'}
                 </Button>

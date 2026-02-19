@@ -26,9 +26,9 @@ import StorefrontIcon from '@mui/icons-material/Storefront';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import CategoryIcon from '@mui/icons-material/Category';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { useState } from 'react';
+import {useNavigate, useLocation} from 'react-router-dom';
+import {useAuth} from '../../hooks/useAuth';
+import {useState} from 'react';
 
 export const drawerWidth = 240;
 export const drawerWidthCollapsed = 70;
@@ -51,84 +51,90 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
     {
         text: "Dashboard",
-        icon: <DashboardIcon />,
+        icon: <DashboardIcon/>,
         path: "/dashboard",
         permissions: ["PUBLIC"],
     },
     {
         text: "Users",
-        icon: <PeopleIcon />,
+        icon: <PeopleIcon/>,
         path: "/users",
         permissions: ["VIEW_USERS"],
     },
     {
         text: "Roles",
-        icon: <SecurityIcon />,
+        icon: <SecurityIcon/>,
         path: "/roles",
         permissions: ["VIEW_ROLES"],
     },
     {
         text: "Permissions",
-        icon: <VpnKeyIcon />,
+        icon: <VpnKeyIcon/>,
         path: "/permissions",
         permissions: ["VIEW_PERMISSIONS"],
     },
     {
         text: "Departments",
-        icon: <BusinessIcon />,
+        icon: <BusinessIcon/>,
         path: "/departments",
         permissions: ["VIEW_DEPARTMENTS"],
     },
     {
         text: "Vendors",
-        icon: <StorefrontIcon />,
+        icon: <StorefrontIcon/>,
         path: "/vendors",
         permissions: ["VIEW_VENDOR"],
     },
     {
         text: "Categories",
-        icon: <CategoryIcon />,
+        icon: <CategoryIcon/>,
         path: "/categories",
         permissions: ["VIEW_CATEGORIES"],
     },
     {
         text: "Inventory",
-        icon: <InventoryIcon />,
+        icon: <InventoryIcon/>,
         path: "/inventory",
         permissions: ["VIEW_INVENTORY"],
     },
     {
         text: "Procurement",
-        icon: <ShoppingCartIcon />,
+        icon: <ShoppingCartIcon/>,
         permissions: ["PUBLIC"],
         children: [
             {
                 text: "Approval Policies",
-                icon: <SecurityIcon />,
+                icon: <SecurityIcon/>,
                 path: "/procurement/approval-policy",
                 permissions: ["PUBLIC"],
             },
             {
                 text: "Amount Risk Scores",
-                icon: <SecurityIcon />,
+                icon: <SecurityIcon/>,
                 path: "/procurement/risk-score",
                 permissions: ["PUBLIC"],
             },
             {
                 text: "Requisitions",
-                icon: <ShoppingCartIcon />,
+                icon: <ShoppingCartIcon/>,
                 path: "/procurement/requisitions",
                 permissions: ["PUBLIC"],
             },
             {
                 text: "Requisitions Approval",
-                icon: <ShoppingCartIcon />,
+                icon: <ShoppingCartIcon/>,
                 path: "/procurement/requisitions-approvals",
                 permissions: ["PUBLIC"],
             },
             {
+                text: "RFQ",
+                icon: <InventoryIcon/>,
+                path: "/rfq",
+                permissions: ["PUBLIC"],
+            },
+            {
                 text: "Purchase Orders",
-                icon: <InventoryIcon />,
+                icon: <InventoryIcon/>,
                 path: "/procurement/purchase-orders",
                 permissions: ["PUBLIC"],
             },
@@ -136,7 +142,7 @@ const menuItems: MenuItem[] = [
     },
     {
         text: "Reports",
-        icon: <AssessmentIcon />,
+        icon: <AssessmentIcon/>,
         path: "/reports",
         permissions: ["VIEW_REPORTS"],
     },
@@ -150,7 +156,7 @@ export const Sidebar = ({
                         }: SidebarProps) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { hasPermission } = useAuth();
+    const {hasPermission} = useAuth();
 
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
@@ -173,8 +179,8 @@ export const Sidebar = ({
 
     const drawerContent = (isDesktop: boolean) => (
         <>
-            <Toolbar />
-            <Box sx={{ overflow: 'auto', mt: 2, height: '100%' }}>
+            <Toolbar/>
+            <Box sx={{overflow: 'auto', mt: 2, height: '100%'}}>
                 <List>
                     {filteredMenuItems.map(item => {
                         const hasChildren = !!item.children?.length;
@@ -184,7 +190,7 @@ export const Sidebar = ({
                         if (hasChildren) {
                             return (
                                 <ListItem key={item.text} disablePadding>
-                                    <Box sx={{ width: '100%' }}>
+                                    <Box sx={{width: '100%'}}>
                                         <ListItemButton
                                             onClick={() => toggleMenu(item.text)}
                                             sx={{
@@ -193,16 +199,16 @@ export const Sidebar = ({
                                                 px: collapsed ? 1 : 2,
                                             }}
                                         >
-                                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                                <ListItemIcon sx={{ minWidth: 40 }}>
+                                            <Box sx={{display: 'flex', alignItems: 'center'}}>
+                                                <ListItemIcon sx={{minWidth: 40}}>
                                                     {item.icon}
                                                 </ListItemIcon>
                                                 {!collapsed && (
-                                                    <ListItemText primary={item.text} />
+                                                    <ListItemText primary={item.text}/>
                                                 )}
                                             </Box>
                                             {!collapsed && (
-                                                isOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />
+                                                isOpen ? <ExpandLessIcon/> : <ExpandMoreIcon/>
                                             )}
                                         </ListItemButton>
 
@@ -222,11 +228,11 @@ export const Sidebar = ({
                                                             }}
                                                             onClick={() => handleNavigation(child.path)}
                                                         >
-                                                            <ListItemIcon sx={{ minWidth: 36 }}>
+                                                            <ListItemIcon sx={{minWidth: 36}}>
                                                                 {child.icon}
                                                             </ListItemIcon>
                                                             {!collapsed && (
-                                                                <ListItemText primary={child.text} />
+                                                                <ListItemText primary={child.text}/>
                                                             )}
                                                         </ListItemButton>
                                                     ))}
@@ -247,11 +253,11 @@ export const Sidebar = ({
                                         justifyContent: collapsed ? 'center' : 'flex-start',
                                     }}
                                 >
-                                    <ListItemIcon sx={{ minWidth: 40 }}>
+                                    <ListItemIcon sx={{minWidth: 40}}>
                                         {item.icon}
                                     </ListItemIcon>
                                     {!collapsed && (
-                                        <ListItemText primary={item.text} />
+                                        <ListItemText primary={item.text}/>
                                     )}
                                 </ListItemButton>
                             </ListItem>
@@ -259,15 +265,15 @@ export const Sidebar = ({
                     })}
                 </List>
 
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{my: 2}}/>
 
                 {isDesktop && (
-                    <Box sx={{ p: collapsed ? 0.5 : 2 }}>
+                    <Box sx={{p: collapsed ? 0.5 : 2}}>
                         <IconButton
                             onClick={onToggleCollapse}
-                            sx={{ width: '100%' }}
+                            sx={{width: '100%'}}
                         >
-                            {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+                            {collapsed ? <ChevronRightIcon/> : <ChevronLeftIcon/>}
                         </IconButton>
                     </Box>
                 )}
@@ -281,7 +287,7 @@ export const Sidebar = ({
                 variant="temporary"
                 open={open}
                 onClose={onClose}
-                sx={{ display: { xs: 'block', sm: 'none' } }}
+                sx={{display: {xs: 'block', sm: 'none'}}}
             >
                 {drawerContent(false)}
             </Drawer>
@@ -289,7 +295,7 @@ export const Sidebar = ({
             <Drawer
                 variant="permanent"
                 sx={{
-                    display: { xs: 'none', sm: 'block' },
+                    display: {xs: 'none', sm: 'block'},
                     width: collapsed ? drawerWidthCollapsed : drawerWidth,
                 }}
                 open

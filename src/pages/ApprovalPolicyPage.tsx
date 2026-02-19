@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {
     Box,
     Button,
@@ -7,14 +7,14 @@ import {
     Switch,
     TextField
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+import {DataGrid, GridColDef} from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-import { DashboardLayout } from '../components/Layout/DashboardLayout';
-import { ApprovalPolicyForm } from '../components/Approval/ApprovalPolicyForm';
-import { ConfirmDialog } from '../components/UI/ConfirmDialog';
+import {DashboardLayout} from '../components/Layout/DashboardLayout';
+import {ApprovalPolicyForm} from '../components/Approval/ApprovalPolicyForm';
+import {ConfirmDialog} from '../components/UI/ConfirmDialog';
 
 import {
     getApprovalPolicies,
@@ -53,16 +53,16 @@ export default function ApprovalPolicyPage() {
     }, [search, rows]);
 
     const columns: GridColDef[] = [
-        { field: 'categoryName', headerName: 'Category', flex: 1 },
-        { field: 'riskLevel', headerName: 'Risk', width: 120 },
-        { field: 'roleName', headerName: 'Approval Role', flex: 1 },
-        { field: 'sequenceOrder', headerName: 'Order', width: 100 },
-        { field: 'escalationHours', headerName: 'Escalation (hrs)', width: 150 },
+        {field: 'categoryName', headerName: 'Category', flex: 1},
+        {field: 'riskLevel', headerName: 'Risk', width: 120},
+        {field: 'roleName', headerName: 'Approval Role', flex: 1},
+        {field: 'sequenceOrder', headerName: 'Order', width: 100},
+        {field: 'escalationHours', headerName: 'Escalation (hrs)', width: 150},
         {
             field: 'isActive',
             headerName: 'Active',
             width: 100,
-            renderCell: (p) => <Switch checked={p.value} disabled />
+            renderCell: (p) => <Switch checked={p.value} disabled/>
         },
         {
             field: 'actions',
@@ -74,11 +74,11 @@ export default function ApprovalPolicyPage() {
                         setSelected(p.row);
                         setOpenForm(true);
                     }}>
-                        <EditIcon />
+                        <EditIcon/>
                     </IconButton>
 
                     <IconButton color="error" onClick={() => setDeleteTarget(p.row)}>
-                        <DeleteIcon />
+                        <DeleteIcon/>
                     </IconButton>
                 </>
             )
@@ -95,7 +95,7 @@ export default function ApprovalPolicyPage() {
 
                     <Button
                         variant="contained"
-                        startIcon={<AddIcon />}
+                        startIcon={<AddIcon/>}
                         onClick={() => {
                             setSelected(null);
                             setOpenForm(true);
@@ -109,7 +109,7 @@ export default function ApprovalPolicyPage() {
                     size="small"
                     placeholder="Search by category, role or risk"
                     fullWidth
-                    sx={{ mb: 2 }}
+                    sx={{mb: 2}}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                 />

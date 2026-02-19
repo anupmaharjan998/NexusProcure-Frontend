@@ -1,12 +1,12 @@
 // src/pages/ForgetPassword.tsx
-import { Box, Card, Typography, Alert } from '@mui/material';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {Box, Card, Typography, Alert} from '@mui/material';
+import {useForm} from 'react-hook-form';
+import {yupResolver} from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { useState } from 'react';
-import { Input } from '../components/UI/Input';
-import { Button } from '../components/UI/Button';
-import { sendResetEmail } from '../services/authService';
+import {useState} from 'react';
+import {Input} from '../components/UI/Input';
+import {Button} from '../components/UI/Button';
+import {sendResetEmail} from '../services/authService';
 
 const schema = yup.object({
     email: yup.string().email('Invalid email format').required('Email is required'),
@@ -20,7 +20,7 @@ export const ForgetPassword = () => {
     const {
         register,
         handleSubmit,
-        formState: { errors },
+        formState: {errors},
     } = useForm<{ email: string }>({
         resolver: yupResolver(schema),
     });
@@ -60,23 +60,23 @@ export const ForgetPassword = () => {
                     boxShadow: '0 24px 60px rgba(0,0,0,0.2)',
                 }}
             >
-                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                <Box sx={{textAlign: 'center', mb: 3}}>
                     <Typography
                         variant="h4"
-                        sx={{ fontFamily: 'Inter, sans-serif', fontWeight: 700, color: '#1E293B' }}
+                        sx={{fontFamily: 'Inter, sans-serif', fontWeight: 700, color: '#1E293B'}}
                     >
                         Forgot Password
                     </Typography>
-                    <Typography sx={{ color: '#64748B', fontFamily: 'Poppins' }}>
+                    <Typography sx={{color: '#64748B', fontFamily: 'Poppins'}}>
                         Enter your email and we will send you a reset link.
                     </Typography>
                 </Box>
 
-                {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-                {message && <Alert severity="success" sx={{ mb: 3 }}>{message}</Alert>}
+                {error && <Alert severity="error" sx={{mb: 3}}>{error}</Alert>}
+                {message && <Alert severity="success" sx={{mb: 3}}>{message}</Alert>}
 
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    <Box sx={{ mb: 3 }}>
+                    <Box sx={{mb: 3}}>
                         <Input
                             label="Email Address"
                             type="email"
