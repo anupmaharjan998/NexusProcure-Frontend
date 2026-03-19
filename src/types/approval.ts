@@ -26,3 +26,16 @@ export interface ApprovalRequest {
     decision: 'Approved' | 'Rejected';
     comments: string;
 }
+
+
+export interface QuotationPendingApproval {
+    id: string;
+    rfqNumber: string;
+    vendorName: string;
+    contactEmail: string;
+    contactPerson: string;
+    submissionDate: string;
+    validUntil: string;
+    totalAmount: number;
+    status: string;
+}

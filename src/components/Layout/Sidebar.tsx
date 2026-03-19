@@ -133,6 +133,12 @@ const menuItems: MenuItem[] = [
                 permissions: ["PUBLIC"],
             },
             {
+                text: "Quotations Approval",
+                icon: <ShoppingCartIcon/>,
+                path: "/procurement/quotations-approvals",
+                permissions: ["PUBLIC"],
+            },
+            {
                 text: "Purchase Orders",
                 icon: <InventoryIcon/>,
                 path: "/procurement/purchase-orders",

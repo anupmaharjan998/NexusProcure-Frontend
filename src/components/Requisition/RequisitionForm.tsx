@@ -43,9 +43,9 @@ interface Props {
 /* ---------------- Yup Schema ---------------- */
 
 const requisitionSchema: yup.ObjectSchema<RequisitionRequest> = yup.object({
-    requestedById: yup
-        .string()
-        .required('Requester is required'),
+    // requestedById: yup
+    //     .string()
+    //     .required('Requester is required'),
 
     categoryId: yup
         .string()
@@ -144,9 +144,12 @@ export const RequisitionForm = ({
 
     const handleFormSubmit = async (data: RequisitionRequest) => {
         setSubmitting(true);
+        console.log("Submitting:", data);
         try {
             await onSubmit(data);
             handleClose();
+        }catch (err) {
+            console.error("Submit error:", err);
         } finally {
             setSubmitting(false);
         }
