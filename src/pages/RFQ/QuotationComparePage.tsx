@@ -97,7 +97,9 @@ export default function QuotationComparePage() {
         ['Email', (q: QuotationDetailResponseDto) => q.vendorEmail],
         ['Contact Person', (q: QuotationDetailResponseDto) => q.contactPerson],
         ['Submitted At', (q: QuotationDetailResponseDto) =>
-            new Date(q.submittedAt).toLocaleDateString()]
+            new Date(q.submittedAt).toLocaleDateString()],
+        ['Delivery Date', (q: QuotationDetailResponseDto) =>
+            new Date(q.deliveryTime).toLocaleDateString()]
     ] satisfies [string, (q: QuotationDetailResponseDto) => string][];
 
 
@@ -330,7 +332,7 @@ export default function QuotationComparePage() {
                                 <Box key={q.id}>
                                     <Box display="flex" alignItems="center" gap={1}>
                                         <Typography fontWeight={600}>
-                                            {q.vendorName}
+                                            {q.totalAmount}
                                         </Typography>
 
                                         {q.totalAmount === lowest && (

@@ -24,7 +24,7 @@ export interface RequisitionDto {
 export interface RequisitionRequest {
     categoryId: string;
     isUrgent: boolean;
-    requestedById: string;
+    //requestedById: string;
     items: RequisitionItemDto[];
 }
 

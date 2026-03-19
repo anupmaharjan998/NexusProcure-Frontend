@@ -28,6 +28,10 @@ import RFQListPage from "./pages/RFQ/RFQListPage.tsx";
 import RFQQuotationListPage from "./pages/RFQ/RFQQuotationListPage.tsx";
 import QuotationDetailsPage from "./pages/RFQ/QuotationDetailsPage.tsx";
 import QuotationComparePage from "./pages/RFQ/QuotationComparePage.tsx";
+import QuotationApprovalList from "./pages/RFQ/QuotationApprovalPage.tsx";
+import QuotationApprovalDetails from "./pages/RFQ/QuotationApprovalDetails.tsx";
+import PurchaseOrderDetailsPage from "./pages/PurchaseOrder/PurchaseOrderDetailsPage.tsx";
+import PurchaseOrderPage from "./pages/PurchaseOrder/PurchaseOrderPage.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -271,6 +275,25 @@ function App() {
                         <Route
                             path="/rfqs/:rfqId/compare"
                             element={<QuotationComparePage />}
+                        />
+
+                        <Route
+                            path="/procurement/quotations-approvals"
+                            element={<QuotationApprovalList />}
+                        />
+                        <Route
+                            path="/procurement/quotation-approval/:id"
+                            element={<QuotationApprovalDetails />}
+                        />
+
+                        <Route
+                            path="/procurement/purchase-orders"
+                            element={<PurchaseOrderPage />}
+                        />
+
+                        <Route
+                            path="/procurement/purchase-orders/:id"
+                            element={<PurchaseOrderDetailsPage />}
                         />
 
 

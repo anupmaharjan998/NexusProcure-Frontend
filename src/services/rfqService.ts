@@ -43,8 +43,7 @@ export const selectQuotationForApproval = async (
     quotationId: string
 ) => {
     return api.post(
-        `/Rfq/${rfqId}/select-quotation`,
-        quotationId // not wrapped in object
+        `/Rfq/${rfqId}/select-quotation?quotationId=${quotationId}`
     );
 };
 

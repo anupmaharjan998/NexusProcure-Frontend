@@ -178,7 +178,7 @@ export default function VendorQuotationForm({rfqToken}: { rfqToken: string }) {
 
         const payload = {
             deliveryTime: control._formValues.deliveryTime,
-            notes: control._formValues.notes,
+            notes: control._formValues.notes || "N/A",
             signature: control._formValues.signature,
 
             items: items.map(i => ({
