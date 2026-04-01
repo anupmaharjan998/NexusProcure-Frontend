@@ -64,8 +64,13 @@ export const uploadVendorDocument = async (vendorId: string, file: File) => {
     return res.data;
 };
 
+// export const getAllCategories = async () => {
+//     const res = await api.get<Category[]>('/common/getAllCategories');
+//     return res.data;
+// };
+
 export const getAllCategories = async () => {
-    const res = await api.get<Category[]>('/common/getAllCategories');
+    const res = await api.get('/inventory/get-leaf-categories');
     return res.data;
 };
 

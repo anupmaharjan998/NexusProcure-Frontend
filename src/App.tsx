@@ -32,6 +32,10 @@ import QuotationApprovalList from "./pages/RFQ/QuotationApprovalPage.tsx";
 import QuotationApprovalDetails from "./pages/RFQ/QuotationApprovalDetails.tsx";
 import PurchaseOrderDetailsPage from "./pages/PurchaseOrder/PurchaseOrderDetailsPage.tsx";
 import PurchaseOrderPage from "./pages/PurchaseOrder/PurchaseOrderPage.tsx";
+import {InventoryPage} from "./pages/Inventory/InventoryPage.tsx";
+import {CategoryPage} from "./pages/Inventory/CategoryPage.tsx";
+import {AddInventoryItemPage} from "./pages/Inventory/AddInventoryItemPage.tsx";
+import {InventoryItemDetailPage} from "./pages/Inventory/InventoryItemDetailPage.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -294,6 +298,23 @@ function App() {
                         <Route
                             path="/procurement/purchase-orders/:id"
                             element={<PurchaseOrderDetailsPage />}
+                        />
+
+                        <Route
+                            path="/inventory"
+                            element={<InventoryPage />}
+                        />
+                        <Route
+                            path="/inventory/categories"
+                            element={<CategoryPage />}
+                        />
+                        <Route
+                            path="/inventory/add-item"
+                            element={<AddInventoryItemPage />}
+                        />
+                        <Route
+                            path="/inventory/item-detail/:id"
+                            element={<InventoryItemDetailPage />}
                         />
 
 

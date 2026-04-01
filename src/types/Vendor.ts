@@ -7,7 +7,8 @@ export interface Vendor {
     email?: string;
     phoneNumber?: string;
     address?: string;
-    categoryId?: string;
+    categoryIds: string[];
+    categoryNames: string[];
     taxType: TaxType;
     taxId?: string;
     category?: string;
@@ -27,8 +28,7 @@ export interface VendorFormData {
     address: string;
     taxId: string;
     taxType: TaxType;
-    category: string;
-    categoryId?: string;
+    categoryIds: string[];
     bankAccount?: string;
     bankName?: string;
     bankBranch?: string;

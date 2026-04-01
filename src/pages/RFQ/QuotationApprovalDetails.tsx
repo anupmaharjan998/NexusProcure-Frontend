@@ -238,6 +238,14 @@ export default function QuotationApprovalDetails() {
                                     </TableRow>
                                 ))}
                             </TableBody>
+                            {/*<TableBody>*/}
+                            {/*    <Box display="flex" justifyContent="space-between" mt={2}>*/}
+                            {/*        <Typography fontWeight={700}>Grand Total</Typography>*/}
+                            {/*        <Typography fontWeight={700} color="primary" fontSize={18}>*/}
+                            {/*            Rs. {grandTotal.toFixed(2)}*/}
+                            {/*        </Typography>*/}
+                            {/*    </Box>*/}
+                            {/*</TableBody>*/}
                         </Table>
                     </CardContent>
                 </Card>
@@ -249,17 +257,6 @@ export default function QuotationApprovalDetails() {
                             Financial Summary
                         </Typography>
 
-                        <Box display="flex" justifyContent="space-between" mb={1}>
-                            <Typography>Subtotal</Typography>
-                            <Typography>Rs. {subtotal.toFixed(2)}</Typography>
-                        </Box>
-
-                        <Box display="flex" justifyContent="space-between" mb={2}>
-                            <Typography>Total VAT (10%)</Typography>
-                            <Typography>Rs. {totalVat.toFixed(2)}</Typography>
-                        </Box>
-
-                        <Divider />
 
                         <Box display="flex" justifyContent="space-between" mt={2}>
                             <Typography fontWeight={700}>Grand Total</Typography>

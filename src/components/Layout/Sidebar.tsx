@@ -94,8 +94,21 @@ const menuItems: MenuItem[] = [
     {
         text: "Inventory",
         icon: <InventoryIcon/>,
-        path: "/inventory",
-        permissions: ["VIEW_INVENTORY"],
+        permissions: ["PUBLIC"],
+        children: [
+            {
+                text: "Inventory",
+                icon: <InventoryIcon/>,
+                path: "/inventory",
+                permissions: ["PUBLIC"]
+            },
+            {
+                text: "Categories",
+                icon: <CategoryIcon/>,
+                path: "/inventory/categories",
+                permissions: ["PUBLIC"],
+            },
+        ]
     },
     {
         text: "Procurement",

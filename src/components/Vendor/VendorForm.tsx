@@ -1,5 +1,6 @@
 import {
     Box,
+    Chip,
     FormControl,
     FormControlLabel,
     FormLabel,
@@ -12,23 +13,21 @@ import {
     Autocomplete,
     MenuItem
 } from '@mui/material';
-import {useForm, Controller} from 'react-hook-form';
-import {yupResolver} from '@hookform/resolvers/yup';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import {Input} from '../UI/Input';
-import {Button} from '../UI/Button';
-import {Modal} from '../UI/Modal';
-import {useEffect, useState} from 'react';
-import {Vendor, VendorFormData} from '../../types/Vendor';
+import { Input } from '../UI/Input';
+import { Button } from '../UI/Button';
+import { Modal } from '../UI/Modal';
+import { useEffect, useState } from 'react';
+import { Vendor, VendorFormData } from '../../types/Vendor';
 import {
     getAllCategories,
-    addCategory,
     getAllPaymentTerms
 } from '../../services/vendorService';
-import {Category} from '../../types/Category';
-import {PaymentTerms} from "../../types/PaymentTerms.ts";
-import {TaxType} from "../../types/TaxType.ts";
-import {useAuth} from "../../hooks/useAuth.ts";
+import { Category } from '../../types/Category';
+import { PaymentTerms } from "../../types/PaymentTerms.ts";
+import { TaxType } from "../../types/TaxType.ts";
 
 /* ---------------- VALIDATION ---------------- */
 const schema = yup.object({
@@ -45,8 +44,11 @@ const schema = yup.object({
         .oneOf(Object.values(TaxType).filter(v => typeof v === 'number'))
         .required(),
     taxId: yup.string().required('Tax number is required'),
-    category: yup.string().required('Category is required'),
-    categoryId: yup.string().optional(),
+    categoryIds: yup
+        .array()
+        .of(yup.string().required())
+        .min(1, 'At least one category is required')
+        .required(),
     bankName: yup.string().optional(),
     bankBranch: yup.string().optional(),
     bankAccount: yup.string().optional(),
@@ -75,17 +77,13 @@ export const VendorForm = ({
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [paymentTermsList, setPaymentTermsList] = useState<PaymentTerms[]>([]);
-    const [categoryInput, setCategoryInput] = useState('');
-    const [addingCategory, setAddingCategory] = useState(false);
-    const {hasPermission} = useAuth();
 
     const {
         register,
         handleSubmit,
         control,
         reset,
-        setValue,
-        formState: {errors}
+        formState: { errors }
     } = useForm<VendorFormData>({
         resolver: yupResolver(schema),
         defaultValues: {
@@ -96,8 +94,7 @@ export const VendorForm = ({
             address: '',
             taxType: TaxType.VAT,
             taxId: '',
-            category: '',
-            categoryId: '',
+            categoryIds: [],
             bankName: '',
             bankBranch: '',
             bankAccount: '',
@@ -106,7 +103,6 @@ export const VendorForm = ({
         }
     });
 
-    /* ---------------- LOAD DROPDOWNS ---------------- */
     useEffect(() => {
         const loadData = async () => {
             const [cats, terms] = await Promise.all([
@@ -116,43 +112,32 @@ export const VendorForm = ({
             setCategories(cats);
             setPaymentTermsList(terms);
         };
+
         loadData();
     }, []);
 
-    /* ---------------- EDIT MODE ---------------- */
     useEffect(() => {
         if (vendor) {
-            // Find the category name by categoryId
-            const selectedCategory = categories.find(
-                c => c.id === vendor.categoryId
-            );
             reset({
-                ...vendor,
-                category: selectedCategory ? selectedCategory.name : '',
-                paymentTerms: vendor.paymentTerms
+                vendorName: vendor.vendorName,
+                companyName: vendor.companyName || '',
+                email: vendor.email || '',
+                phoneNumber: vendor.phoneNumber || '',
+                address: vendor.address || '',
+                taxType: vendor.taxType,
+                taxId: vendor.taxId || '',
+                categoryIds: vendor.categoryIds || [],
+                bankName: vendor.bankName || '',
+                bankBranch: vendor.bankBranch || '',
+                bankAccount: vendor.bankAccount || '',
+                paymentTerms: vendor.paymentTerms,
+                status: vendor.status
             });
-            setCategoryInput(selectedCategory ? selectedCategory.name : '');
         }
-    }, [vendor, reset, categories]);
+    }, [vendor, reset]);
 
     const handleFormSubmit = async (data: VendorFormData) => {
-        if (!data.category) {
-            // optionally show error or return
-            return;
-        }
-
-        const selectedCategory = categories.find(
-            c => c.name.toLowerCase() === data.category!.toLowerCase()
-        );
-
-        if (!selectedCategory) return;
-
-        const payload = {
-            ...data,
-            categoryId: selectedCategory.id
-        };
-
-        await onSubmit(payload);
+        await onSubmit(data);
         reset();
     };
 
@@ -179,10 +164,9 @@ export const VendorForm = ({
         >
             <form>
                 <Grid container spacing={3}>
-                    {/* ---------------- BASIC INFO ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Vendor Information</Typography>
-                        <Divider/>
+                        <Divider />
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
@@ -203,10 +187,9 @@ export const VendorForm = ({
                         />
                     </Grid>
 
-                    {/* ---------------- CONTACT ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Contact Information</Typography>
-                        <Divider/>
+                        <Divider />
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
@@ -238,17 +221,16 @@ export const VendorForm = ({
                         />
                     </Grid>
 
-                    {/* ---------------- TAX DETAILS ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Tax Details</Typography>
-                        <Divider/>
+                        <Divider />
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
                         <Controller
                             name="taxType"
                             control={control}
-                            render={({field}) => (
+                            render={({ field }) => (
                                 <TextField
                                     {...field}
                                     select
@@ -273,58 +255,36 @@ export const VendorForm = ({
                         />
                     </Grid>
 
-                    {/* ---------------- CATEGORY (ADDABLE) ---------------- */}
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12}>
                         <Controller
-                            name="category"
+                            name="categoryIds"
                             control={control}
-                            render={({field}) => (
+                            render={({ field }) => (
                                 <Autocomplete
-                                    freeSolo
-                                    options={categories.map(c => c.name)}
-                                    value={field.value || ''}
-                                    inputValue={categoryInput}
-                                    onInputChange={(_, value) =>
-                                        setCategoryInput(value)
+                                    multiple
+                                    options={categories}
+                                    getOptionLabel={(option) => option.name}
+                                    value={categories.filter(c => field.value?.includes(c.id))}
+                                    onChange={(_, selected) => {
+                                        field.onChange(selected.map(item => item.id));
+                                    }}
+                                    renderTags={(value, getTagProps) =>
+                                        value.map((option, index) => (
+                                            <Chip
+                                                label={option.name}
+                                                {...getTagProps({ index })}
+                                                key={option.id}
+                                            />
+                                        ))
                                     }
-                                    onChange={(_, value) => {
-                                        if (typeof value === 'string') {
-                                            field.onChange(value);
-                                        }
-                                    }}
-                                    onKeyDown={async e => {
-                                        if (
-                                            e.key === 'Enter' &&
-                                            categoryInput.trim()
-                                        ) {
-                                            e.preventDefault();
-
-                                            const exists = categories.some(
-                                                c =>
-                                                    c.name.toLowerCase() ===
-                                                    categoryInput.toLowerCase()
-                                            );
-
-                                            if (!exists) {
-                                                setAddingCategory(true);
-                                                await addCategory(categoryInput.trim());
-                                                const updated =
-                                                    await getAllCategories();
-                                                setCategories(updated);
-                                                setAddingCategory(false);
-                                            }
-
-                                            field.onChange(categoryInput.trim());
-                                        }
-                                    }}
-                                    renderInput={params => (
+                                    renderInput={(params) => (
                                         <TextField
                                             {...params}
-                                            label="Category *"
-                                            error={!!errors.category}
+                                            label="Categories *"
+                                            error={!!errors.categoryIds}
                                             helperText={
-                                                errors.category?.message ||
-                                                'Type and press Enter to add new category'
+                                                (errors.categoryIds as any)?.message ||
+                                                'Select one or more categories'
                                             }
                                         />
                                     )}
@@ -333,45 +293,28 @@ export const VendorForm = ({
                         />
                     </Grid>
 
-                    {/* ---------------- BANK DETAILS ---------------- */}
                     <Grid item xs={12}>
                         <Typography variant="h6">Bank Details</Typography>
-                        <Divider/>
+                        <Divider />
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
-                        <Input
-                            label="Bank Name"
-                            {...register('bankName')}
-                            error={!!errors.bankName}
-                            helperText={errors.bankName?.message}
-                        />
+                        <Input label="Bank Name" {...register('bankName')} />
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
-                        <Input
-                            label="Bank Branch"
-                            {...register('bankBranch')}
-                            error={!!errors.bankBranch}
-                            helperText={errors.bankBranch?.message}
-                        />
+                        <Input label="Bank Branch" {...register('bankBranch')} />
                     </Grid>
 
                     <Grid item xs={12} sm={6}>
-                        <Input
-                            label="Account Number"
-                            {...register('bankAccount')}
-                            error={!!errors.bankAccount}
-                            helperText={errors.bankAccount?.message}
-                        />
+                        <Input label="Account Number" {...register('bankAccount')} />
                     </Grid>
 
-                    {/* ---------------- PAYMENT TERMS ---------------- */}
                     <Grid item xs={12} sm={6}>
                         <Controller
                             name="paymentTerms"
                             control={control}
-                            render={({field}) => (
+                            render={({ field }) => (
                                 <TextField
                                     {...field}
                                     select
@@ -381,10 +324,7 @@ export const VendorForm = ({
                                     helperText={errors.paymentTerms?.message}
                                 >
                                     {paymentTermsList.map(term => (
-                                        <MenuItem
-                                            key={term.value}
-                                            value={term.value}
-                                        >
+                                        <MenuItem key={term.value} value={term.value}>
                                             {term.displayName}
                                         </MenuItem>
                                     ))}
@@ -393,24 +333,23 @@ export const VendorForm = ({
                         />
                     </Grid>
 
-                    {/* ---------------- STATUS ---------------- */}
                     {vendor?.status !== 'Pending' && isEdit && (
                         <Grid item xs={12}>
                             <Controller
                                 name="status"
                                 control={control}
-                                render={({field}) => (
+                                render={({ field }) => (
                                     <FormControl>
                                         <FormLabel>Status</FormLabel>
                                         <RadioGroup row {...field}>
                                             <FormControlLabel
                                                 value="Active"
-                                                control={<Radio color="success"/>}
+                                                control={<Radio color="success" />}
                                                 label="Active"
                                             />
                                             <FormControlLabel
                                                 value="Inactive"
-                                                control={<Radio color="warning"/>}
+                                                control={<Radio color="warning" />}
                                                 label="Inactive"
                                             />
                                         </RadioGroup>
