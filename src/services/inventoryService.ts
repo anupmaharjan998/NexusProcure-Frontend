@@ -58,6 +58,11 @@ export const getInventoryItemById = async (id: string) => {
     return res.data;
 };
 
+export const updateInventoryItem = async (id: string, payload: any) => {
+    const res = await api.put(`/inventory/update-item/${id}`, payload);
+    return res.data;
+};
+
 
 // 🔹 ASSIGN ITEM
 export const assignItem = async (itemId: string, userId: string) => {

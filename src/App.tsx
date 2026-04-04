@@ -36,6 +36,8 @@ import {InventoryPage} from "./pages/Inventory/InventoryPage.tsx";
 import {CategoryPage} from "./pages/Inventory/CategoryPage.tsx";
 import {AddInventoryItemPage} from "./pages/Inventory/AddInventoryItemPage.tsx";
 import {InventoryItemDetailPage} from "./pages/Inventory/InventoryItemDetailPage.tsx";
+import {EditInventoryItemPage} from "./pages/Inventory/EditInventoryItemPage.tsx";
+import PurchaseOrderDeliveryPage from "./pages/Inventory/PurchaseOrderDeliveryPage.tsx";
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -315,6 +317,15 @@ function App() {
                         <Route
                             path="/inventory/item-detail/:id"
                             element={<InventoryItemDetailPage />}
+                        />
+                        <Route
+                            path="/inventory/item-edit/:id"
+                            element={<EditInventoryItemPage />}
+                        />
+
+                        <Route
+                            path="/inventory/delivery"
+                            element={<PurchaseOrderDeliveryPage />}
                         />
 
 

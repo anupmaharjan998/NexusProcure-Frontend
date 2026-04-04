@@ -108,6 +108,12 @@ const menuItems: MenuItem[] = [
                 path: "/inventory/categories",
                 permissions: ["PUBLIC"],
             },
+            {
+                text: "Categories",
+                icon: <CategoryIcon/>,
+                path: "/inventory/delivery",
+                permissions: ["PUBLIC"],
+            },
         ]
     },
     {

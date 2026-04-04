@@ -2,7 +2,7 @@ import {
     Box, Card, Typography, Grid, TextField,
     Stack, Button, Chip, IconButton, Divider,
     Dialog, DialogTitle, DialogContent, DialogActions,
-    CircularProgress, Pagination, MenuItem
+    CircularProgress, Pagination, MenuItem, AlertColor
 } from '@mui/material';
 
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -38,11 +38,16 @@ export const CategoryPage = () => {
         }
     });
 
-    const [snackbar, setSnackbar] = useState({
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: AlertColor;
+    }>({
         open: false,
         message: '',
-        severity: 'success' // success | error | warning | info
+        severity: 'success',
     });
+
     const showMessage = (message: string, severity: any = 'success') => {
         setSnackbar({ open: true, message, severity });
     };
@@ -76,6 +81,7 @@ export const CategoryPage = () => {
     const [subForm, setSubForm] = useState({
         name: '',
         description: '',
+        riskWeight: 0,
         parentCategoryId: null
     });
 
@@ -252,7 +258,8 @@ export const CategoryPage = () => {
                                                 setSubForm({
                                                     name: '',
                                                     description: '',
-                                                    parentCategoryId: cat.id
+                                                    parentCategoryId: cat.id,
+                                                    riskWeight: 0
                                                 });
 
                                                 setOpenSub(true);
@@ -327,7 +334,8 @@ export const CategoryPage = () => {
                                                     setSubForm({
                                                         name: sub.name,
                                                         description: sub.description || '',
-                                                        parentCategoryId: cat.id
+                                                        parentCategoryId: cat.id,
+                                                        riskWeight: sub.riskWeight || 0
                                                     });
 
                                                     setOpenSub(true);
@@ -548,7 +556,7 @@ export const CategoryPage = () => {
                             variant="contained"
                             onClick={async () => {
                                 try {
-                                    await deleteCategory(deleteDialog.id);
+                                    await deleteCategory(deleteDialog.id ?? "");
 
                                     showMessage(
                                         `${deleteDialog.type === 'category' ? 'Category' : 'Subcategory'} deleted successfully`

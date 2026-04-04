@@ -92,11 +92,11 @@ export const VendorDetails = () => {
 
     /* ---------------- HELPERS ---------------- */
 
-    const getCategoryName = () => {
-        if (!vendor?.categoryId) return "-";
-        const category = categories.find(c => c.id === vendor.categoryId);
-        return category?.name || "-";
-    };
+    // const getCategoryName = () => {
+    //     if (!vendor?.categoryIds) return "-";
+    //     const category = categories.find(c => c.id === vendor.categoryIds);
+    //     return category?.name || "-";
+    // };
     const getPaymentTermsName = () => {
         if (vendor?.paymentTerms === null || vendor?.paymentTerms === undefined)
             return "-";
@@ -275,7 +275,7 @@ export const VendorDetails = () => {
                         <Info label="Email" value={vendor.email}/>
                         <Info label="Phone" value={vendor.phoneNumber}/>
                         <Info label="Address" value={vendor.address}/>
-                        <Info label="Category" value={getCategoryName()}/>
+                        <Info label="Category" value={vendor.vendorName}/>
                         <Info label="Status" value={vendor.status}/>
                     </Section>
                 </Paper>

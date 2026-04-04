@@ -22,7 +22,6 @@ export const useAuthStore = create<AuthState>((set) => ({
 
             const parsed: any = JSON.parse(raw);
             parsed.roleName = parsed.roleName || parsed.role?.name || '';
-            debugger;
             return parsed as User;
         } catch {
             return null;

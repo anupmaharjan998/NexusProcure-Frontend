@@ -27,3 +27,18 @@ export const getRequisitionById = async (id: string): Promise<RequisitionDto> =>
     const res = await api.get(`/Requisitions/${id}`);
     return res.data;
 };
+
+export const getLeafCategories = async () => {
+    const res = await api.get('/inventory/get-leaf-categories-dropdown');
+    return res.data;
+};
+
+export const getItemsByCategory = async (categoryId: string) => {
+    const res = await api.get(`/inventory/items/by-category/${categoryId}`);
+    return res.data;
+};
+
+export const createItem = async (payload: { name: string; categoryId: string, description: string}) => {
+    const res = await api.post('/inventory/create-item', payload);
+    return res.data;
+};

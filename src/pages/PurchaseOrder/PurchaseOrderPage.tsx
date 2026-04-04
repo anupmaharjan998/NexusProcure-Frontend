@@ -69,7 +69,7 @@ export default function PurchaseOrderPage() {
             const matchSearch =
                 o.poNumber?.toLowerCase().includes(search.toLowerCase()) ||
                 o.vendorName?.toLowerCase().includes(search.toLowerCase()) ||
-                o.requisitionNumber?.toLowerCase().includes(search.toLowerCase());
+                o.reqNumber?.toLowerCase().includes(search.toLowerCase());
 
             const matchStatus =
                 statusFilter === "All" ||
