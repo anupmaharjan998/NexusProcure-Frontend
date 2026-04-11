@@ -38,7 +38,7 @@ import {DashboardLayout} from "../components/Layout/DashboardLayout";
 import {TaxType} from "../types/TaxType";
 import {Category} from "../types/Category";
 import {PaymentTerms} from "@/types/PaymentTerms.ts";
-
+import {useAuth} from "../hooks/useAuth.ts";
 /* ---------------------------------- */
 
 export const VendorDetails = () => {
@@ -53,7 +53,7 @@ export const VendorDetails = () => {
     const [dialogType, setDialogType] =
         useState<"approve" | "reject" | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
-
+    const {hasPermission} = useAuth();
     const [snackbar, setSnackbar] = useState({
         open: false,
         message: "",
@@ -237,18 +237,22 @@ export const VendorDetails = () => {
                         Vendor Details
                     </Typography>
 
-                    <Button
-                        variant="contained"
-                        startIcon={<EditIcon/>}
-                        onClick={() => setEditOpen(true)}
-                    >
-                        Edit
-                    </Button>
+                    {hasPermission("EDIT_VENDOR") && (
+                        <Button
+                            variant="contained"
+                            startIcon={<EditIcon/>}
+                            onClick={() => setEditOpen(true)}
+                        >
+                            Edit
+                        </Button>
+                    )}
+
+
                 </Box>
 
                 {/* Approval */}
                 {/*{vendor.status === "Pending" && hasPermission("APPROVE_VENDOR") &&(*/}
-                {vendor.status === "Pending" && (
+                {vendor.status === "Pending" && hasPermission("APPROVE_VENDOR")  && (
                     <Box display="flex" gap={2} mb={3}>
                         <Button
                             color="success"

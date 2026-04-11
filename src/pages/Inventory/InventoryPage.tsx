@@ -39,6 +39,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
 import { DashboardLayout } from '../../components/Layout/DashboardLayout';
 import { getInventory } from '../../services/inventoryService';
+import {useAuth} from "../../hooks/useAuth.ts";
 
 interface InventoryStats {
     totalItems: number;
@@ -74,7 +75,7 @@ interface InventoryQuery {
 export const InventoryPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-
+    const {hasPermission} = useAuth();
     const [data, setData] = useState<InventoryResponse>({
         items: [],
         totalCount: 0,
@@ -214,13 +215,16 @@ export const InventoryPage = () => {
                             >
                                 Manage Categories
                             </Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                onClick={() => navigate('/inventory/add-item')}
-                            >
-                                Add Item
-                            </Button>
+                            {hasPermission("ADD_INVENTORY_ITEM") && (
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddIcon />}
+                                    onClick={() => navigate('/inventory/add-item')}
+                                >
+                                    Add Item
+                                </Button>
+                            )}
+
                         </Stack>
                     </Stack>
 

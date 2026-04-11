@@ -29,11 +29,13 @@ import {
     TotalAmountRiskScore,
     TotalAmountRiskScoreRequest
 } from '../../types/TotalAmountRiskScore';
+import {useAuth} from "../../hooks/useAuth.ts";
 
 export const TotalAmountRiskScores = () => {
     const [data, setData] = useState<TotalAmountRiskScore[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
+    const {hasPermission} = useAuth();
 
     const [search, setSearch] = useState('');
     const [formOpen, setFormOpen] = useState(false);
@@ -131,23 +133,28 @@ export const TotalAmountRiskScores = () => {
             align: 'center',
             format: (_, row) => (
                 <Box display="flex" gap={1} justifyContent="center">
-                    <IconButton
-                        size="small"
-                        onClick={() => {
-                            setSelected(row);
-                            setFormOpen(true);
-                        }}
-                    >
-                        <EditIcon fontSize="small"/>
-                    </IconButton>
+                    {hasPermission("UPDATE_TOTAL_AMOUNT_RISK_SCORE") && (
+                        <IconButton
+                            size="small"
+                            onClick={() => {
+                                setSelected(row);
+                                setFormOpen(true);
+                            }}
+                        >
+                            <EditIcon fontSize="small"/>
+                        </IconButton>
+                    )}
 
-                    <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => setDeleteTarget(row)}
-                    >
-                        <DeleteIcon fontSize="small"/>
-                    </IconButton>
+                    {hasPermission("DELETE_TOTAL_AMOUNT_RISK_SCORE") && (
+                        <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => setDeleteTarget(row)}
+                        >
+                            <DeleteIcon fontSize="small"/>
+                        </IconButton>
+                    )}
+
                 </Box>
             )
         }
@@ -160,16 +167,19 @@ export const TotalAmountRiskScores = () => {
                     <Typography variant="h4" fontWeight={700}>
                         Total Amount Risk Scores
                     </Typography>
+                    {hasPermission("ADD_TOTAL_AMOUNT_RISK_SCORE") && (
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon/>}
+                            onClick={() => {
+                                setFormOpen(true);
+                            }}
+                        >
+                            Add Rule
+                        </Button>
+                    )}
 
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon/>}
-                        onClick={() => {
-                            setFormOpen(true);
-                        }}
-                    >
-                        Add Rule
-                    </Button>
+
                 </Box>
 
                 <TextField

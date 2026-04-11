@@ -4,26 +4,28 @@ import {ReactNode} from 'react';
 
 interface ProtectedRouteProps {
     children: ReactNode;
-    requiredRoles?: string[];
+    permissions?: string[];
 }
 
-export const ProtectedRoute = ({children, requiredRoles}: ProtectedRouteProps) => {
+export const ProtectedRoute = ({
+                                   children,
+                                   permissions = [],
+                               }: ProtectedRouteProps) => {
     const {isAuthenticated, hasPermission} = useAuth();
     const location = useLocation();
 
-    // FOR TESTING: Comment this out to bypass authentication
-    // PRODUCTION: Uncomment this for real authentication
     if (!isAuthenticated) {
-        return <Navigate to="/login" state={{from: location}} replace/>;
+        return <Navigate to="/login" state={{from: location}} replace />;
     }
 
-    if (requiredRoles && requiredRoles.length > 0) {
-        const hasRequiredRole = requiredRoles.some((role) => hasPermission(role));
-        if (!hasRequiredRole) {
-            return <Navigate to="/dashboard" replace/>;
-        }
+    const hasAccess =
+        permissions.length === 0 ||
+        permissions.includes('PUBLIC') ||
+        hasPermission(permissions);
+
+    if (!hasAccess) {
+        return <Navigate to="/dashboard" replace />;
     }
 
     return <>{children}</>;
 };
-

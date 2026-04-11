@@ -471,6 +471,17 @@ export const CategoryPage = () => {
                                     setSubForm({ ...subForm, name: e.target.value })
                                 }
                             />
+                            <TextField
+                                label="Risk Weight"
+                                fullWidth
+                                value={subForm.riskWeight}
+                                onChange={(e) => {
+                                    let value = Number(e.target.value);
+                                    if (value > 100) value = 100;
+                                    if (value < 0) value = 0;
+                                    setForm({ ...subForm, riskWeight: value });
+                                }}
+                            />
 
                             <TextField
                                 label="Description"

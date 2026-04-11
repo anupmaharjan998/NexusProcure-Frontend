@@ -20,12 +20,14 @@ import {
     getApprovalPolicies,
     deleteApprovalPolicy
 } from '../services/approvalPolicyService';
+import {useAuth} from "../hooks/useAuth.ts";
 
 export default function ApprovalPolicyPage() {
     const [rows, setRows] = useState<any[]>([]);
     const [openForm, setOpenForm] = useState(false);
     const [selected, setSelected] = useState<any | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+    const {hasPermission} = useAuth();
 
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(true);
@@ -70,16 +72,21 @@ export default function ApprovalPolicyPage() {
             width: 120,
             renderCell: (p) => (
                 <>
-                    <IconButton onClick={() => {
-                        setSelected(p.row);
-                        setOpenForm(true);
-                    }}>
-                        <EditIcon/>
-                    </IconButton>
+                    {hasPermission("UPDATE_POLICIES") && (
+                        <IconButton onClick={() => {
+                            setSelected(p.row);
+                            setOpenForm(true);
+                        }}>
+                            <EditIcon/>
+                        </IconButton>
+                    )}
 
-                    <IconButton color="error" onClick={() => setDeleteTarget(p.row)}>
-                        <DeleteIcon/>
-                    </IconButton>
+                    {hasPermission("DELETE_POLICIES") && (
+                        <IconButton color="error" onClick={() => setDeleteTarget(p.row)}>
+                            <DeleteIcon/>
+                        </IconButton>
+                    )}
+
                 </>
             )
         }
@@ -93,16 +100,19 @@ export default function ApprovalPolicyPage() {
                         Approval Policies
                     </Typography>
 
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon/>}
-                        onClick={() => {
-                            setSelected(null);
-                            setOpenForm(true);
-                        }}
-                    >
-                        Add Policy
-                    </Button>
+                    {hasPermission("ADD_POLICIES") && (
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon/>}
+                            onClick={() => {
+                                setSelected(null);
+                                setOpenForm(true);
+                            }}
+                        >
+                            Add Policy
+                        </Button>
+                    )}
+
                 </Box>
 
                 <TextField

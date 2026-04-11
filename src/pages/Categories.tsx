@@ -10,6 +10,7 @@ import {ConfirmDialog} from '../components/UI/ConfirmDialog';
 import {CategoryForm} from '../components/Category/CategoryForm';
 import {getAllCategories, createCategory, updateCategory, deleteCategory} from '../services/categoryService';
 import {Category, CategoryRequest} from '../types/Category';
+import {useAuth} from "../hooks/useAuth.ts";
 
 export const Categories = () => {
     const [categories, setCategories] = useState<Category[]>([]);
@@ -21,6 +22,7 @@ export const Categories = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const {hasPermission} = useAuth();
 
     const fetchData = async () => {
         setLoading(true);
@@ -101,12 +103,17 @@ export const Categories = () => {
             align: 'center',
             format: (_, category) => (
                 <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
-                    <IconButton size="small" onClick={() => handleEdit(category)} sx={{color: '#0056D2'}}>
-                        <EditIcon fontSize="small"/>
-                    </IconButton>
-                    <IconButton size="small" onClick={() => handleDeleteClick(category)} sx={{color: '#E63946'}}>
-                        <DeleteIcon fontSize="small"/>
-                    </IconButton>
+                    {hasPermission("CREATE_USERS") && (
+                        <IconButton size="small" onClick={() => handleEdit(category)} sx={{color: '#0056D2'}}>
+                            <EditIcon fontSize="small"/>
+                        </IconButton>
+                    )}
+
+                    {hasPermission("CREATE_USERS") && (
+                        <IconButton size="small" onClick={() => handleDeleteClick(category)} sx={{color: '#E63946'}}>
+                            <DeleteIcon fontSize="small"/>
+                        </IconButton>
+                    )}
                 </Box>
             ),
         },
@@ -120,7 +127,10 @@ export const Categories = () => {
                         <Typography variant="h4" sx={{fontWeight: 700}}>Categories</Typography>
                         <Typography variant="body2" sx={{color: '#64748B'}}>Manage global categories</Typography>
                     </Box>
-                    <Button variant="contained" startIcon={<AddIcon/>} onClick={handleAdd}>Add Category</Button>
+                    {hasPermission("CREATE_USERS") && (
+                        <Button variant="contained" startIcon={<AddIcon/>} onClick={handleAdd}>Add Category</Button>
+                    )}
+
                 </Box>
 
                 {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}

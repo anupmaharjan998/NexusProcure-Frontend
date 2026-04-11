@@ -5,8 +5,6 @@ interface AuthState {
     user: User | null;
     token: string | null;
     permissions: string[];
-
-    // computed
     isAuthenticated: boolean;
 
     setAuth: (user: User, token: string, permissions: string[]) => void;
@@ -14,32 +12,41 @@ interface AuthState {
     updateUser: (user: User) => void;
 }
 
+const getStoredUser = (): User | null => {
+    try {
+        const raw = localStorage.getItem('user');
+        if (!raw) return null;
+
+        const parsed: any = JSON.parse(raw);
+        parsed.roleName = parsed.roleName || parsed.role?.name || '';
+        return parsed as User;
+    } catch {
+        return null;
+    }
+};
+
+const getStoredPermissions = (): string[] => {
+    try {
+        return JSON.parse(localStorage.getItem('permissions') || '[]');
+    } catch {
+        return [];
+    }
+};
+
+const getStoredToken = (): string | null => {
+    return localStorage.getItem('token');
+};
+
 export const useAuthStore = create<AuthState>((set) => ({
-    user: (() => {
-        try {
-            const raw = localStorage.getItem('user');
-            if (!raw) return null;
-
-            const parsed: any = JSON.parse(raw);
-            parsed.roleName = parsed.roleName || parsed.role?.name || '';
-            return parsed as User;
-        } catch {
-            return null;
-        }
-    })(),
-
-    token: localStorage.getItem('token'),
-    permissions: JSON.parse(localStorage.getItem('permissions') || '[]'),
-
-    // Remove the getter here and instead compute dynamically in useAuth
-    get isAuthenticated() {
-        return !!localStorage.getItem('token');
-    },
+    user: getStoredUser(),
+    token: getStoredToken(),
+    permissions: getStoredPermissions(),
+    isAuthenticated: !!getStoredToken(),
 
     setAuth: (user: User, token: string, permissions: string[]) => {
         const normalized: User = {
             ...user,
-            roleName: (user as any).roleName || (user as any).role?.name || ''
+            roleName: (user as any).roleName || (user as any).role?.name || '',
         };
 
         localStorage.setItem('user', JSON.stringify(normalized));
@@ -50,7 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             user: normalized,
             token,
             permissions,
-            isAuthenticated: !!localStorage.getItem('token'),
+            isAuthenticated: true,
         });
     },
 
@@ -63,15 +70,20 @@ export const useAuthStore = create<AuthState>((set) => ({
             user: null,
             token: null,
             permissions: [],
+            isAuthenticated: false,
         });
     },
 
     updateUser: (user: User) => {
         const normalized: User = {
             ...user,
-            roleName: (user as any).roleName || (user as any).role?.name || ''
+            roleName: (user as any).roleName || (user as any).role?.name || '',
         };
+
         localStorage.setItem('user', JSON.stringify(normalized));
-        set({user: normalized});
-    }
+
+        set({
+            user: normalized,
+        });
+    },
 }));

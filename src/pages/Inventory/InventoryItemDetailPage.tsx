@@ -1,20 +1,26 @@
 import {
     Alert,
+    Autocomplete,
     Box,
     Button,
     Card,
     Chip,
     CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
     Divider,
     Grid,
     IconButton,
     Link,
     Paper,
     Skeleton,
+    Snackbar,
     Stack,
+    TextField,
     Typography,
-    Breadcrumbs,
-    Snackbar
+    Breadcrumbs
 } from '@mui/material';
 import Barcode from 'react-barcode';
 import { useEffect, useState } from 'react';
@@ -35,8 +41,9 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 
 import { DashboardLayout } from '../../components/Layout/DashboardLayout';
 import {
-    getInventoryItemById,
     assignItem,
+    getInventoryItemById,
+    searchUsers,
     unassignItem
 } from '../../services/inventoryService';
 
@@ -61,20 +68,84 @@ interface InventoryItemDetail {
     assignmentHistory?: AssignmentHistory[];
 }
 
-
+interface UserOption {
+    id: string;
+    fullName: string;
+    email?: string;
+    department?: string;
+}
 
 export const InventoryItemDetailPage = () => {
     const navigate = useNavigate();
     const { id } = useParams();
+    const location = useLocation();
 
     const [item, setItem] = useState<InventoryItemDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [assigning, setAssigning] = useState(false);
+    const [userSearch, setUserSearch] = useState('');
+    const [userOptions, setUserOptions] = useState<UserOption[]>([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<UserOption | null>(null);
+    const [assignNotes, setAssignNotes] = useState('');
+
+    const [snackbar, setSnackbar] = useState<{
+        open: boolean;
+        message: string;
+        severity: 'success' | 'error' | 'warning' | 'info';
+    }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
     useEffect(() => {
         loadItem();
     }, [id]);
+
+    useEffect(() => {
+        if (location.state?.message) {
+            setSnackbar({
+                open: true,
+                message: location.state.message,
+                severity: location.state.severity || 'success',
+            });
+
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
+    useEffect(() => {
+        const delay = setTimeout(async () => {
+            if (!assignDialogOpen) return;
+
+            const q = userSearch.trim();
+            if (q.length < 2) {
+                setUserOptions([]);
+                return;
+            }
+
+            setUsersLoading(true);
+            try {
+                const res = await searchUsers(q);
+                setUserOptions(res || []);
+            } catch (err: any) {
+                setSnackbar({
+                    open: true,
+                    message: err?.response?.data?.message || 'Failed to search users',
+                    severity: 'error',
+                });
+            } finally {
+                setUsersLoading(false);
+            }
+        }, 300);
+
+        return () => clearTimeout(delay);
+    }, [userSearch, assignDialogOpen]);
 
     const loadItem = async () => {
         if (!id) return;
@@ -107,18 +178,41 @@ export const InventoryItemDetailPage = () => {
         }
     };
 
+    const handleOpenAssignDialog = () => {
+        setSelectedUser(null);
+        setUserSearch('');
+        setUserOptions([]);
+        setAssignNotes('');
+        setAssignDialogOpen(true);
+    };
+
     const handleAssign = async () => {
-        if (!item) return;
-        setActionLoading(true);
+        if (!item || !selectedUser) {
+            setSnackbar({
+                open: true,
+                message: 'Please select a user to assign this item.',
+                severity: 'warning',
+            });
+            return;
+        }
+
+        setAssigning(true);
         setError('');
 
         try {
-            await assignItem(item.id, 'USER_ID');
+            await assignItem(item.id, selectedUser.id, assignNotes.trim() || undefined);
+            setAssignDialogOpen(false);
             await loadItem();
+
+            setSnackbar({
+                open: true,
+                message: `Item assigned to ${selectedUser.fullName} successfully`,
+                severity: 'success',
+            });
         } catch (err: any) {
             setError(err?.response?.data?.message || 'Failed to assign item');
         } finally {
-            setActionLoading(false);
+            setAssigning(false);
         }
     };
 
@@ -130,6 +224,12 @@ export const InventoryItemDetailPage = () => {
         try {
             await unassignItem(item.id);
             await loadItem();
+
+            setSnackbar({
+                open: true,
+                message: 'Item unassigned successfully',
+                severity: 'success',
+            });
         } catch (err: any) {
             setError(err?.response?.data?.message || 'Failed to unassign item');
         } finally {
@@ -167,32 +267,6 @@ export const InventoryItemDetailPage = () => {
             year: 'numeric',
         });
     };
-
-    const location = useLocation();
-
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: 'success' | 'error' | 'warning' | 'info';
-    }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
-
-    useEffect(() => {
-        if (location.state?.message) {
-            setSnackbar({
-                open: true,
-                message: location.state.message,
-                severity: location.state.severity || 'success',
-            });
-
-            window.history.replaceState({}, document.title);
-        }
-    }, [location.state]);
-
-
 
     return (
         <DashboardLayout>
@@ -316,7 +390,7 @@ export const InventoryItemDetailPage = () => {
                                         <Button
                                             variant="contained"
                                             disabled={item.status !== 'Available' || actionLoading}
-                                            onClick={handleAssign}
+                                            onClick={handleOpenAssignDialog}
                                             startIcon={
                                                 actionLoading && item.status === 'Available' ? (
                                                     <CircularProgress size={16} color="inherit" />
@@ -582,7 +656,104 @@ export const InventoryItemDetailPage = () => {
                         {snackbar.message}
                     </Alert>
                 </Snackbar>
+
+                <Dialog
+                    open={assignDialogOpen}
+                    onClose={() => !assigning && setAssignDialogOpen(false)}
+                    fullWidth
+                    maxWidth="sm"
+                >
+                    <DialogTitle>Assign Item</DialogTitle>
+                    <DialogContent dividers>
+                        <Stack spacing={2.5} sx={{ mt: 0.5 }}>
+                            <Typography color="text.secondary">
+                                Search and select a user to assign this inventory item.
+                            </Typography>
+
+                            <Autocomplete
+                                options={userOptions}
+                                loading={usersLoading}
+                                value={selectedUser}
+                                onChange={(_, value) => setSelectedUser(value)}
+                                onInputChange={(_, value) => setUserSearch(value)}
+                                getOptionLabel={(option) =>
+                                    `${option.fullName}${option.email ? ` (${option.email})` : ''}`
+                                }
+                                isOptionEqualToValue={(option, value) => option.id === value.id}
+                                noOptionsText={
+                                    userSearch.trim().length < 2
+                                        ? 'Type at least 2 characters to search'
+                                        : 'No users found'
+                                }
+                                renderOption={(props, option) => (
+                                    <Box component="li" {...props} key={option.id}>
+                                        <Stack spacing={0.25}>
+                                            <Typography fontWeight={600}>
+                                                {option.fullName}
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {option.email || 'No email'}
+                                                {option.department ? ` • ${option.department}` : ''}
+                                            </Typography>
+                                        </Stack>
+                                    </Box>
+                                )}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Search User"
+                                        placeholder="Type name or email..."
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            endAdornment: (
+                                                <>
+                                                    {usersLoading ? (
+                                                        <CircularProgress color="inherit" size={18} />
+                                                    ) : null}
+                                                    {params.InputProps.endAdornment}
+                                                </>
+                                            ),
+                                        }}
+                                    />
+                                )}
+                            />
+
+                            <TextField
+                                label="Notes"
+                                placeholder="Optional assignment note"
+                                multiline
+                                minRows={3}
+                                value={assignNotes}
+                                onChange={(e) => setAssignNotes(e.target.value)}
+                            />
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={() => setAssignDialogOpen(false)}
+                            disabled={assigning}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            onClick={handleAssign}
+                            disabled={!selectedUser || assigning}
+                            startIcon={
+                                assigning ? (
+                                    <CircularProgress size={16} color="inherit" />
+                                ) : (
+                                    <AssignmentIndOutlinedIcon />
+                                )
+                            }
+                        >
+                            {assigning ? 'Assigning...' : 'Assign Item'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </DashboardLayout>
     );
 };
+
+export default InventoryItemDetailPage;
