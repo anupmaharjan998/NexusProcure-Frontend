@@ -9,11 +9,18 @@ import {ConfirmDialog} from '../components/UI/ConfirmDialog';
 import {UserForm} from '../components/User/UserForm';
 import {User, UserFormData} from '../types/User.ts';
 import {useEffect, useState} from 'react';
-import {getUsers, createUser, updateUser, deleteUser, getUserById} from '../services/userService.ts';
+import {
+    getUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    getUserById
+} from '../services/userService.ts';
 import {getRoles} from '../services/roleService.ts';
 import {getDepartments} from '../services/departmentService.ts';
 import {Role} from '../types/Role.ts';
 import {Department} from '../types/Department.ts';
+import {useAuth} from "../hooks/useAuth.ts";
 
 export const Users = () => {
     const [users, setUsers] = useState<User[]>([]);
@@ -27,6 +34,7 @@ export const Users = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const {hasPermission} = useAuth();
 
     const fetchData = async () => {
         setLoading(true);
@@ -35,8 +43,8 @@ export const Users = () => {
                 getUsers(),
                 getRoles(),
                 getDepartments(),
-
             ]);
+
             setUsers(usersData);
             setRoles(rolesData);
             setDepartments(departmentsData);
@@ -56,17 +64,14 @@ export const Users = () => {
         setFormOpen(true);
     };
 
-
     const handleEdit = async (user: User) => {
         try {
             setActionLoading(true);
-
             const userDetails = await getUserById(user.id);
-
             setSelectedUser(userDetails);
             setFormOpen(true);
         } catch (err: any) {
-            setError(err.response?.data?.message || "Failed to load user data");
+            setError(err.response?.data?.message || 'Failed to load user data');
         } finally {
             setActionLoading(false);
         }
@@ -86,7 +91,7 @@ export const Users = () => {
             setSuccess('User deleted successfully');
             setDeleteDialogOpen(false);
             setUserToDelete(undefined);
-            fetchData();
+            await fetchData();
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to delete user');
         } finally {
@@ -97,6 +102,7 @@ export const Users = () => {
     const handleFormSubmit = async (data: UserFormData) => {
         setActionLoading(true);
         setError('');
+
         try {
             if (selectedUser) {
                 await updateUser(selectedUser.id!, data);
@@ -105,9 +111,10 @@ export const Users = () => {
                 await createUser(data);
                 setSuccess('User created successfully');
             }
+
             setFormOpen(false);
             setSelectedUser(undefined);
-            fetchData();
+            await fetchData();
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to save user');
         } finally {
@@ -116,20 +123,75 @@ export const Users = () => {
     };
 
     const columns: Column<User>[] = [
-        {id: 'fullName', label: 'Name', minWidth: 150, format: (_, row) => row.fullName || (row as any).name || ''},
-        {id: 'email', label: 'Email', minWidth: 200},
-        {id: 'roleName', label: 'Role', minWidth: 120},
-        {id: 'departmentName', label: 'Department', minWidth: 150},
+        {
+            id: 'fullName',
+            label: 'User',
+            minWidth: 220,
+            format: (_, row) => (
+                <Box>
+                    <Typography
+                        sx={{
+                            fontWeight: 600,
+                            color: '#1E293B',
+                            fontSize: 14,
+                        }}
+                    >
+                        {row.fullName || (row as any).name || '-'}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            color: '#64748B',
+                            fontSize: 12,
+                        }}
+                    >
+                        @{row.username || 'no-username'}
+                    </Typography>
+                </Box>
+            ),
+        },
+        {
+            id: 'email',
+            label: 'Email',
+            minWidth: 220,
+            format: (value) => (
+                <Typography sx={{fontSize: 14, color: '#334155'}}>
+                    {value || '-'}
+                </Typography>
+            ),
+        },
+        {
+            id: 'roleName',
+            label: 'Role',
+            minWidth: 140,
+            format: (value) => (
+                <Chip
+                    label={value || 'Unassigned'}
+                    size="small"
+                    variant="outlined"
+                    sx={{fontWeight: 500}}
+                />
+            ),
+        },
+        {
+            id: 'departmentName',
+            label: 'Department',
+            minWidth: 160,
+            format: (value) => (
+                <Typography sx={{fontSize: 14, color: '#334155'}}>
+                    {value || '-'}
+                </Typography>
+            ),
+        },
         {
             id: 'isActive',
             label: 'Status',
-            minWidth: 100,
+            minWidth: 120,
             format: (value) => (
                 <Chip
-                    label={value}
+                    label={value ? 'Active' : 'Inactive'}
                     color={value === true ? 'success' : 'default'}
                     size="small"
-                    sx={{fontFamily: 'Poppins, sans-serif'}}
+                    sx={{fontFamily: 'Poppins, sans-serif', fontWeight: 600}}
                 />
             ),
         },
@@ -140,26 +202,43 @@ export const Users = () => {
             align: 'center',
             format: (_, user) => (
                 <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(user);
-                        }}
-                        sx={{color: '#0056D2'}}
-                    >
-                        <EditIcon fontSize="small"/>
-                    </IconButton>
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(user);
-                        }}
-                        sx={{color: '#E63946'}}
-                    >
-                        <DeleteIcon fontSize="small"/>
-                    </IconButton>
+                    {hasPermission("EDIT_USER") && (
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(user);
+                            }}
+                            sx={{
+                                color: '#0056D2',
+                                bgcolor: '#EFF6FF',
+                                '&:hover': {bgcolor: '#DBEAFE'},
+                            }}
+                        >
+                            <EditIcon fontSize="small" />
+                        </IconButton>
+                    )}
+
+
+                    {hasPermission("DELETE_USER") && (
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(user);
+                            }}
+                            sx={{
+                                color: '#E63946',
+                                bgcolor: '#FEF2F2',
+                                '&:hover': {bgcolor: '#FEE2E2'},
+                            }}
+                        >
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    )}
+
+
+
                 </Box>
             ),
         },
@@ -168,7 +247,16 @@ export const Users = () => {
     return (
         <DashboardLayout>
             <Box>
-                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3}}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: {xs: 'flex-start', md: 'center'},
+                        flexDirection: {xs: 'column', md: 'row'},
+                        gap: 2,
+                        mb: 3,
+                    }}
+                >
                     <Box>
                         <Typography
                             variant="h4"
@@ -188,19 +276,30 @@ export const Users = () => {
                                 color: '#64748B',
                             }}
                         >
-                            Manage user accounts and permissions
+                            Manage user accounts, assign roles, and control account access.
                         </Typography>
                     </Box>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon/>}
-                        onClick={handleAdd}
-                        sx={{
-                            background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
-                        }}
-                    >
-                        Add User
-                    </Button>
+
+                    <Box sx={{display: 'flex', gap: 1.5, flexWrap: 'wrap'}}>
+                        <Chip
+                            label={`${users.length} Total Users`}
+                            variant="outlined"
+                            sx={{fontWeight: 600}}
+                        />
+                        {hasPermission("CREATE_USER") && (
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleAdd}
+                                sx={{
+                                    background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
+                                }}
+                            >
+                                Add User
+                            </Button>
+                        )}
+
+                    </Box>
                 </Box>
 
                 {error && (
@@ -215,7 +314,7 @@ export const Users = () => {
                     </Alert>
                 )}
 
-                <Table columns={columns} data={users} loading={loading}/>
+                <Table columns={columns} data={users} loading={loading} />
 
                 <UserForm
                     open={formOpen}
@@ -247,5 +346,3 @@ export const Users = () => {
         </DashboardLayout>
     );
 };
-
-

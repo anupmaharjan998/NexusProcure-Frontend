@@ -17,6 +17,8 @@ import {
     deleteDepartment, getDepartmentById,
 } from '../services/departmentService.ts';
 import {getUsers} from '../services/userService.ts';
+import {useAuth} from "../hooks/useAuth.ts";
+
 
 export const Departments = () => {
     const [departments, setDepartments] = useState<Department[]>([]);
@@ -29,6 +31,7 @@ export const Departments = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const {hasPermission} = useAuth();
 
     const fetchData = async () => {
         setLoading(true);
@@ -151,26 +154,32 @@ export const Departments = () => {
             align: 'center',
             format: (_, department) => (
                 <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(department);
-                        }}
-                        sx={{color: '#0056D2'}}
-                    >
-                        <EditIcon fontSize="small"/>
-                    </IconButton>
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(department);
-                        }}
-                        sx={{color: '#E63946'}}
-                    >
-                        <DeleteIcon fontSize="small"/>
-                    </IconButton>
+                    {hasPermission("EDIT_DEPARTMENT") && (
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(department);
+                            }}
+                            sx={{color: '#0056D2'}}
+                        >
+                            <EditIcon fontSize="small"/>
+                        </IconButton>
+                    )}
+                    {hasPermission("DELETE_DEPARTMENT") && (
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(department);
+                            }}
+                            sx={{color: '#E63946'}}
+                        >
+                            <DeleteIcon fontSize="small"/>
+                        </IconButton>
+                    )}
+
+
                 </Box>
             ),
         },
@@ -202,16 +211,19 @@ export const Departments = () => {
                             Organize and manage organizational departments
                         </Typography>
                     </Box>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon/>}
-                        onClick={handleAdd}
-                        sx={{
-                            background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
-                        }}
-                    >
-                        Add Department
-                    </Button>
+                    {hasPermission("CREATE_DEPARTMENT") && (
+                        <Button
+                            variant="contained"
+                            startIcon={<AddIcon/>}
+                            onClick={handleAdd}
+                            sx={{
+                                background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
+                            }}
+                        >
+                            Add Department
+                        </Button>
+                    )}
+
                 </Box>
 
                 {error && (

@@ -26,12 +26,14 @@ import {getRoles} from '../services/roleService';
 import {Role} from '../types/Role';
 import {ApprovalLevel} from '../types/approvalLevel';
 import {DashboardLayout} from '../components/Layout/DashboardLayout';
+import {useAuth} from "../hooks/useAuth.ts";
 
 export default function ApprovalFlowPage() {
     const [levels, setLevels] = useState<ApprovalLevel[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
     const [open, setOpen] = useState(false);
     const [selected, setSelected] = useState<ApprovalLevel | null>(null);
+    const {hasPermission} = useAuth();
 
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
@@ -116,21 +118,27 @@ export default function ApprovalFlowPage() {
             width: 120,
             renderCell: (params) => (
                 <>
-                    <IconButton
-                        onClick={() => {
-                            setSelected(params.row as ApprovalLevel);
-                            setOpen(true);
-                        }}
-                    >
-                        <EditIcon/>
-                    </IconButton>
 
-                    <IconButton
-                        onClick={() => handleDeleteClick(params.row as ApprovalLevel)}
-                        sx={{color: '#E63946'}}
-                    >
-                        <DeleteIcon/>
-                    </IconButton>
+                    {hasPermission("CREATE_USERS") && (
+                        <IconButton
+                            onClick={() => {
+                                setSelected(params.row as ApprovalLevel);
+                                setOpen(true);
+                            }}
+                        >
+                            <EditIcon/>
+                        </IconButton>
+                    )}
+
+                    {hasPermission("CREATE_USERS") && (
+                        <IconButton
+                            onClick={() => handleDeleteClick(params.row as ApprovalLevel)}
+                            sx={{color: '#E63946'}}
+                        >
+                            <DeleteIcon/>
+                        </IconButton>
+                    )}
+
                 </>
             )
         }
@@ -151,14 +159,17 @@ export default function ApprovalFlowPage() {
                                 Approval Flow Management
                             </Typography>
 
-                            <Button
-                                startIcon={<AddIcon/>}
-                                variant="contained"
-                                onClick={() => setOpen(true)}
-                                disabled={loading}
-                            >
-                                Add Approval Level
-                            </Button>
+                            {hasPermission("CREATE_USERS") && (
+                                <Button
+                                    startIcon={<AddIcon/>}
+                                    variant="contained"
+                                    onClick={() => setOpen(true)}
+                                    disabled={loading}
+                                >
+                                    Add Approval Level
+                                </Button>
+                            )}
+
                         </Box>
 
                         {error && <Alert severity="error" sx={{mb: 2}}>{error}</Alert>}

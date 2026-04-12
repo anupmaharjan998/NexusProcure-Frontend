@@ -147,7 +147,7 @@ function App() {
                         <Route
                             path="/users"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute permissions={['VIEW_USERS']}>
                                     <Users/>
                                 </ProtectedRoute>
                             }
@@ -155,7 +155,7 @@ function App() {
                         <Route
                             path="/roles"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute permissions={['VIEW_ROLES']}>
                                     <Roles/>
                                 </ProtectedRoute>
                             }
@@ -163,7 +163,7 @@ function App() {
                         <Route
                             path="/permissions"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute permissions={['VIEW_PERMISSIONS']}>
                                     <Permissions/>
                                 </ProtectedRoute>
                             }
@@ -171,7 +171,7 @@ function App() {
                         <Route
                             path="/departments"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute permissions={['VIEW_DEPARTMENTS']}>
                                     <Departments/>
                                 </ProtectedRoute>
                             }
@@ -187,7 +187,7 @@ function App() {
                         <Route
                             path="/vendors"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute permissions={['VIEW_VENDOR']}>
                                     <Vendors/>
                                 </ProtectedRoute>
                             }
@@ -195,7 +195,7 @@ function App() {
                         <Route
                             path="/vendors/:id"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute permissions={['VIEW_VENDOR']}>
                                     <VendorDetails/>
                                 </ProtectedRoute>
                             }
@@ -203,7 +203,7 @@ function App() {
                         <Route
                             path="/categories"
                             element={
-                                <ProtectedRoute>
+                                <ProtectedRoute  permissions={['VIEW_CATEGORIES']}>
                                     <Categories/>
                                 </ProtectedRoute>
                             }
@@ -240,7 +240,9 @@ function App() {
                         <Route
                             path="/procurement/requisitions/:id/approval"
                             element={
-                                <RequisitionApprovalDetailsPage/>
+                                <ProtectedRoute>
+                                    <RequisitionApprovalDetailsPage/>
+                                </ProtectedRoute>
                             }
                         />
 
@@ -248,7 +250,9 @@ function App() {
                         <Route
                             path="/procurement/approval-policy"
                             element={
-                                <ApprovalPolicyPage/>
+                                <ProtectedRoute>
+                                    <ApprovalPolicyPage/>
+                                </ProtectedRoute>
                             }
                         />
 
@@ -256,76 +260,129 @@ function App() {
                         <Route
                             path="/procurement/risk-score"
                             element={
-                                <TotalAmountRiskScores/>
+                                <ProtectedRoute>
+                                    <TotalAmountRiskScores/>
+                                </ProtectedRoute>
                             }
                         />
                         <Route
                             path="/rfq"
                             element={
-                                <RFQListPage/>
+                                <ProtectedRoute>
+                                    <RFQListPage/>
+                                </ProtectedRoute>
                             }
                         />
 
                         <Route
                             path="/rfqs/:rfqId"
                             element={
-                                <RFQQuotationListPage />
+                                <ProtectedRoute>
+                                    <RFQQuotationListPage />
+                                </ProtectedRoute>
                             }
                         />
                         <Route
                             path="/rfqs/quotation/:quotationId"
                             element={
-                                <QuotationDetailsPage />
+                                <ProtectedRoute>
+                                    <QuotationDetailsPage />
+                                </ProtectedRoute>
                             }
                         />
                         <Route
                             path="/rfqs/:rfqId/compare"
-                            element={<QuotationComparePage />}
+
+                            element={
+                                <ProtectedRoute>
+                                    <QuotationComparePage/>
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/procurement/quotations-approvals"
-                            element={<QuotationApprovalList />}
+                            element={
+                                <ProtectedRoute>
+                                    <QuotationApprovalList />
+                                </ProtectedRoute>
+                            }
                         />
                         <Route
                             path="/procurement/quotation-approval/:id"
-                            element={<QuotationApprovalDetails />}
+                            element={
+                                <ProtectedRoute>
+                                    <QuotationApprovalDetails/>
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/procurement/purchase-orders"
-                            element={<PurchaseOrderPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <PurchaseOrderPage />
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/procurement/purchase-orders/:id"
-                            element={<PurchaseOrderDetailsPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <PurchaseOrderDetailsPage/>
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/inventory"
-                            element={<InventoryPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <InventoryPage/>
+                                </ProtectedRoute>
+                            }
                         />
                         <Route
                             path="/inventory/categories"
-                            element={<CategoryPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <CategoryPage/>
+                                </ProtectedRoute>
+                            }
                         />
                         <Route
                             path="/inventory/add-item"
-                            element={<AddInventoryItemPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <AddInventoryItemPage/>
+                                </ProtectedRoute>
+                            }
                         />
                         <Route
                             path="/inventory/item-detail/:id"
-                            element={<InventoryItemDetailPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <InventoryItemDetailPage/>
+                                </ProtectedRoute>
+                            }
                         />
                         <Route
                             path="/inventory/item-edit/:id"
-                            element={<EditInventoryItemPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <EditInventoryItemPage/>
+                                </ProtectedRoute>
+                            }
                         />
 
                         <Route
                             path="/inventory/delivery"
-                            element={<PurchaseOrderDeliveryPage />}
+                            element={
+                                <ProtectedRoute>
+                                    <PurchaseOrderDeliveryPage/>
+                                </ProtectedRoute>
+                            }
                         />
 
 

@@ -43,7 +43,7 @@ export const Navbar = ({onMenuClick}: NavbarProps) => {
 
     const handleLogout = async () => {
         handleMenuClose();
-        await logoutService();
+        //await logoutService();
         logout();
         navigate('/login');
     };
@@ -160,9 +160,16 @@ export const Navbar = ({onMenuClick}: NavbarProps) => {
                     <Divider/>
                     <MenuItem
                         onClick={handleLogout}
-                        sx={{fontFamily: 'Poppins, sans-serif', gap: 1.5, color: '#E63946'}}
+                        sx={{
+                            fontFamily: 'Poppins, sans-serif',
+                            gap: 1.5,
+                            color: '#E63946',
+                            '&:hover': {
+                                backgroundColor: '#FEF2F2',
+                            },
+                        }}
                     >
-                        <LogoutIcon fontSize="small"/>
+                        <LogoutIcon fontSize="small" />
                         Logout
                     </MenuItem>
                 </Menu>

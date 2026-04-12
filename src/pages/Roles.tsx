@@ -1,4 +1,4 @@
-import {Box, Typography, IconButton, Alert} from '@mui/material';
+import {Box, Typography, IconButton, Alert, Chip} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -15,8 +15,9 @@ import {
     updateRole,
     deleteRole,
 } from '../services/roleService.ts';
-import {Permission} from "../types/Permission.ts";
-import {getPermissions} from "../services/permissionService.ts";
+import {Permission} from '../types/Permission.ts';
+import {getPermissions} from '../services/permissionService.ts';
+import {useAuth} from "../hooks/useAuth.ts";
 
 export const Roles = () => {
     const [roles, setRoles] = useState<Role[]>([]);
@@ -29,6 +30,7 @@ export const Roles = () => {
     const [actionLoading, setActionLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const {hasPermission} = useAuth();
 
     const fetchData = async () => {
         setLoading(true);
@@ -74,9 +76,9 @@ export const Roles = () => {
             setSuccess('Role deleted successfully');
             setDeleteDialogOpen(false);
             setRoleToDelete(undefined);
-            fetchData();
+            await fetchData();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete roleName');
+            setError(err.response?.data?.message || 'Failed to delete role');
         } finally {
             setActionLoading(false);
         }
@@ -85,6 +87,7 @@ export const Roles = () => {
     const handleFormSubmit = async (data: RoleFormData) => {
         setActionLoading(true);
         setError('');
+
         try {
             if (selectedRole) {
                 await updateRole(selectedRole.id, data);
@@ -93,19 +96,52 @@ export const Roles = () => {
                 await createRole(data);
                 setSuccess('Role created successfully');
             }
+
             setFormOpen(false);
             setSelectedRole(undefined);
-            fetchData();
+            await fetchData();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to save roleName');
+            setError(err.response?.data?.message || 'Failed to save role');
         } finally {
             setActionLoading(false);
         }
     };
 
     const columns: Column<Role>[] = [
-        {id: 'name', label: 'Role Name', minWidth: 150},
-        {id: 'description', label: 'Description', minWidth: 250},
+        {
+            id: 'name',
+            label: 'Role',
+            minWidth: 180,
+            format: (value) => (
+                <Typography sx={{fontWeight: 600, color: '#1E293B', fontSize: 14}}>
+                    {value || '-'}
+                </Typography>
+            ),
+        },
+        {
+            id: 'description',
+            label: 'Description',
+            minWidth: 260,
+            format: (value) => (
+                <Typography sx={{fontSize: 14, color: '#475569'}}>
+                    {value || '-'}
+                </Typography>
+            ),
+        },
+        {
+            id: 'permissions',
+            label: 'Permissions',
+            minWidth: 150,
+            format: (_, row) => (
+                <Chip
+                    label={`${row.permissions?.length || 0} Permissions`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{fontWeight: 600}}
+                />
+            ),
+        },
         {
             id: 'actions',
             label: 'Actions',
@@ -113,26 +149,39 @@ export const Roles = () => {
             align: 'center',
             format: (_, role) => (
                 <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleEdit(role);
-                        }}
-                        sx={{color: '#0056D2'}}
-                    >
-                        <EditIcon fontSize="small"/>
-                    </IconButton>
-                    <IconButton
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(role);
-                        }}
-                        sx={{color: '#E63946'}}
-                    >
-                        <DeleteIcon fontSize="small"/>
-                    </IconButton>
+                    {hasPermission("EDIT_ROLE") && (
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(role);
+                            }}
+                            sx={{
+                                color: '#0056D2',
+                                bgcolor: '#EFF6FF',
+                                '&:hover': {bgcolor: '#DBEAFE'},
+                            }}
+                        >
+                            <EditIcon fontSize="small" />
+                        </IconButton>
+                    )}
+                    {hasPermission("DELETE_ROLE") && (
+                        <IconButton
+                            size="small"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(role);
+                            }}
+                            sx={{
+                                color: '#E63946',
+                                bgcolor: '#FEF2F2',
+                                '&:hover': {bgcolor: '#FEE2E2'},
+                            }}
+                        >
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    )}
+
                 </Box>
             ),
         },
@@ -141,7 +190,16 @@ export const Roles = () => {
     return (
         <DashboardLayout>
             <Box>
-                <Box sx={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3}}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: {xs: 'flex-start', md: 'center'},
+                        flexDirection: {xs: 'column', md: 'row'},
+                        gap: 2,
+                        mb: 3,
+                    }}
+                >
                     <Box>
                         <Typography
                             variant="h4"
@@ -161,19 +219,31 @@ export const Roles = () => {
                                 color: '#64748B',
                             }}
                         >
-                            Define roles and assign permissions
+                            Define roles and assign permission access for system users.
                         </Typography>
                     </Box>
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon/>}
-                        onClick={handleAdd}
-                        sx={{
-                            background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
-                        }}
-                    >
-                        Add Role
-                    </Button>
+
+                    <Box sx={{display: 'flex', gap: 1.5, flexWrap: 'wrap'}}>
+                        <Chip
+                            label={`${roles.length} Total Roles`}
+                            variant="outlined"
+                            sx={{fontWeight: 600}}
+                        />
+
+                        {hasPermission("CREATE_ROLE") && (
+                            <Button
+                                variant="contained"
+                                startIcon={<AddIcon />}
+                                onClick={handleAdd}
+                                sx={{
+                                    background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
+                                }}
+                            >
+                                Add Role
+                            </Button>
+                        )}
+
+                    </Box>
                 </Box>
 
                 {error && (
@@ -188,7 +258,7 @@ export const Roles = () => {
                     </Alert>
                 )}
 
-                <Table columns={columns} data={roles} loading={loading}/>
+                <Table columns={columns} data={roles} loading={loading} />
 
                 <RoleForm
                     open={formOpen}
@@ -198,6 +268,7 @@ export const Roles = () => {
                     }}
                     onSubmit={handleFormSubmit}
                     role={selectedRole}
+                    permissions={permissions}
                     loading={actionLoading}
                 />
 
@@ -218,5 +289,3 @@ export const Roles = () => {
         </DashboardLayout>
     );
 };
-
-

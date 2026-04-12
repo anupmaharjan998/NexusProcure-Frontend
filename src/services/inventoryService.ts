@@ -63,17 +63,25 @@ export const updateInventoryItem = async (id: string, payload: any) => {
     return res.data;
 };
 
-
-// 🔹 ASSIGN ITEM
-export const assignItem = async (itemId: string, userId: string) => {
-    return await api.post(`/${itemId}/assign`, { userId });
+export const assignItem = async (id: string, userId: string, notes?: string) => {
+    const res = await api.post(`/inventory/${id}/assign`, {
+        userId,
+        notes,
+    });
+    return res.data;
 };
 
-// 🔹 UNASSIGN ITEM
-export const unassignItem = async (itemId: string) => {
-    return await api.post(`/${itemId}/unassign`);
+export const unassignItem = async (id: string) => {
+    const res = await api.post(`/inventory/${id}/unassign`);
+    return res.data;
 };
 
+export const searchUsers = async (search: string) => {
+    const res = await api.get('/users/search', {
+        params: { search },
+    });
+    return res.data;
+};
 
 
 // 🔹 TYPES
