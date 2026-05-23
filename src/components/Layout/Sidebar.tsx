@@ -35,6 +35,9 @@ import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
+import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined';
+import { ManageAccounts } from '@mui/icons-material';
 import {useNavigate, useLocation} from 'react-router-dom';
 import {useAuth} from '../../hooks/useAuth';
 import {useEffect, useMemo, useState} from 'react';
@@ -88,6 +91,13 @@ const menuItems: MenuItem[] = [
         path: '/departments',
         permissions: ['VIEW_DEPARTMENTS'],
     },
+
+    {
+        text: 'Delegations',
+        icon: <ManageAccounts />,
+        path: '/delegations',
+        permissions: ['PUBLIC'],
+    },
     {
         text: 'Vendors',
         icon: <StorefrontOutlinedIcon />,
@@ -106,9 +116,21 @@ const menuItems: MenuItem[] = [
         permissions: ['PUBLIC'],
         children: [
             {
-                text: 'Inventory Items',
+                text: 'Stock Catalog',
                 icon: <Inventory2OutlinedIcon />,
                 path: '/inventory',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Add Stock',
+                icon: <AddBoxOutlinedIcon />,
+                path: '/inventory/stocks/create',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Add Asset',
+                icon: <DevicesOutlinedIcon />,
+                path: '/inventory/assets/create',
                 permissions: ['PUBLIC'],
             },
             {
@@ -118,9 +140,15 @@ const menuItems: MenuItem[] = [
                 permissions: ['PUBLIC'],
             },
             {
-                text: 'Deliveries',
+                text: 'PO Deliveries',
                 icon: <LocalShippingOutlinedIcon />,
                 path: '/inventory/delivery',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Inventory Requests',
+                icon: <AssignmentTurnedInOutlinedIcon />,
+                path: '/inventory/requests',
                 permissions: ['PUBLIC'],
             },
         ],

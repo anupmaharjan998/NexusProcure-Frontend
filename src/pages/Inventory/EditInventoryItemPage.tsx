@@ -26,7 +26,6 @@ import {
     getInventoryItemById,
     getLeafCategories,
     updateInventoryItem,
-    previewSku,
 } from '../../services/inventoryService';
 
 interface CategoryDto {
@@ -156,40 +155,40 @@ export const EditInventoryItemPage = () => {
         }
     };
 
-    useEffect(() => {
-        if (!hasInitialized.current) return;
-        if (!form.name.trim() || !form.inventoryCategoryId) return;
-
-        const delay = setTimeout(async () => {
-            setLoadingSku(true);
-
-            try {
-                const res = await previewSku({
-                    name: form.name.trim(),
-                    categoryId: form.inventoryCategoryId,
-                });
-
-                const nextSku = typeof res === 'string' ? res : res?.sku || '';
-                const nextBarcode =
-                    typeof res === 'string' ? res : res?.barcode || nextSku;
-
-                setForm((prev) => ({
-                    ...prev,
-                    sku: nextSku,
-                    barcode: nextBarcode,
-                }));
-            } catch (err: any) {
-                showMessage(
-                    err?.response?.data?.message || 'Failed to generate SKU and barcode',
-                    'error'
-                );
-            } finally {
-                setLoadingSku(false);
-            }
-        }, 400);
-
-        return () => clearTimeout(delay);
-    }, [form.name, form.inventoryCategoryId]);
+    // useEffect(() => {
+    //     if (!hasInitialized.current) return;
+    //     if (!form.name.trim() || !form.inventoryCategoryId) return;
+    //
+    //     const delay = setTimeout(async () => {
+    //         setLoadingSku(true);
+    //
+    //         try {
+    //             const res = await previewSku({
+    //                 name: form.name.trim(),
+    //                 categoryId: form.inventoryCategoryId,
+    //             });
+    //
+    //             const nextSku = typeof res === 'string' ? res : res?.sku || '';
+    //             const nextBarcode =
+    //                 typeof res === 'string' ? res : res?.barcode || nextSku;
+    //
+    //             setForm((prev) => ({
+    //                 ...prev,
+    //                 sku: nextSku,
+    //                 barcode: nextBarcode,
+    //             }));
+    //         } catch (err: any) {
+    //             showMessage(
+    //                 err?.response?.data?.message || 'Failed to generate SKU and barcode',
+    //                 'error'
+    //             );
+    //         } finally {
+    //             setLoadingSku(false);
+    //         }
+    //     }, 400);
+    //
+    //     return () => clearTimeout(delay);
+    // }, [form.name, form.inventoryCategoryId]);
 
     const handleChange =
         (field: keyof InventoryItemFormState) =>
