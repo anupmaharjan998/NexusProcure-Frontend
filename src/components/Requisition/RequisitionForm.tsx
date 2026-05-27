@@ -3,7 +3,10 @@ import {
     Autocomplete,
     Box,
     Button,
+    Card,
+    CardContent,
     Checkbox,
+    Chip,
     CircularProgress,
     Dialog,
     DialogActions,
@@ -13,6 +16,7 @@ import {
     FormControlLabel,
     Grid,
     IconButton,
+    InputAdornment,
     MenuItem,
     Paper,
     Snackbar,
@@ -23,35 +27,26 @@ import {
 import { Controller, useFieldArray, useForm, useWatch } from 'react-hook-form';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
 import CalculateOutlinedIcon from '@mui/icons-material/CalculateOutlined';
+import SearchIcon from '@mui/icons-material/Search';
+import NotesIcon from '@mui/icons-material/Notes';
+import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import { useEffect, useMemo, useState } from 'react';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { RequisitionDto, RequisitionRequest } from '../../types/requisition';
 import {
-    createItem,
-    getItemsByCategory,
+    RequisitionDto,
+    RequisitionFormRequest,
+    RequisitionRequest,
+} from '../../types/requisition';
+import {
+    getInventoryStocks,
     getLeafCategories,
-} from '../../services/requisitionService';
-
-interface CategoryDto {
-    id: string;
-    name: string;
-}
-
-interface ItemDto {
-    id: string;
-    name: string;
-}
-
-interface RequisitionItemForm {
-    itemName: string;
-    quantity: number;
-    estimatedCost: number;
-}
+    InventoryCategoryDto,
+    InventoryStockDto,
+} from '../../services/inventoryService';
 
 interface Props {
     open: boolean;
@@ -66,14 +61,25 @@ type SnackState = {
     severity: 'success' | 'error' | 'info';
 };
 
-const requisitionSchema: yup.ObjectSchema<RequisitionRequest> = yup.object({
-    categoryId: yup.string().required('Category is required'),
+const emptyItem = {
+    categoryId: '',
+    inventoryStockId: '',
+    quantity: 1,
+    estimatedCost: 0,
+    remarks: '',
+};
+
+const requisitionSchema: yup.ObjectSchema<RequisitionFormRequest> = yup.object({
     isUrgent: yup.boolean().required(),
+    purpose: yup.string().trim().required('Purpose is required'),
+    requiredDate: yup.string().nullable().optional(),
+    notes: yup.string().optional(),
     items: yup
         .array()
         .of(
             yup.object({
-                itemName: yup.string().trim().required('Item name is required'),
+                categoryId: yup.string().required('Category is required'),
+                inventoryStockId: yup.string().required('Stock is required'),
                 quantity: yup
                     .number()
                     .typeError('Quantity must be a number')
@@ -83,8 +89,9 @@ const requisitionSchema: yup.ObjectSchema<RequisitionRequest> = yup.object({
                 estimatedCost: yup
                     .number()
                     .typeError('Unit cost must be a number')
-                    .min(1, 'Unit cost must be at least 1')
+                    .min(0, 'Unit cost cannot be negative')
                     .required('Unit cost is required'),
+                remarks: yup.string().optional(),
             })
         )
         .min(1, 'At least one item is required')
@@ -97,18 +104,25 @@ const formatCurrency = (value: number) =>
         maximumFractionDigits: 2,
     })}`;
 
+const getStockLabel = (stock: InventoryStockDto | null | undefined) => {
+    if (!stock) return '';
+    return `${stock.name}${stock.sku ? ` - ${stock.sku}` : ''}`;
+};
+
 export const RequisitionForm = ({
                                     open,
                                     onClose,
                                     onSubmit,
                                     defaultValues,
                                 }: Props) => {
-    const [categories, setCategories] = useState<CategoryDto[]>([]);
-    const [itemsByCategory, setItemsByCategory] = useState<ItemDto[]>([]);
+    const [categories, setCategories] = useState<InventoryCategoryDto[]>([]);
+    const [stocksByRow, setStocksByRow] = useState<Record<number, InventoryStockDto[]>>({});
+    const [stockSearchByRow, setStockSearchByRow] = useState<Record<number, string>>({});
+    const [loadingStockRow, setLoadingStockRow] = useState<Record<number, boolean>>({});
+
     const [loadingCategories, setLoadingCategories] = useState(false);
-    const [loadingItems, setLoadingItems] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const [creatingItemRows, setCreatingItemRows] = useState<Record<number, boolean>>({});
+
     const [snackbar, setSnackbar] = useState<SnackState>({
         open: false,
         message: '',
@@ -120,35 +134,31 @@ export const RequisitionForm = ({
         handleSubmit,
         reset,
         setValue,
-        getValues,
         formState: { errors },
-    } = useForm<RequisitionRequest>({
+    } = useForm<RequisitionFormRequest>({
         resolver: yupResolver(requisitionSchema),
-        defaultValues: defaultValues || {
-            categoryId: '',
+        defaultValues: {
             isUrgent: false,
-            items: [{ itemName: '', quantity: 1, estimatedCost: 0 }],
+            purpose: '',
+            requiredDate: null,
+            notes: '',
+            items: [{ ...emptyItem }],
         },
-    });
-
-    const selectedCategory = useWatch({
-        control,
-        name: 'categoryId',
     });
 
     const watchedItems = useWatch({
         control,
         name: 'items',
-    }) as RequisitionItemForm[] | undefined;
+    });
 
-    const { fields, append, remove, replace } = useFieldArray({
+    const { fields, append, remove } = useFieldArray({
         control,
         name: 'items',
     });
 
     const totalAmount = useMemo(() => {
         return (
-            watchedItems?.reduce((sum: number, item: RequisitionItemForm) => {
+            watchedItems?.reduce((sum, item) => {
                 const quantity = Number(item.quantity) || 0;
                 const unitCost = Number(item.estimatedCost) || 0;
                 return sum + quantity * unitCost;
@@ -156,70 +166,146 @@ export const RequisitionForm = ({
         );
     }, [watchedItems]);
 
+    const selectedStockIds = useMemo(() => {
+        return (watchedItems || [])
+            .map((item) => item.inventoryStockId)
+            .filter(Boolean);
+    }, [watchedItems]);
+
+    const duplicatedStockIds = useMemo(() => {
+        return selectedStockIds.filter(
+            (id, index) => selectedStockIds.indexOf(id) !== index
+        );
+    }, [selectedStockIds]);
+
+    const loadCategories = async () => {
+        setLoadingCategories(true);
+
+        try {
+            const data = await getLeafCategories();
+            setCategories(data || []);
+        } catch {
+            showSnack('Failed to load categories', 'error');
+        } finally {
+            setLoadingCategories(false);
+        }
+    };
+
+    const loadStocksForRow = async (
+        rowIndex: number,
+        categoryId: string,
+        search = ''
+    ) => {
+        if (!categoryId) {
+            setStocksByRow((prev) => ({ ...prev, [rowIndex]: [] }));
+            return;
+        }
+
+        setLoadingStockRow((prev) => ({ ...prev, [rowIndex]: true }));
+
+        try {
+            const res = await getInventoryStocks({
+                categoryId,
+                search,
+                pageNumber: 1,
+                pageSize: 100,
+            });
+
+            setStocksByRow((prev) => ({
+                ...prev,
+                [rowIndex]: res.items || [],
+            }));
+        } catch {
+            showSnack('Failed to load stocks for selected category', 'error');
+        } finally {
+            setLoadingStockRow((prev) => ({ ...prev, [rowIndex]: false }));
+        }
+    };
+
     useEffect(() => {
         if (!open) return;
-
-        const loadCategories = async () => {
-            setLoadingCategories(true);
-            try {
-                const data = await getLeafCategories();
-                setCategories(data);
-            } catch {
-                setSnackbar({
-                    open: true,
-                    message: 'Failed to load categories',
-                    severity: 'error',
-                });
-            } finally {
-                setLoadingCategories(false);
-            }
-        };
-
         loadCategories();
     }, [open]);
-
-    useEffect(() => {
-        const loadItems = async () => {
-            if (!selectedCategory) {
-                setItemsByCategory([]);
-                return;
-            }
-
-            setLoadingItems(true);
-            try {
-                const data = await getItemsByCategory(selectedCategory);
-                setItemsByCategory(data);
-            } catch {
-                setItemsByCategory([]);
-                setSnackbar({
-                    open: true,
-                    message: 'Failed to load items for selected category',
-                    severity: 'error',
-                });
-            } finally {
-                setLoadingItems(false);
-            }
-        };
-
-        loadItems();
-    }, [selectedCategory]);
 
     useEffect(() => {
         if (!open) return;
 
         if (defaultValues) {
-            reset(defaultValues);
+            reset({
+                isUrgent: defaultValues.isUrgent || false,
+                purpose: defaultValues.purpose || '',
+                requiredDate: defaultValues.requiredDate
+                    ? defaultValues.requiredDate.slice(0, 16)
+                    : null,
+                notes: defaultValues.notes || '',
+                items: defaultValues.items?.length
+                    ? defaultValues.items.map((item) => ({
+                        categoryId: '',
+                        inventoryStockId: item.inventoryStockId,
+                        quantity: item.quantity,
+                        estimatedCost: item.estimatedCost,
+                        remarks: item.remarks || '',
+                    }))
+                    : [{ ...emptyItem }],
+            });
         } else {
             reset({
-                categoryId: '',
                 isUrgent: false,
-                items: [{ itemName: '', quantity: 1, estimatedCost: 0 }],
+                purpose: '',
+                requiredDate: null,
+                notes: '',
+                items: [{ ...emptyItem }],
             });
+
+            setStocksByRow({});
+            setStockSearchByRow({});
         }
     }, [defaultValues, open, reset]);
 
+    useEffect(() => {
+        if (!open) return;
+
+        watchedItems?.forEach((item, index) => {
+            const categoryId = item?.categoryId;
+            const search = stockSearchByRow[index] || '';
+
+            if (!categoryId) return;
+
+            const timeout = window.setTimeout(() => {
+                loadStocksForRow(index, categoryId, search);
+            }, 350);
+
+            return () => window.clearTimeout(timeout);
+        });
+    }, [stockSearchByRow, open]);
+
     const showSnack = (message: string, severity: SnackState['severity']) => {
         setSnackbar({ open: true, message, severity });
+    };
+
+    const handleCategoryChange = (
+        index: number,
+        categoryId: string,
+        onChange: (value: string) => void
+    ) => {
+        onChange(categoryId);
+
+        setValue(`items.${index}.inventoryStockId`, '', {
+            shouldValidate: true,
+            shouldDirty: true,
+        });
+
+        setValue(`items.${index}.estimatedCost`, 0, {
+            shouldValidate: true,
+            shouldDirty: true,
+        });
+
+        setStocksByRow((prev) => ({ ...prev, [index]: [] }));
+        setStockSearchByRow((prev) => ({ ...prev, [index]: '' }));
+
+        if (categoryId) {
+            loadStocksForRow(index, categoryId, '');
+        }
     };
 
     const handleClose = () => {
@@ -227,98 +313,43 @@ export const RequisitionForm = ({
         onClose();
     };
 
-    const refreshItemsForCategory = async (categoryId: string) => {
-        const data = await getItemsByCategory(categoryId);
-        setItemsByCategory(data);
-        return data;
-    };
-
-    const createItemFromRow = async (rowIndex: number) => {
-        const categoryId = getValues('categoryId');
-        const itemName = getValues(`items.${rowIndex}.itemName`)?.trim();
-
-        if (!categoryId) {
-            showSnack('Please select a category first', 'error');
+    const submitForm = async (data: RequisitionFormRequest) => {
+        if (duplicatedStockIds.length > 0) {
+            showSnack('Duplicate stock items are not allowed. Increase quantity instead.', 'error');
             return;
         }
 
-        if (!itemName) {
-            showSnack('Please enter an item name', 'error');
-            return;
-        }
-
-        const exists = itemsByCategory.some(
-            (item: ItemDto) => item.name.trim().toLowerCase() === itemName.toLowerCase()
-        );
-
-        if (exists) {
-            showSnack('Item already exists in this category', 'info');
-            return;
-        }
-
-        setCreatingItemRows((prev) => ({ ...prev, [rowIndex]: true }));
-
-        try {
-            const created = await createItem({
-                name: itemName,
-                description: '',
-                categoryId,
-            });
-
-            const refreshed = await refreshItemsForCategory(categoryId);
-
-            const createdItem =
-                refreshed.find((item: ItemDto) => item.id === created.id) ||
-                refreshed.find(
-                    (item: ItemDto) =>
-                        item.name.trim().toLowerCase() === itemName.toLowerCase()
-                );
-
-            if (createdItem) {
-                setValue(`items.${rowIndex}.itemName`, createdItem.name, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                });
-            }
-
-            showSnack(`Item "${itemName}" created successfully`, 'success');
-        } catch (err: any) {
-            showSnack(
-                err?.response?.data?.message || `Failed to create item "${itemName}"`,
-                'error'
-            );
-        } finally {
-            setCreatingItemRows((prev) => ({ ...prev, [rowIndex]: false }));
-        }
-    };
-
-    const handleCategoryChange = (newCategoryId: string) => {
-        const currentCategoryId = getValues('categoryId');
-        if (currentCategoryId === newCategoryId) return;
-
-        setValue('categoryId', newCategoryId, {
-            shouldValidate: true,
-            shouldDirty: true,
-        });
-
-        replace([{ itemName: '', quantity: 1, estimatedCost: 0 }]);
-    };
-
-    const handleFormSubmit = async (data: RequisitionRequest) => {
         setSubmitting(true);
 
         try {
-            await onSubmit(data);
+            await onSubmit({
+                isUrgent: data.isUrgent,
+                purpose: data.purpose.trim(),
+                requiredDate: data.requiredDate
+                    ? new Date(data.requiredDate).toISOString()
+                    : null,
+                notes: data.notes?.trim() || '',
+                items: data.items.map((item) => ({
+                    inventoryStockId: item.inventoryStockId,
+                    quantity: Number(item.quantity),
+                    estimatedCost: Number(item.estimatedCost),
+                    remarks: item.remarks?.trim() || '',
+                })),
+            });
+
             showSnack(
                 defaultValues
                     ? 'Requisition updated successfully'
                     : 'Requisition created successfully',
                 'success'
             );
+
             onClose();
         } catch (err: any) {
             showSnack(
-                err?.response?.data?.message || 'Failed to submit requisition',
+                err?.response?.data?.message ||
+                err?.response?.data?.title ||
+                'Failed to submit requisition',
                 'error'
             );
         } finally {
@@ -326,12 +357,8 @@ export const RequisitionForm = ({
         }
     };
 
-    const filterOptions = (options: ItemDto[], params: { inputValue: string }) => {
-        const input = params.inputValue.trim().toLowerCase();
-        if (!input) return options;
-        return options.filter((item: ItemDto) =>
-            item.name.toLowerCase().includes(input)
-        );
+    const findSelectedStock = (rowIndex: number, stockId: string) => {
+        return (stocksByRow[rowIndex] || []).find((stock) => stock.id === stockId) || null;
     };
 
     return (
@@ -357,73 +384,94 @@ export const RequisitionForm = ({
                         variant="outlined"
                         sx={{ p: 2.5, mb: 3, borderRadius: 2.5, bgcolor: 'white' }}
                     >
-                        <Grid container spacing={2} alignItems="center">
+                        <Grid container spacing={2}>
                             <Grid item xs={12} md={8}>
-                                <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                                    <CategoryOutlinedIcon fontSize="small" color="action" />
-                                    <Typography variant="subtitle2" fontWeight={700}>
-                                        Category
-                                    </Typography>
-                                </Stack>
-
                                 <Controller
-                                    name="categoryId"
+                                    name="purpose"
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <TextField
                                             {...field}
-                                            select
+                                            label="Purpose"
+                                            placeholder="Example: Office equipment for new staff"
                                             fullWidth
-                                            value={field.value || ''}
                                             error={!!fieldState.error}
                                             helperText={fieldState.error?.message}
-                                            disabled={loadingCategories || submitting}
-                                            onChange={(e) => handleCategoryChange(e.target.value)}
-                                            placeholder="Select category"
+                                            disabled={submitting}
                                             InputProps={{
-                                                endAdornment: loadingCategories ? (
-                                                    <CircularProgress size={18} />
-                                                ) : undefined,
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <NotesIcon />
+                                                    </InputAdornment>
+                                                ),
                                             }}
-                                        >
-                                            {categories.map((cat: CategoryDto) => (
-                                                <MenuItem key={cat.id} value={cat.id}>
-                                                    {cat.name}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
+                                        />
                                     )}
                                 />
                             </Grid>
 
                             <Grid item xs={12} md={4}>
-                                <Box
-                                    sx={{
-                                        height: '100%',
-                                        display: 'flex',
-                                        alignItems: { xs: 'flex-start', md: 'center' },
-                                        pt: { xs: 0, md: 3.5 },
-                                    }}
-                                >
-                                    <Controller
-                                        name="isUrgent"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <FormControlLabel
-                                                control={
-                                                    <Checkbox
-                                                        checked={!!field.value}
-                                                        onChange={(e) =>
-                                                            field.onChange(e.target.checked)
-                                                        }
-                                                        disabled={submitting}
-                                                    />
-                                                }
-                                                label="Urgent Requisition"
-                                            />
-                                        )}
-                                    />
-                                </Box>
+                                <Controller
+                                    name="requiredDate"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            value={field.value || ''}
+                                            label="Required Date"
+                                            type="datetime-local"
+                                            fullWidth
+                                            disabled={submitting}
+                                            InputLabelProps={{ shrink: true }}
+                                        />
+                                    )}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} md={8}>
+                                <Controller
+                                    name="notes"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            label="Notes"
+                                            placeholder="Optional notes"
+                                            fullWidth
+                                            disabled={submitting}
+                                        />
+                                    )}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} md={4}>
+                                <Controller
+                                    name="isUrgent"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <FormControlLabel
+                                            control={
+                                                <Checkbox
+                                                    checked={!!field.value}
+                                                    onChange={(event) =>
+                                                        field.onChange(event.target.checked)
+                                                    }
+                                                    disabled={submitting}
+                                                />
+                                            }
+                                            label={
+                                                <Box>
+                                                    <Typography fontWeight={700}>
+                                                        Mark as urgent
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Urgent requisitions may increase risk score.
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                        />
+                                    )}
+                                />
                             </Grid>
                         </Grid>
                     </Paper>
@@ -433,226 +481,296 @@ export const RequisitionForm = ({
                         sx={{ p: 2.5, borderRadius: 2.5, bgcolor: 'white' }}
                     >
                         <Stack
-                            direction="row"
+                            direction={{ xs: 'column', sm: 'row' }}
                             justifyContent="space-between"
-                            alignItems="center"
+                            alignItems={{ xs: 'stretch', sm: 'center' }}
+                            spacing={2}
                             mb={2}
                         >
                             <Stack direction="row" spacing={1} alignItems="center">
-                                <Inventory2OutlinedIcon fontSize="small" color="action" />
-                                <Typography variant="h6" fontWeight={700}>
-                                    Requisition Items
-                                </Typography>
+                                <Inventory2OutlinedIcon color="action" />
+                                <Box>
+                                    <Typography variant="h6" fontWeight={800}>
+                                        Requested Items
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Select category first, then choose stock from that category.
+                                    </Typography>
+                                </Box>
                             </Stack>
 
                             <Button
+                                variant="outlined"
                                 startIcon={<AddIcon />}
-                                onClick={() =>
-                                    append({
-                                        itemName: '',
-                                        quantity: 1,
-                                        estimatedCost: 0,
-                                    })
-                                }
+                                onClick={() => append({ ...emptyItem })}
                                 disabled={submitting}
                             >
                                 Add Item
                             </Button>
                         </Stack>
 
+                        {duplicatedStockIds.length > 0 && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                Duplicate stock items are not allowed. Increase quantity instead.
+                            </Alert>
+                        )}
+
                         <Stack spacing={2}>
-                            {fields.map((row, index) => {
-                                const quantity =
-                                    Number(watchedItems?.[index]?.quantity) || 0;
-                                const unitCost =
-                                    Number(watchedItems?.[index]?.estimatedCost) || 0;
-                                const lineTotal = quantity * unitCost;
-                                const isCreatingThisRow = !!creatingItemRows[index];
+                            {fields.map((field, index) => {
+                                const item = watchedItems?.[index];
+                                const selectedStock = item?.inventoryStockId
+                                    ? findSelectedStock(index, item.inventoryStockId)
+                                    : null;
+
+                                const rowStocks = stocksByRow[index] || [];
+                                const rowLoading = loadingStockRow[index] || false;
+
+                                const quantity = Number(item?.quantity || 0);
+                                const estimatedCost = Number(item?.estimatedCost || 0);
+                                const lineTotal = quantity * estimatedCost;
+
+                                const isDuplicate =
+                                    !!item?.inventoryStockId &&
+                                    duplicatedStockIds.includes(item.inventoryStockId);
 
                                 return (
-                                    <Paper
-                                        key={row.id}
+                                    <Card
+                                        key={field.id}
                                         variant="outlined"
                                         sx={{
-                                            p: 2,
-                                            borderRadius: 2,
-                                            bgcolor: '#fcfcfd',
+                                            borderRadius: 3,
+                                            borderColor: isDuplicate ? 'error.main' : 'divider',
+                                            bgcolor: isDuplicate ? '#fef2f2' : 'white',
                                         }}
                                     >
-                                        <Grid container spacing={2} alignItems="flex-start">
-                                            <Grid item xs={12} md={5}>
-                                                <Controller
-                                                    name={`items.${index}.itemName`}
-                                                    control={control}
-                                                    render={({ field, fieldState }) => (
-                                                        <Autocomplete
-                                                            freeSolo
-                                                            options={itemsByCategory}
-                                                            filterOptions={filterOptions}
-                                                            loading={loadingItems}
-                                                            getOptionLabel={(option) =>
-                                                                typeof option === 'string'
-                                                                    ? option
-                                                                    : option.name
-                                                            }
-                                                            value={field.value || ''}
-                                                            onChange={(_, value) => {
-                                                                if (typeof value === 'string') {
-                                                                    field.onChange(value);
-                                                                } else {
-                                                                    field.onChange(value?.name || '');
+                                        <CardContent>
+                                            <Grid container spacing={2} alignItems="flex-start">
+                                                <Grid item xs={12} md={3}>
+                                                    <Controller
+                                                        name={`items.${index}.categoryId`}
+                                                        control={control}
+                                                        render={({ field, fieldState }) => (
+                                                            <TextField
+                                                                select
+                                                                label="Category"
+                                                                value={field.value || ''}
+                                                                fullWidth
+                                                                disabled={submitting || loadingCategories}
+                                                                error={!!fieldState.error}
+                                                                helperText={
+                                                                    fieldState.error?.message ||
+                                                                    'Select category first'
                                                                 }
-                                                            }}
-                                                            onInputChange={(_, value, reason) => {
-                                                                if (reason === 'input') {
-                                                                    field.onChange(value);
+                                                                onChange={(event) =>
+                                                                    handleCategoryChange(
+                                                                        index,
+                                                                        event.target.value,
+                                                                        field.onChange
+                                                                    )
                                                                 }
-                                                            }}
-                                                            renderInput={(params) => (
-                                                                <TextField
-                                                                    {...params}
-                                                                    label="Item Name"
-                                                                    error={!!fieldState.error}
-                                                                    helperText={
-                                                                        fieldState.error?.message ||
-                                                                        'Select existing item or type a new one and press Enter'
+                                                                InputProps={{
+                                                                    startAdornment: (
+                                                                        <InputAdornment position="start">
+                                                                            <CategoryOutlinedIcon />
+                                                                        </InputAdornment>
+                                                                    ),
+                                                                }}
+                                                            >
+                                                                {categories.map((category) => (
+                                                                    <MenuItem key={category.id} value={category.id}>
+                                                                        {category.name}
+                                                                    </MenuItem>
+                                                                ))}
+                                                            </TextField>
+                                                        )}
+                                                    />
+                                                </Grid>
+
+                                                <Grid item xs={12} md={4}>
+                                                    <Controller
+                                                        name={`items.${index}.inventoryStockId`}
+                                                        control={control}
+                                                        render={({ field, fieldState }) => (
+                                                            <Autocomplete
+                                                                value={selectedStock}
+                                                                inputValue={stockSearchByRow[index] || ''}
+                                                                options={rowStocks}
+                                                                loading={rowLoading}
+                                                                filterOptions={(x) => x}
+                                                                getOptionLabel={(option) =>
+                                                                    getStockLabel(option)
+                                                                }
+                                                                isOptionEqualToValue={(option, value) =>
+                                                                    option.id === value.id
+                                                                }
+                                                                onInputChange={(_, value, reason) => {
+                                                                    if (reason === 'input' || reason === 'clear') {
+                                                                        setStockSearchByRow((prev) => ({
+                                                                            ...prev,
+                                                                            [index]: value,
+                                                                        }));
                                                                     }
-                                                                    onKeyDown={async (e) => {
-                                                                        if (e.key === 'Enter') {
-                                                                            const currentValue = getValues(
-                                                                                `items.${index}.itemName`
-                                                                            )?.trim();
+                                                                }}
+                                                                onChange={(_, stock) => {
+                                                                    field.onChange(stock?.id || '');
 
-                                                                            const hasText = !!currentValue;
-                                                                            const exists =
-                                                                                itemsByCategory.some(
-                                                                                    (item: ItemDto) =>
-                                                                                        item.name
-                                                                                            .trim()
-                                                                                            .toLowerCase() ===
-                                                                                        currentValue?.toLowerCase()
-                                                                                );
-
-                                                                            if (hasText && !exists) {
-                                                                                e.preventDefault();
-                                                                                e.stopPropagation();
-                                                                                await createItemFromRow(index);
+                                                                    if (stock?.estimatedUnitCost !== undefined) {
+                                                                        setValue(
+                                                                            `items.${index}.estimatedCost`,
+                                                                            Number(stock.estimatedUnitCost || 0),
+                                                                            {
+                                                                                shouldValidate: true,
+                                                                                shouldDirty: true,
                                                                             }
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                disabled={submitting || !item?.categoryId}
+                                                                noOptionsText={
+                                                                    !item?.categoryId
+                                                                        ? 'Select category first'
+                                                                        : 'No stock found'
+                                                                }
+                                                                renderInput={(params) => (
+                                                                    <TextField
+                                                                        {...params}
+                                                                        label="Stock"
+                                                                        placeholder="Search stock"
+                                                                        error={!!fieldState.error || isDuplicate}
+                                                                        helperText={
+                                                                            fieldState.error?.message ||
+                                                                            (isDuplicate
+                                                                                ? 'Duplicate stock item'
+                                                                                : selectedStock
+                                                                                    ? `Available: ${
+                                                                                        selectedStock.quantityAvailable ??
+                                                                                        selectedStock.availableQuantity ??
+                                                                                        0
+                                                                                    } ${selectedStock.unit || ''}`
+                                                                                    : 'Select stock from category')
                                                                         }
-                                                                    }}
-                                                                    InputProps={{
-                                                                        ...params.InputProps,
-                                                                        endAdornment: (
-                                                                            <>
-                                                                                {isCreatingThisRow && (
-                                                                                    <CircularProgress
-                                                                                        size={18}
-                                                                                        sx={{ mr: 1 }}
-                                                                                    />
-                                                                                )}
-                                                                                {loadingItems && (
-                                                                                    <CircularProgress
-                                                                                        size={18}
-                                                                                        sx={{ mr: 1 }}
-                                                                                    />
-                                                                                )}
-                                                                                {params.InputProps.endAdornment}
-                                                                            </>
-                                                                        ),
-                                                                    }}
-                                                                />
-                                                            )}
-                                                            disabled={
-                                                                !selectedCategory ||
-                                                                submitting ||
-                                                                isCreatingThisRow
-                                                            }
-                                                        />
-                                                    )}
-                                                />
-                                            </Grid>
+                                                                        InputProps={{
+                                                                            ...params.InputProps,
+                                                                            startAdornment: (
+                                                                                <>
+                                                                                    <InputAdornment position="start">
+                                                                                        <SearchIcon />
+                                                                                    </InputAdornment>
+                                                                                    {params.InputProps.startAdornment}
+                                                                                </>
+                                                                            ),
+                                                                            endAdornment: (
+                                                                                <>
+                                                                                    {rowLoading ? (
+                                                                                        <CircularProgress size={18} />
+                                                                                    ) : null}
+                                                                                    {params.InputProps.endAdornment}
+                                                                                </>
+                                                                            ),
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                                renderOption={(props, option) => (
+                                                                    <Box component="li" {...props} key={option.id}>
+                                                                        <Stack spacing={0.3}>
+                                                                            <Typography fontWeight={800}>
+                                                                                {option.name}
+                                                                                {option.sku ? ` - ${option.sku}` : ''}
+                                                                            </Typography>
+                                                                            <Typography variant="caption" color="text.secondary">
+                                                                                Available:{' '}
+                                                                                {option.quantityAvailable ??
+                                                                                    option.availableQuantity ??
+                                                                                    0}{' '}
+                                                                                {option.unit || ''}
+                                                                            </Typography>
+                                                                        </Stack>
+                                                                    </Box>
+                                                                )}
+                                                            />
+                                                        )}
+                                                    />
+                                                </Grid>
 
-                                            <Grid item xs={12} sm={4} md={2}>
-                                                <Controller
-                                                    name={`items.${index}.quantity`}
-                                                    control={control}
-                                                    render={({ field, fieldState }) => (
-                                                        <TextField
-                                                            value={field.value ?? ''}
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target.value === ''
-                                                                        ? ''
-                                                                        : parseInt(
-                                                                        e.target.value,
-                                                                        10
-                                                                    ) || 0
-                                                                )
-                                                            }
-                                                            type="number"
-                                                            label="Qty"
-                                                            fullWidth
-                                                            error={!!fieldState.error}
-                                                            helperText={fieldState.error?.message}
-                                                            inputProps={{ min: 1 }}
-                                                            disabled={submitting}
-                                                        />
-                                                    )}
-                                                />
-                                            </Grid>
+                                                <Grid item xs={12} sm={4} md={1.3}>
+                                                    <Controller
+                                                        name={`items.${index}.quantity`}
+                                                        control={control}
+                                                        render={({ field, fieldState }) => (
+                                                            <TextField
+                                                                value={field.value ?? ''}
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target.value === ''
+                                                                            ? ''
+                                                                            : parseInt(e.target.value, 10) || 0
+                                                                    )
+                                                                }
+                                                                type="number"
+                                                                label="Qty"
+                                                                fullWidth
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
+                                                                inputProps={{ min: 1 }}
+                                                                disabled={submitting}
+                                                            />
+                                                        )}
+                                                    />
+                                                </Grid>
 
-                                            <Grid item xs={12} sm={4} md={2.5}>
-                                                <Controller
-                                                    name={`items.${index}.estimatedCost`}
-                                                    control={control}
-                                                    render={({ field, fieldState }) => (
-                                                        <TextField
-                                                            value={field.value ?? ''}
-                                                            onChange={(e) =>
-                                                                field.onChange(
-                                                                    e.target.value === ''
-                                                                        ? ''
-                                                                        : parseFloat(
-                                                                        e.target.value
-                                                                    ) || 0
-                                                                )
-                                                            }
-                                                            type="number"
-                                                            label="Unit Cost"
-                                                            fullWidth
-                                                            error={!!fieldState.error}
-                                                            helperText={fieldState.error?.message}
-                                                            inputProps={{ min: 0, step: 0.01 }}
-                                                            disabled={submitting}
-                                                        />
-                                                    )}
-                                                />
-                                            </Grid>
+                                                <Grid item xs={12} sm={4} md={1.5}>
+                                                    <Controller
+                                                        name={`items.${index}.estimatedCost`}
+                                                        control={control}
+                                                        render={({ field, fieldState }) => (
+                                                            <TextField
+                                                                value={field.value ?? ''}
+                                                                onChange={(e) =>
+                                                                    field.onChange(
+                                                                        e.target.value === ''
+                                                                            ? ''
+                                                                            : parseFloat(e.target.value) || 0
+                                                                    )
+                                                                }
+                                                                type="number"
+                                                                label="Unit Cost"
+                                                                fullWidth
+                                                                error={!!fieldState.error}
+                                                                helperText={fieldState.error?.message}
+                                                                inputProps={{ min: 0, step: 0.01 }}
+                                                                disabled={submitting}
+                                                            />
+                                                        )}
+                                                    />
+                                                </Grid>
 
-                                            <Grid item xs={10} sm={3} md={2}>
-                                                <Box
-                                                    sx={{
-                                                        height: '100%',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        minHeight: 56,
-                                                        pt: { xs: 0, md: 0.5 },
-                                                    }}
-                                                >
-                                                    <Typography fontWeight={700}>
-                                                        {formatCurrency(lineTotal)}
-                                                    </Typography>
-                                                </Box>
-                                            </Grid>
+                                                <Grid item xs={12} sm={4} md={1.7}>
+                                                    <Controller
+                                                        name={`items.${index}.remarks`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <TextField
+                                                                {...field}
+                                                                label="Remarks"
+                                                                fullWidth
+                                                                disabled={submitting}
+                                                            />
+                                                        )}
+                                                    />
+                                                </Grid>
 
-                                            <Grid item xs={2} sm={1} md={0.5}>
-                                                <Box
-                                                    sx={{
-                                                        height: '100%',
-                                                        display: 'flex',
-                                                        justifyContent: 'flex-end',
-                                                    }}
-                                                >
+                                                <Grid item xs={10} md={0.8}>
+                                                    <Stack spacing={0.5}>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Total
+                                                        </Typography>
+                                                        <Typography fontWeight={800}>
+                                                            {formatCurrency(lineTotal)}
+                                                        </Typography>
+                                                    </Stack>
+                                                </Grid>
+
+                                                <Grid item xs={2} md={0.7}>
                                                     <IconButton
                                                         color="error"
                                                         onClick={() => remove(index)}
@@ -660,10 +778,10 @@ export const RequisitionForm = ({
                                                     >
                                                         <DeleteIcon />
                                                     </IconButton>
-                                                </Box>
+                                                </Grid>
                                             </Grid>
-                                        </Grid>
-                                    </Paper>
+                                        </CardContent>
+                                    </Card>
                                 );
                             })}
                         </Stack>
@@ -686,9 +804,16 @@ export const RequisitionForm = ({
                                 </Typography>
                             </Stack>
 
-                            <Typography variant="h5" fontWeight={800}>
-                                Total: {formatCurrency(totalAmount)}
-                            </Typography>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                <Chip
+                                    label={`${fields.length} item${fields.length > 1 ? 's' : ''}`}
+                                    color="primary"
+                                    variant="outlined"
+                                />
+                                <Typography variant="h5" fontWeight={800}>
+                                    Total: {formatCurrency(totalAmount)}
+                                </Typography>
+                            </Stack>
                         </Box>
                     </Paper>
                 </DialogContent>
@@ -712,8 +837,8 @@ export const RequisitionForm = ({
                         </Button>
                         <Button
                             variant="contained"
-                            onClick={handleSubmit(handleFormSubmit)}
-                            disabled={submitting}
+                            onClick={handleSubmit(submitForm)}
+                            disabled={submitting || duplicatedStockIds.length > 0}
                             startIcon={
                                 submitting ? (
                                     <CircularProgress size={18} color="inherit" />

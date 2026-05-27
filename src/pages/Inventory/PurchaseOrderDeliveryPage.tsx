@@ -1,975 +1,1339 @@
+import { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Box,
     Button,
     Card,
+    CardContent,
     Chip,
+    CircularProgress,
     Dialog,
     DialogActions,
     DialogContent,
     DialogTitle,
     Divider,
-    FormControl,
     Grid,
+    IconButton,
     InputAdornment,
+    LinearProgress,
     MenuItem,
-    Select,
-    Skeleton,
-    Snackbar,
+    Paper,
     Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     TextField,
+    Tooltip,
     Typography,
 } from '@mui/material';
-import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
-import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
-import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-import SearchOutlinedIcon from '@mui/icons-material/SearchOutlined';
-import AddTaskOutlinedIcon from '@mui/icons-material/AddTaskOutlined';
-import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
-import TodayOutlinedIcon from '@mui/icons-material/TodayOutlined';
-import WarehouseOutlinedIcon from '@mui/icons-material/WarehouseOutlined';
-import EventRepeatOutlinedIcon from '@mui/icons-material/EventRepeatOutlined';
-import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
-import { useEffect, useMemo, useState } from 'react';
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
 import {
-    getTodayPurchaseOrderDeliveries,
-    //receivePurchaseOrderDelivery,
-} from '../../services/purchaseOrderReceiptService';
+    AssignmentTurnedIn,
+    CalendarMonth,
+    Close,
+    Inventory2,
+    LocalShipping,
+    Notes,
+    Numbers,
+    Place,
+    ReceiptLong,
+    Search,
+    Storefront,
+    WarningAmber,
+} from '@mui/icons-material';
+import { DashboardLayout } from '../../components/Layout/DashboardLayout.tsx';
 
-type MuiSeverity = 'success' | 'error' | 'warning' | 'info';
-
-type DeliveryStatus = 'Pending' | 'PartiallyReceived' | 'Received' | 'Delayed';
-
-type InventoryProcessingStatus = 'Pending' | 'Processing' | 'Completed' | 'Failed';
-
-type PurchaseOrderDeliveryItem = {
+type DeliveryItem = {
     purchaseOrderItemId: string;
     itemName: string;
-    sku?: string | null;
     orderedQty: number;
     receivedQty: number;
     remainingQty: number;
-    unitPrice: number;
 };
 
-type PurchaseOrderDelivery = {
+type Delivery = {
     id: string;
     purchaseOrderNumber: string;
     vendorName: string;
-    expectedDate?: string | null;
-    nextDeliveryDate?: string | null;
-    deliveryTime?: string | null;
-    status: DeliveryStatus;
-    location: string;
+    expectedDate: string;
+    status: string;
     totalItems: number;
-    inventoryProcessingStatus?: InventoryProcessingStatus;
-    items: PurchaseOrderDeliveryItem[];
+    items: DeliveryItem[];
 };
 
-type ReceiveRow = {
+type DeliveryItemRow = {
     purchaseOrderItemId: string;
     itemName: string;
-    receiveQty: number;
-    orderedQty: number;
-    receivedQty: number;
     remainingQty: number;
+    quantityReceived: number;
     location: string;
     condition: string;
     notes: string;
 };
 
-type ReceivePayload = {
-    purchaseOrderId: string;
-    receivedAt: string;
-    nextDeliveryDate?: string | null;
-    notes?: string;
-    items: Array<{
-        purchaseOrderItemId: string;
-        quantityReceived: number;
-        location: string;
-        condition: string;
-        notes?: string;
-    }>;
+const dummyDeliveries: Delivery[] = [
+    {
+        id: 'po-001',
+        purchaseOrderNumber: 'PO-2026-0001',
+        vendorName: 'Tech Supplies Nepal',
+        expectedDate: '2026-05-25T00:00:00Z',
+        status: 'Pending',
+        totalItems: 3,
+        items: [
+            {
+                purchaseOrderItemId: 'poi-001',
+                itemName: 'Dell Latitude 5440 Laptop',
+                orderedQty: 10,
+                receivedQty: 0,
+                remainingQty: 10,
+            },
+            {
+                purchaseOrderItemId: 'poi-002',
+                itemName: 'Logitech Wireless Mouse',
+                orderedQty: 25,
+                receivedQty: 5,
+                remainingQty: 20,
+            },
+            {
+                purchaseOrderItemId: 'poi-003',
+                itemName: 'Laptop Bag',
+                orderedQty: 10,
+                receivedQty: 0,
+                remainingQty: 10,
+            },
+        ],
+    },
+    {
+        id: 'po-002',
+        purchaseOrderNumber: 'PO-2026-0002',
+        vendorName: 'Office World Suppliers',
+        expectedDate: '2026-05-28T00:00:00Z',
+        status: 'Partial',
+        totalItems: 2,
+        items: [
+            {
+                purchaseOrderItemId: 'poi-004',
+                itemName: 'A4 Paper Ream',
+                orderedQty: 100,
+                receivedQty: 40,
+                remainingQty: 60,
+            },
+            {
+                purchaseOrderItemId: 'poi-005',
+                itemName: 'Blue Ball Pen Box',
+                orderedQty: 50,
+                receivedQty: 25,
+                remainingQty: 25,
+            },
+        ],
+    },
+    {
+        id: 'po-003',
+        purchaseOrderNumber: 'PO-2026-0003',
+        vendorName: 'Network Solutions Pvt. Ltd.',
+        expectedDate: '2026-06-02T00:00:00Z',
+        status: 'Pending',
+        totalItems: 4,
+        items: [
+            {
+                purchaseOrderItemId: 'poi-006',
+                itemName: 'Cisco 24-Port Switch',
+                orderedQty: 5,
+                receivedQty: 0,
+                remainingQty: 5,
+            },
+            {
+                purchaseOrderItemId: 'poi-007',
+                itemName: 'CAT6 Ethernet Cable 10m',
+                orderedQty: 40,
+                receivedQty: 0,
+                remainingQty: 40,
+            },
+            {
+                purchaseOrderItemId: 'poi-008',
+                itemName: 'TP-Link WiFi Router',
+                orderedQty: 8,
+                receivedQty: 2,
+                remainingQty: 6,
+            },
+            {
+                purchaseOrderItemId: 'poi-009',
+                itemName: 'RJ45 Connector Pack',
+                orderedQty: 20,
+                receivedQty: 0,
+                remainingQty: 20,
+            },
+        ],
+    },
+    {
+        id: 'po-004',
+        purchaseOrderNumber: 'PO-2026-0004',
+        vendorName: 'Furniture Hub',
+        expectedDate: '2026-06-05T00:00:00Z',
+        status: 'Received',
+        totalItems: 2,
+        items: [
+            {
+                purchaseOrderItemId: 'poi-010',
+                itemName: 'Office Chair',
+                orderedQty: 12,
+                receivedQty: 12,
+                remainingQty: 0,
+            },
+            {
+                purchaseOrderItemId: 'poi-011',
+                itemName: 'Office Desk',
+                orderedQty: 6,
+                receivedQty: 6,
+                remainingQty: 0,
+            },
+        ],
+    },
+];
+
+const conditionOptions = ['Good', 'Damaged', 'NeedsRepair'];
+
+const initialRowDefaults = {
+    location: 'Inventory',
+    condition: 'Good',
+    notes: '',
 };
 
-const formatCurrency = (value: number) =>
-    `Rs. ${value.toLocaleString(undefined, {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    })}`;
+export default function PurchaseOrderDeliveryPage() {
+    const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+    const [selected, setSelected] = useState<Delivery | null>(null);
+    const [rows, setRows] = useState<DeliveryItemRow[]>([]);
+    const [notes, setNotes] = useState('');
 
-const formatDate = (value?: string | null) => {
-    if (!value) return '-';
-    return new Date(value).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-    });
-};
-
-const getStatusChip = (status: DeliveryStatus) => {
-    switch (status) {
-        case 'Pending':
-            return <Chip label="Due Today" color="warning" size="small" sx={{ fontWeight: 700 }} />;
-        case 'PartiallyReceived':
-            return (
-                <Chip
-                    label="Partially Received"
-                    color="info"
-                    size="small"
-                    sx={{ fontWeight: 700 }}
-                />
-            );
-        case 'Received':
-            return <Chip label="Received" color="success" size="small" sx={{ fontWeight: 700 }} />;
-        case 'Delayed':
-            return <Chip label="Delayed" color="error" size="small" sx={{ fontWeight: 700 }} />;
-        default:
-            return <Chip label={status} size="small" />;
-    }
-};
-
-const getProcessingChip = (status?: InventoryProcessingStatus) => {
-    if (!status) return null;
-
-    switch (status) {
-        case 'Pending':
-            return <Chip label="Inventory Pending" size="small" variant="outlined" />;
-        case 'Processing':
-            return <Chip label="Inventory Processing" size="small" color="warning" variant="outlined" />;
-        case 'Completed':
-            return <Chip label="Inventory Updated" size="small" color="success" variant="outlined" />;
-        case 'Failed':
-            return <Chip label="Inventory Failed" size="small" color="error" variant="outlined" />;
-        default:
-            return null;
-    }
-};
-
-export const PurchaseOrderDeliveryPage = () => {
-    const [deliveries, setDeliveries] = useState<PurchaseOrderDelivery[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
     const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string>('');
-    const [selectedDelivery, setSelectedDelivery] = useState<PurchaseOrderDelivery | null>(null);
-    const [detailsOpen, setDetailsOpen] = useState(false);
-    const [receiveOpen, setReceiveOpen] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    const [receiveRows, setReceiveRows] = useState<ReceiveRow[]>([]);
-    const [nextDeliveryDate, setNextDeliveryDate] = useState('');
-    const [receiptNotes, setReceiptNotes] = useState('');
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: MuiSeverity;
-    }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+    const [statusFilter, setStatusFilter] = useState('');
 
-    useEffect(() => {
-        loadDeliveries();
-    }, []);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
-    const showMessage = (message: string, severity: MuiSeverity = 'success') => {
-        setSnackbar({
-            open: true,
-            message,
-            severity,
-        });
-    };
-
-    const loadDeliveries = async () => {
+    const load = async () => {
         setLoading(true);
-        setError('');
+        setErrorMessage('');
+
         try {
-            const data = await getTodayPurchaseOrderDeliveries();
-            setDeliveries(data || []);
-        } catch (err: any) {
-            setError(err?.response?.data?.message || "Failed to load today's deliveries");
+            await new Promise((resolve) => setTimeout(resolve, 350));
+            setDeliveries(dummyDeliveries);
+        } catch {
+            setErrorMessage('Failed to load purchase order deliveries.');
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredDeliveries = useMemo(() => {
-        return deliveries.filter((delivery) => {
-            const q = search.trim().toLowerCase();
-            const matchesSearch =
-                !q ||
-                delivery.purchaseOrderNumber.toLowerCase().includes(q) ||
-                delivery.vendorName.toLowerCase().includes(q) ||
-                delivery.location.toLowerCase().includes(q);
+    useEffect(() => {
+        load();
+    }, []);
 
-            const matchesStatus = !statusFilter || delivery.status === statusFilter;
+    const filteredDeliveries = useMemo(() => {
+        const query = search.trim().toLowerCase();
+
+        return deliveries.filter((delivery) => {
+            const matchesSearch =
+                !query ||
+                delivery.purchaseOrderNumber.toLowerCase().includes(query) ||
+                delivery.vendorName.toLowerCase().includes(query) ||
+                delivery.status.toLowerCase().includes(query);
+
+            const matchesStatus =
+                !statusFilter ||
+                delivery.status.toLowerCase() === statusFilter.toLowerCase();
+
             return matchesSearch && matchesStatus;
         });
     }, [deliveries, search, statusFilter]);
 
     const stats = useMemo(() => {
+        const total = deliveries.length;
+        const pending = deliveries.filter((d) =>
+            d.status.toLowerCase().includes('pending')
+        ).length;
+        const partial = deliveries.filter((d) =>
+            d.status.toLowerCase().includes('partial')
+        ).length;
+        const totalItems = deliveries.reduce(
+            (sum, d) => sum + Number(d.totalItems || d.items?.length || 0),
+            0
+        );
+
         return {
-            total: deliveries.length,
-            dueToday: deliveries.filter((d) => d.status === 'Pending').length,
-            partial: deliveries.filter((d) => d.status === 'PartiallyReceived').length,
-            itemsExpected: deliveries.reduce(
-                (sum, d) => sum + d.items.reduce((a, b) => a + b.remainingQty, 0),
-                0
-            ),
+            total,
+            pending,
+            partial,
+            totalItems,
         };
     }, [deliveries]);
 
-    const openDetailsDialog = (delivery: PurchaseOrderDelivery) => {
-        setSelectedDelivery(delivery);
-        setDetailsOpen(true);
-    };
+    const totalReceiving = useMemo(() => {
+        return rows.reduce((sum, row) => sum + Number(row.quantityReceived || 0), 0);
+    }, [rows]);
 
-    const openReceiveDialog = (delivery: PurchaseOrderDelivery) => {
-        setSelectedDelivery(delivery);
-        setReceiveRows(
-            delivery.items.map((item) => ({
-                purchaseOrderItemId: item.purchaseOrderItemId,
-                itemName: item.itemName,
-                receiveQty: item.remainingQty,
-                orderedQty: item.orderedQty,
-                receivedQty: item.receivedQty,
-                remainingQty: item.remainingQty,
-                location: delivery.location || 'Inventory',
-                condition: 'Good',
-                notes: '',
-            }))
+    const invalidRows = useMemo(() => {
+        return rows.filter((row) => {
+            const qty = Number(row.quantityReceived || 0);
+            return qty < 0 || qty > Number(row.remainingQty || 0);
+        });
+    }, [rows]);
+
+    const hasReceivableItems = useMemo(() => {
+        return rows.some((row) => Number(row.quantityReceived || 0) > 0);
+    }, [rows]);
+
+    const isSubmitDisabled =
+        saving || !selected || invalidRows.length > 0 || !hasReceivableItems;
+
+    const openReceive = (delivery: Delivery) => {
+        setSelected(delivery);
+        setNotes('');
+        setErrorMessage('');
+
+        setRows(
+            delivery.items
+                .filter((item) => Number(item.remainingQty || 0) > 0)
+                .map((item) => ({
+                    purchaseOrderItemId: item.purchaseOrderItemId,
+                    itemName: item.itemName,
+                    remainingQty: Number(item.remainingQty || 0),
+                    quantityReceived: Number(item.remainingQty || 0),
+                    location: initialRowDefaults.location,
+                    condition: initialRowDefaults.condition,
+                    notes: initialRowDefaults.notes,
+                }))
         );
-        setNextDeliveryDate(delivery.nextDeliveryDate ? delivery.nextDeliveryDate.slice(0, 10) : '');
-        setReceiptNotes('');
-        setReceiveOpen(true);
     };
 
-    const updateReceiveRow = (
-        index: number,
-        field: keyof ReceiveRow,
-        value: string | number
-    ) => {
-        setReceiveRows((prev) =>
-            prev.map((row, i) => {
-                if (i !== index) return row;
+    const closeReceiveDialog = () => {
+        if (saving) return;
 
-                if (field === 'receiveQty') {
-                    const numeric = Number(value);
-                    const safeValue = Number.isNaN(numeric)
-                        ? 0
-                        : Math.max(0, Math.min(numeric, row.remainingQty));
+        setSelected(null);
+        setRows([]);
+        setNotes('');
+    };
 
+    const updateRow = (index: number, key: keyof DeliveryItemRow, value: any) => {
+        setRows((currentRows) =>
+            currentRows.map((row, rowIndex) => {
+                if (rowIndex !== index) return row;
+
+                if (key === 'quantityReceived') {
                     return {
                         ...row,
-                        receiveQty: safeValue,
+                        quantityReceived: Number(value),
                     };
                 }
 
                 return {
                     ...row,
-                    [field]: value,
+                    [key]: value,
                 };
             })
         );
     };
 
-    const totalReceivingQty = useMemo(
-        () => receiveRows.reduce((sum, row) => sum + (Number(row.receiveQty) || 0), 0),
-        [receiveRows]
-    );
-
-    const totalRemainingAfterReceipt = useMemo(
-        () =>
-            receiveRows.reduce(
-                (sum, row) => sum + Math.max(0, row.remainingQty - (Number(row.receiveQty) || 0)),
-                0
-            ),
-        [receiveRows]
-    );
-
-    const totalReceiptValue = useMemo(() => {
-        if (!selectedDelivery) return 0;
-
-        const priceLookup = new Map(
-            selectedDelivery.items.map((item) => [item.purchaseOrderItemId, item.unitPrice])
+    const fillAllRemaining = () => {
+        setRows((currentRows) =>
+            currentRows.map((row) => ({
+                ...row,
+                quantityReceived: Number(row.remainingQty || 0),
+            }))
         );
+    };
 
-        return receiveRows.reduce((sum, row) => {
-            const price = priceLookup.get(row.purchaseOrderItemId) || 0;
-            return sum + (Number(row.receiveQty) || 0) * price;
-        }, 0);
-    }, [receiveRows, selectedDelivery]);
+    const clearAllQuantities = () => {
+        setRows((currentRows) =>
+            currentRows.map((row) => ({
+                ...row,
+                quantityReceived: 0,
+            }))
+        );
+    };
 
-    const requiresNextDeliveryDate = totalRemainingAfterReceipt > 0;
+    const submitReceive = async () => {
+        if (!selected || isSubmitDisabled) return;
 
-    const handleReceiveSubmit = async () => {
-        if (!selectedDelivery) return;
-
-        setSubmitting(true);
-        setError('');
+        setSaving(true);
+        setErrorMessage('');
 
         try {
-            const items = receiveRows
-                .filter((row) => Number(row.receiveQty) > 0)
-                .map((row) => ({
-                    purchaseOrderItemId: row.purchaseOrderItemId,
-                    quantityReceived: Number(row.receiveQty),
-                    location: row.location,
-                    condition: row.condition,
-                    notes: row.notes || undefined,
-                }));
-
-            if (items.length === 0) {
-                showMessage('Please enter received quantity for at least one item.', 'warning');
-                setSubmitting(false);
-                return;
-            }
-
-            if (requiresNextDeliveryDate && !nextDeliveryDate) {
-                showMessage(
-                    'Please provide the next delivery date because some items are still remaining.',
-                    'warning'
-                );
-                setSubmitting(false);
-                return;
-            }
-
-            const payload: ReceivePayload = {
-                purchaseOrderId: selectedDelivery.id,
-                receivedAt: new Date().toISOString(),
-                nextDeliveryDate: requiresNextDeliveryDate ? nextDeliveryDate : null,
-                notes: receiptNotes || undefined,
-                items,
+            const payload = {
+                purchaseOrderId: selected.id,
+                receivedDate: new Date().toISOString(),
+                notes: notes.trim(),
+                items: rows
+                    .filter((row) => Number(row.quantityReceived) > 0)
+                    .map((row) => ({
+                        purchaseOrderItemId: row.purchaseOrderItemId,
+                        quantityReceived: Number(row.quantityReceived),
+                        location: row.location.trim() || 'Inventory',
+                        condition: row.condition,
+                        notes: row.notes.trim(),
+                    })),
             };
 
-            //await receivePurchaseOrderDelivery(payload);
+            console.log('Dummy receipt payload:', payload);
 
-            showMessage(
-                requiresNextDeliveryDate
-                    ? `Partial receipt saved for ${selectedDelivery.purchaseOrderNumber}. Next delivery date updated.`
-                    : `Delivery for ${selectedDelivery.purchaseOrderNumber} received and queued for inventory update.`,
-                'success'
+            await new Promise((resolve) => setTimeout(resolve, 600));
+
+            setDeliveries((currentDeliveries) =>
+                currentDeliveries.map((delivery) => {
+                    if (delivery.id !== selected.id) return delivery;
+
+                    const updatedItems = delivery.items.map((item) => {
+                        const receivedRow = rows.find(
+                            (row) => row.purchaseOrderItemId === item.purchaseOrderItemId
+                        );
+
+                        if (!receivedRow) return item;
+
+                        const receivedNow = Number(receivedRow.quantityReceived || 0);
+                        const newReceivedQty = Number(item.receivedQty || 0) + receivedNow;
+                        const newRemainingQty = Math.max(
+                            0,
+                            Number(item.remainingQty || 0) - receivedNow
+                        );
+
+                        return {
+                            ...item,
+                            receivedQty: newReceivedQty,
+                            remainingQty: newRemainingQty,
+                        };
+                    });
+
+                    const allReceived = updatedItems.every(
+                        (item) => Number(item.remainingQty || 0) === 0
+                    );
+
+                    const anyReceived = updatedItems.some(
+                        (item) => Number(item.receivedQty || 0) > 0
+                    );
+
+                    return {
+                        ...delivery,
+                        items: updatedItems,
+                        status: allReceived ? 'Received' : anyReceived ? 'Partial' : 'Pending',
+                    };
+                })
             );
 
-            setReceiveOpen(false);
-            setSelectedDelivery(null);
-            await loadDeliveries();
-        } catch (err: any) {
-            setError(err?.response?.data?.message || 'Failed to receive delivery');
+            closeReceiveDialog();
+        } catch {
+            setErrorMessage('Failed to submit purchase order receipt.');
         } finally {
-            setSubmitting(false);
+            setSaving(false);
         }
+    };
+
+    const getStatusColor = (status: unknown) => {
+        const value = String(status || '').toLowerCase();
+
+        if (value.includes('complete') || value.includes('received')) return 'success';
+        if (value.includes('partial')) return 'warning';
+        if (value.includes('cancel')) return 'error';
+        if (value.includes('pending') || value.includes('open')) return 'primary';
+
+        return 'default';
+    };
+
+    const formatDate = (value: string | null | undefined) => {
+        if (!value) return '-';
+
+        const date = new Date(value);
+
+        if (Number.isNaN(date.getTime())) {
+            return value;
+        }
+
+        return date.toLocaleDateString();
     };
 
     return (
         <DashboardLayout>
-            <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>
-                <Stack spacing={3}>
-                    <Stack
-                        direction={{ xs: 'column', md: 'row' }}
-                        justifyContent="space-between"
-                        alignItems={{ xs: 'flex-start', md: 'center' }}
-                        spacing={2}
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    bgcolor: '#f8fafc',
+                    px: { xs: 2, md: 4 },
+                    py: { xs: 2, md: 4 },
+                }}
+            >
+                <Box sx={{ maxWidth: 1280, mx: 'auto' }}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: { xs: 2.5, md: 4 },
+                            mb: 3,
+                            borderRadius: 5,
+                            color: 'white',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            background:
+                                'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+                        }}
                     >
-                        <Box>
-                            <Typography variant="h4" fontWeight={800}>
-                                Purchase Order Deliveries
-                            </Typography>
-                            <Typography color="text.secondary">
-                                Review today&apos;s incoming deliveries, record receipts, and push received
-                                items into inventory.
-                            </Typography>
-                        </Box>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                width: 260,
+                                height: 260,
+                                borderRadius: '50%',
+                                right: -90,
+                                top: -100,
+                                bgcolor: 'rgba(255,255,255,0.08)',
+                            }}
+                        />
 
-                        <Stack direction="row" spacing={1.5}>
-                            <Button
-                                variant="outlined"
-                                startIcon={<TodayOutlinedIcon />}
-                                onClick={loadDeliveries}
-                            >
-                                Refresh Today&apos;s Deliveries
-                            </Button>
-                        </Stack>
-                    </Stack>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                width: 170,
+                                height: 170,
+                                borderRadius: '50%',
+                                right: 140,
+                                bottom: -110,
+                                bgcolor: 'rgba(255,255,255,0.06)',
+                            }}
+                        />
 
-                    {(error || snackbar.open) && error && <Alert severity="error">{error}</Alert>}
-
-                    <Grid container spacing={2}>
-                        {[
-                            {
-                                label: "Today's Deliveries",
-                                value: stats.total,
-                                icon: <LocalShippingOutlinedIcon />,
-                            },
-                            {
-                                label: 'Due Today',
-                                value: stats.dueToday,
-                                icon: <TodayOutlinedIcon />,
-                            },
-                            {
-                                label: 'Partially Received',
-                                value: stats.partial,
-                                icon: <CheckCircleOutlineOutlinedIcon />,
-                            },
-                            {
-                                label: 'Items Remaining',
-                                value: stats.itemsExpected,
-                                icon: <Inventory2OutlinedIcon />,
-                            },
-                        ].map((card) => (
-                            <Grid item xs={12} sm={6} lg={3} key={card.label}>
-                                <Card
+                        <Stack
+                            direction={{ xs: 'column', md: 'row' }}
+                            spacing={3}
+                            justifyContent="space-between"
+                            alignItems={{ xs: 'flex-start', md: 'center' }}
+                            sx={{ position: 'relative', zIndex: 1 }}
+                        >
+                            <Stack direction="row" spacing={2} alignItems="center">
+                                <Box
                                     sx={{
-                                        p: 2.5,
-                                        borderRadius: 3,
-                                        boxShadow: '0 10px 24px rgba(15, 23, 42, 0.05)',
+                                        width: 68,
+                                        height: 68,
+                                        borderRadius: 4,
+                                        bgcolor: 'rgba(255,255,255,0.14)',
+                                        display: 'grid',
+                                        placeItems: 'center',
+                                        backdropFilter: 'blur(8px)',
                                     }}
                                 >
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                        <Box>
-                                            <Typography color="text.secondary" variant="body2">
-                                                {card.label}
-                                            </Typography>
-                                            <Typography variant="h4" fontWeight={800} mt={0.5}>
-                                                {card.value}
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ color: 'primary.main' }}>{card.icon}</Box>
-                                    </Stack>
-                                </Card>
-                            </Grid>
-                        ))}
+                                    <LocalShipping sx={{ fontSize: 36 }} />
+                                </Box>
+
+                                <Box>
+                                    <Typography variant="h4" fontWeight={900}>
+                                        Purchase Order Deliveries
+                                    </Typography>
+
+                                    <Typography sx={{ mt: 0.5, color: 'rgba(255,255,255,0.75)' }}>
+                                        Receive ordered items, verify quantities, and move delivered stock into inventory.
+                                    </Typography>
+                                </Box>
+                            </Stack>
+
+                            <Button
+                                variant="contained"
+                                startIcon={<ReceiptLong />}
+                                onClick={load}
+                                disabled={loading}
+                                sx={{
+                                    bgcolor: 'white',
+                                    color: '#0f172a',
+                                    borderRadius: 3,
+                                    px: 3,
+                                    py: 1.1,
+                                    textTransform: 'none',
+                                    fontWeight: 900,
+                                    '&:hover': {
+                                        bgcolor: '#f1f5f9',
+                                    },
+                                }}
+                            >
+                                Refresh Dummy Data
+                            </Button>
+                        </Stack>
+                    </Paper>
+
+                    {errorMessage && (
+                        <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
+                            {errorMessage}
+                        </Alert>
+                    )}
+
+                    <Grid container spacing={2.5} sx={{ mb: 3 }}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<ReceiptLong />}
+                                title="Total Deliveries"
+                                value={stats.total}
+                                helper="Receiving records"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<WarningAmber />}
+                                title="Pending"
+                                value={stats.pending}
+                                helper="Awaiting receipt"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<AssignmentTurnedIn />}
+                                title="Partial"
+                                value={stats.partial}
+                                helper="Partially received"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<Inventory2 />}
+                                title="Total Items"
+                                value={stats.totalItems}
+                                helper="Items to receive"
+                            />
+                        </Grid>
                     </Grid>
 
                     <Card
+                        elevation={0}
                         sx={{
-                            p: 2,
-                            borderRadius: 3,
-                            boxShadow: '0 10px 24px rgba(15, 23, 42, 0.05)',
+                            mb: 3,
+                            borderRadius: 5,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            overflow: 'hidden',
+                            boxShadow: '0 18px 45px rgba(15,23,42,0.06)',
                         }}
                     >
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} md={6}>
-                                <TextField
-                                    fullWidth
-                                    placeholder="Search by PO number, vendor, or location..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <InputAdornment position="start">
-                                                <SearchOutlinedIcon fontSize="small" />
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                />
-                            </Grid>
+                        {loading && <LinearProgress />}
 
-                            <Grid item xs={12} md={3}>
-                                <FormControl fullWidth>
-                                    <Select
-                                        displayEmpty
-                                        value={statusFilter}
-                                        onChange={(e) => setStatusFilter(e.target.value)}
-                                    >
-                                        <MenuItem value="">All Status</MenuItem>
-                                        <MenuItem value="Pending">Due Today</MenuItem>
-                                        <MenuItem value="PartiallyReceived">Partially Received</MenuItem>
-                                        <MenuItem value="Received">Received</MenuItem>
-                                        <MenuItem value="Delayed">Delayed</MenuItem>
-                                    </Select>
-                                </FormControl>
-                            </Grid>
-
-                            <Grid item xs={12} md={3}>
-                                <Box
-                                    sx={{
-                                        height: '100%',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'flex-end',
-                                    }}
-                                >
+                        <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+                            <Stack
+                                direction={{ xs: 'column', md: 'row' }}
+                                spacing={2}
+                                alignItems={{ xs: 'stretch', md: 'center' }}
+                                justifyContent="space-between"
+                            >
+                                <Box>
+                                    <Typography variant="h6" fontWeight={900}>
+                                        Deliveries Ready for Receiving
+                                    </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        {filteredDeliveries.length} delivery
-                                        {filteredDeliveries.length !== 1 ? 'ies' : 'y'} shown
+                                        Search purchase orders and receive pending item quantities.
                                     </Typography>
                                 </Box>
-                            </Grid>
-                        </Grid>
-                    </Card>
 
-                    <Card
-                        sx={{
-                            borderRadius: 3,
-                            overflow: 'hidden',
-                            boxShadow: '0 10px 24px rgba(15, 23, 42, 0.05)',
-                        }}
-                    >
-                        {loading ? (
-                            <Box sx={{ p: 2 }}>
-                                <Stack spacing={1.5}>
-                                    <Skeleton variant="rounded" height={52} />
-                                    <Skeleton variant="rounded" height={52} />
-                                    <Skeleton variant="rounded" height={52} />
-                                </Stack>
-                            </Box>
-                        ) : filteredDeliveries.length === 0 ? (
-                            <Box sx={{ p: 5, textAlign: 'center' }}>
-                                <WarehouseOutlinedIcon sx={{ fontSize: 44, color: 'text.disabled', mb: 1 }} />
-                                <Typography variant="h6" fontWeight={700}>
-                                    No deliveries scheduled
-                                </Typography>
-                                <Typography color="text.secondary" mt={0.5}>
-                                    There are no matching purchase order deliveries for the selected view.
-                                </Typography>
-                            </Box>
-                        ) : (
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow sx={{ bgcolor: '#f8fafc' }}>
-                                            <TableCell sx={{ fontWeight: 700 }}>PO Number</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Vendor</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Expected</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Next Delivery</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Items</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Location</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                                            <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredDeliveries.map((delivery) => (
-                                            <TableRow key={delivery.id} hover>
-                                                <TableCell>
-                                                    <Stack spacing={0.35}>
-                                                        <Typography fontWeight={700}>
-                                                            {delivery.purchaseOrderNumber}
-                                                        </Typography>
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            {delivery.deliveryTime || '-'}
-                                                        </Typography>
-                                                    </Stack>
-                                                </TableCell>
+                                <Stack
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    spacing={1.5}
+                                    sx={{ width: { xs: '100%', md: 'auto' } }}
+                                >
+                                    <TextField
+                                        placeholder="Search PO, vendor, status..."
+                                        value={search}
+                                        onChange={(event) => setSearch(event.target.value)}
+                                        size="small"
+                                        sx={{
+                                            minWidth: { xs: '100%', md: 320 },
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 3,
+                                                bgcolor: '#f8fafc',
+                                            },
+                                        }}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <Search />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
 
-                                                <TableCell>{delivery.vendorName}</TableCell>
-                                                <TableCell>{formatDate(delivery.expectedDate)}</TableCell>
-                                                <TableCell>
-                                                    {delivery.status === 'PartiallyReceived' ? (
-                                                        <Stack direction="row" spacing={0.75} alignItems="center">
-                                                            <EventRepeatOutlinedIcon
-                                                                fontSize="small"
-                                                                color="action"
-                                                            />
-                                                            <Typography variant="body2">
-                                                                {formatDate(delivery.nextDeliveryDate)}
-                                                            </Typography>
-                                                        </Stack>
-                                                    ) : (
-                                                        '-'
-                                                    )}
-                                                </TableCell>
-                                                <TableCell>{delivery.totalItems}</TableCell>
-                                                <TableCell>{delivery.location || '-'}</TableCell>
-                                                <TableCell>
-                                                    <Stack spacing={0.75}>
-                                                        {getStatusChip(delivery.status)}
-                                                        {getProcessingChip(delivery.inventoryProcessingStatus)}
-                                                    </Stack>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Stack direction="row" spacing={1}>
-                                                        <Button
-                                                            size="small"
-                                                            variant="text"
-                                                            startIcon={<VisibilityOutlinedIcon />}
-                                                            onClick={() => openDetailsDialog(delivery)}
-                                                        >
-                                                            View
-                                                        </Button>
-                                                        <Button
-                                                            size="small"
-                                                            variant="contained"
-                                                            startIcon={<AddTaskOutlinedIcon />}
-                                                            onClick={() => openReceiveDialog(delivery)}
-                                                            disabled={delivery.status === 'Received'}
-                                                        >
-                                                            Receive
-                                                        </Button>
-                                                    </Stack>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        )}
-                    </Card>
-                </Stack>
-            </Box>
-
-            <Dialog
-                open={detailsOpen}
-                onClose={() => {
-                    setDetailsOpen(false);
-                    setSelectedDelivery(null);
-                }}
-                fullWidth
-                maxWidth="md"
-            >
-                <DialogTitle>Delivery Details</DialogTitle>
-                <DialogContent dividers>
-                    {selectedDelivery && (
-                        <Stack spacing={2}>
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        PO Number
-                                    </Typography>
-                                    <Typography fontWeight={700}>
-                                        {selectedDelivery.purchaseOrderNumber}
-                                    </Typography>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Vendor
-                                    </Typography>
-                                    <Typography fontWeight={700}>
-                                        {selectedDelivery.vendorName}
-                                    </Typography>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Delivery Status
-                                    </Typography>
-                                    <Box mt={0.5}>{getStatusChip(selectedDelivery.status)}</Box>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Expected Date
-                                    </Typography>
-                                    <Typography fontWeight={700}>
-                                        {formatDate(selectedDelivery.expectedDate)}
-                                    </Typography>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Next Delivery Date
-                                    </Typography>
-                                    <Typography fontWeight={700}>
-                                        {selectedDelivery.nextDeliveryDate
-                                            ? formatDate(selectedDelivery.nextDeliveryDate)
-                                            : '-'}
-                                    </Typography>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Delivery Location
-                                    </Typography>
-                                    <Typography fontWeight={700}>{selectedDelivery.location}</Typography>
-                                </Grid>
-                            </Grid>
-
-                            <Divider />
-
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Item</TableCell>
-                                        <TableCell>Ordered</TableCell>
-                                        <TableCell>Received</TableCell>
-                                        <TableCell>Remaining</TableCell>
-                                        <TableCell>Unit Price</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {selectedDelivery.items.map((item) => (
-                                        <TableRow key={item.purchaseOrderItemId}>
-                                            <TableCell>
-                                                <Stack spacing={0.25}>
-                                                    <Typography fontWeight={600}>
-                                                        {item.itemName}
-                                                    </Typography>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {item.sku || '-'}
-                                                    </Typography>
-                                                </Stack>
-                                            </TableCell>
-                                            <TableCell>{item.orderedQty}</TableCell>
-                                            <TableCell>{item.receivedQty}</TableCell>
-                                            <TableCell>{item.remainingQty}</TableCell>
-                                            <TableCell>{formatCurrency(item.unitPrice)}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </Stack>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() => {
-                            setDetailsOpen(false);
-                            setSelectedDelivery(null);
-                        }}
-                    >
-                        Close
-                    </Button>
-                    {selectedDelivery && (
-                        <Button
-                            variant="contained"
-                            onClick={() => {
-                                setDetailsOpen(false);
-                                openReceiveDialog(selectedDelivery);
-                            }}
-                        >
-                            Receive Items
-                        </Button>
-                    )}
-                </DialogActions>
-            </Dialog>
-
-            <Dialog
-                open={receiveOpen}
-                onClose={() => !submitting && setReceiveOpen(false)}
-                fullWidth
-                maxWidth="lg"
-            >
-                <DialogTitle>Receive Delivery Into Inventory</DialogTitle>
-                <DialogContent dividers>
-                    {selectedDelivery && (
-                        <Stack spacing={2}>
-                            <Alert severity="info">
-                                Record the delivered quantities. If some items are still pending, set the
-                                next delivery date so the order remains partially received.
-                            </Alert>
-
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        PO Number
-                                    </Typography>
-                                    <Typography fontWeight={700}>
-                                        {selectedDelivery.purchaseOrderNumber}
-                                    </Typography>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Vendor
-                                    </Typography>
-                                    <Typography fontWeight={700}>
-                                        {selectedDelivery.vendorName}
-                                    </Typography>
-                                </Grid>
-                                <Grid item xs={12} md={4}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Delivery Location
-                                    </Typography>
-                                    <Typography fontWeight={700}>{selectedDelivery.location}</Typography>
-                                </Grid>
-                            </Grid>
-
-                            <Divider />
-
-                            <Stack spacing={2}>
-                                {receiveRows.map((row, index) => (
-                                    <Card
-                                        key={row.purchaseOrderItemId}
-                                        variant="outlined"
-                                        sx={{ p: 2, borderRadius: 2 }}
+                                    <TextField
+                                        select
+                                        label="Status"
+                                        value={statusFilter}
+                                        onChange={(event) => setStatusFilter(event.target.value)}
+                                        size="small"
+                                        sx={{
+                                            minWidth: { xs: '100%', sm: 180 },
+                                            '& .MuiOutlinedInput-root': {
+                                                borderRadius: 3,
+                                                bgcolor: '#f8fafc',
+                                            },
+                                        }}
                                     >
-                                        <Grid container spacing={2} alignItems="center">
-                                            <Grid item xs={12} md={3}>
-                                                <Typography fontWeight={700}>{row.itemName}</Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Ordered: {row.orderedQty} | Received: {row.receivedQty} |
-                                                    Remaining: {row.remainingQty}
-                                                </Typography>
-                                            </Grid>
+                                        <MenuItem value="">All Status</MenuItem>
+                                        <MenuItem value="Pending">Pending</MenuItem>
+                                        <MenuItem value="Partial">Partial</MenuItem>
+                                        <MenuItem value="Received">Received</MenuItem>
+                                    </TextField>
+                                </Stack>
+                            </Stack>
+                        </CardContent>
+                    </Card>
 
-                                            <Grid item xs={12} sm={6} md={2}>
-                                                <TextField
-                                                    fullWidth
-                                                    type="number"
-                                                    label="Receive Qty"
-                                                    value={row.receiveQty}
-                                                    onChange={(e) =>
-                                                        updateReceiveRow(
-                                                            index,
-                                                            'receiveQty',
-                                                            Number(e.target.value)
-                                                        )
-                                                    }
-                                                    inputProps={{ min: 0, max: row.remainingQty }}
-                                                />
-                                            </Grid>
+                    {loading ? (
+                        <Box display="flex" justifyContent="center" mt={6}>
+                            <CircularProgress />
+                        </Box>
+                    ) : filteredDeliveries.length === 0 ? (
+                        <EmptyState />
+                    ) : (
+                        <Grid container spacing={2.5}>
+                            {filteredDeliveries.map((delivery) => (
+                                <Grid item xs={12} md={6} lg={4} key={delivery.id}>
+                                    <DeliveryCard
+                                        delivery={delivery}
+                                        getStatusColor={getStatusColor}
+                                        formatDate={formatDate}
+                                        onReceive={() => openReceive(delivery)}
+                                    />
+                                </Grid>
+                            ))}
+                        </Grid>
+                    )}
+                </Box>
 
-                                            <Grid item xs={12} sm={6} md={2}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Location"
-                                                    value={row.location}
-                                                    onChange={(e) =>
-                                                        updateReceiveRow(index, 'location', e.target.value)
-                                                    }
-                                                />
-                                            </Grid>
+                <Dialog
+                    open={Boolean(selected)}
+                    onClose={closeReceiveDialog}
+                    maxWidth="lg"
+                    fullWidth
+                    PaperProps={{
+                        sx: {
+                            borderRadius: 5,
+                        },
+                    }}
+                >
+                    <DialogTitle sx={{ pb: 1 }}>
+                        <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="flex-start"
+                            spacing={2}
+                        >
+                            <Stack direction="row" spacing={1.5} alignItems="center">
+                                <Box
+                                    sx={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 3,
+                                        bgcolor: 'primary.main',
+                                        color: 'white',
+                                        display: 'grid',
+                                        placeItems: 'center',
+                                    }}
+                                >
+                                    <ReceiptLong />
+                                </Box>
 
-                                            <Grid item xs={12} sm={6} md={2}>
-                                                <TextField
-                                                    fullWidth
-                                                    select
-                                                    label="Condition"
-                                                    value={row.condition}
-                                                    onChange={(e) =>
-                                                        updateReceiveRow(index, 'condition', e.target.value)
-                                                    }
-                                                >
-                                                    <MenuItem value="Good">Good</MenuItem>
-                                                    <MenuItem value="Damaged">Damaged</MenuItem>
-                                                    <MenuItem value="Needs Inspection">
-                                                        Needs Inspection
-                                                    </MenuItem>
-                                                </TextField>
-                                            </Grid>
-
-                                            <Grid item xs={12} md={3}>
-                                                <TextField
-                                                    fullWidth
-                                                    label="Notes"
-                                                    value={row.notes}
-                                                    onChange={(e) =>
-                                                        updateReceiveRow(index, 'notes', e.target.value)
-                                                    }
-                                                />
-                                            </Grid>
-                                        </Grid>
-                                    </Card>
-                                ))}
+                                <Box>
+                                    <Typography variant="h6" fontWeight={900}>
+                                        Receive Purchase Order
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {selected?.purchaseOrderNumber || 'Purchase order'} from{' '}
+                                        {selected?.vendorName || 'vendor'}
+                                    </Typography>
+                                </Box>
                             </Stack>
 
-                            <Divider />
+                            <Tooltip title="Close">
+                                <IconButton onClick={closeReceiveDialog} disabled={saving}>
+                                    <Close />
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
+                    </DialogTitle>
 
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} md={4}>
-                                    <Card variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Receiving Now
-                                        </Typography>
-                                        <Typography variant="h5" fontWeight={800}>
-                                            {totalReceivingQty}
-                                        </Typography>
-                                    </Card>
-                                </Grid>
+                    <DialogContent sx={{ pt: 2 }}>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={8}>
+                                <Stack spacing={2.5}>
+                                    <Alert severity="info" sx={{ borderRadius: 3 }}>
+                                        Enter the quantity received for each item. Quantities cannot exceed the remaining quantity.
+                                    </Alert>
 
-                                <Grid item xs={12} md={4}>
-                                    <Card variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Remaining After This Receipt
-                                        </Typography>
-                                        <Typography variant="h5" fontWeight={800}>
-                                            {totalRemainingAfterReceipt}
-                                        </Typography>
-                                    </Card>
-                                </Grid>
+                                    {invalidRows.length > 0 && (
+                                        <Alert severity="error" sx={{ borderRadius: 3 }}>
+                                            One or more rows have invalid received quantities.
+                                        </Alert>
+                                    )}
 
-                                <Grid item xs={12} md={4}>
-                                    <Card variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            Receipt Value
-                                        </Typography>
-                                        <Typography variant="h5" fontWeight={800}>
-                                            {formatCurrency(totalReceiptValue)}
-                                        </Typography>
-                                    </Card>
-                                </Grid>
-                            </Grid>
+                                    <TextField
+                                        label="Receipt Notes"
+                                        placeholder="Example: Items received and checked by warehouse team"
+                                        value={notes}
+                                        onChange={(event) => setNotes(event.target.value)}
+                                        fullWidth
+                                        multiline
+                                        minRows={2}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <InputAdornment position="start">
+                                                    <Notes />
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
 
-                            {requiresNextDeliveryDate && (
-                                <Card
-                                    variant="outlined"
-                                    sx={{ p: 2, borderRadius: 2, bgcolor: '#fcfcfd' }}
-                                >
-                                    <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-                                        <AutorenewOutlinedIcon color="action" fontSize="small" />
-                                        <Typography fontWeight={700}>
-                                            Remaining Items Need Another Delivery
+                                    <Stack
+                                        direction={{ xs: 'column', sm: 'row' }}
+                                        spacing={1.5}
+                                        justifyContent="space-between"
+                                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                                    >
+                                        <Typography variant="h6" fontWeight={900}>
+                                            Items to Receive
                                         </Typography>
+
+                                        <Stack direction="row" spacing={1}>
+                                            <Button
+                                                variant="outlined"
+                                                onClick={fillAllRemaining}
+                                                disabled={saving}
+                                                sx={{
+                                                    borderRadius: 3,
+                                                    textTransform: 'none',
+                                                    fontWeight: 800,
+                                                }}
+                                            >
+                                                Fill Remaining
+                                            </Button>
+
+                                            <Button
+                                                variant="outlined"
+                                                color="warning"
+                                                onClick={clearAllQuantities}
+                                                disabled={saving}
+                                                sx={{
+                                                    borderRadius: 3,
+                                                    textTransform: 'none',
+                                                    fontWeight: 800,
+                                                }}
+                                            >
+                                                Clear Qty
+                                            </Button>
+                                        </Stack>
                                     </Stack>
 
-                                    <Grid container spacing={2}>
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                fullWidth
-                                                type="date"
-                                                label="Next Delivery Date"
-                                                value={nextDeliveryDate}
-                                                onChange={(e) => setNextDeliveryDate(e.target.value)}
-                                                InputLabelProps={{ shrink: true }}
-                                                helperText="Required because not all items are being received now"
+                                    <Stack spacing={2}>
+                                        {rows.map((row, index) => {
+                                            const quantity = Number(row.quantityReceived || 0);
+                                            const remaining = Number(row.remainingQty || 0);
+                                            const hasError = quantity < 0 || quantity > remaining;
+
+                                            return (
+                                                <Card
+                                                    key={row.purchaseOrderItemId}
+                                                    variant="outlined"
+                                                    sx={{
+                                                        borderRadius: 4,
+                                                        borderColor: hasError ? 'error.main' : 'divider',
+                                                        bgcolor: hasError ? '#fef2f2' : 'white',
+                                                    }}
+                                                >
+                                                    <CardContent>
+                                                        <Stack spacing={2}>
+                                                            <Stack
+                                                                direction={{ xs: 'column', sm: 'row' }}
+                                                                justifyContent="space-between"
+                                                                spacing={1}
+                                                            >
+                                                                <Box>
+                                                                    <Typography fontWeight={900}>
+                                                                        {row.itemName}
+                                                                    </Typography>
+                                                                    <Typography variant="body2" color="text.secondary">
+                                                                        Remaining quantity: {remaining}
+                                                                    </Typography>
+                                                                </Box>
+
+                                                                <Chip
+                                                                    size="small"
+                                                                    label={
+                                                                        quantity > 0
+                                                                            ? `Receiving ${quantity}`
+                                                                            : 'Skipping'
+                                                                    }
+                                                                    color={quantity > 0 ? 'primary' : 'default'}
+                                                                    sx={{ width: 'fit-content', fontWeight: 800 }}
+                                                                />
+                                                            </Stack>
+
+                                                            <Grid container spacing={2}>
+                                                                <Grid item xs={12} md={3}>
+                                                                    <TextField
+                                                                        label="Quantity Received"
+                                                                        type="number"
+                                                                        value={row.quantityReceived}
+                                                                        onChange={(event) =>
+                                                                            updateRow(
+                                                                                index,
+                                                                                'quantityReceived',
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        fullWidth
+                                                                        error={hasError}
+                                                                        helperText={
+                                                                            hasError
+                                                                                ? `Must be between 0 and ${remaining}`
+                                                                                : ' '
+                                                                        }
+                                                                        InputProps={{
+                                                                            inputProps: {
+                                                                                min: 0,
+                                                                                max: remaining,
+                                                                            },
+                                                                            startAdornment: (
+                                                                                <InputAdornment position="start">
+                                                                                    <Numbers />
+                                                                                </InputAdornment>
+                                                                            ),
+                                                                        }}
+                                                                    />
+                                                                </Grid>
+
+                                                                <Grid item xs={12} md={3}>
+                                                                    <TextField
+                                                                        label="Location"
+                                                                        value={row.location}
+                                                                        onChange={(event) =>
+                                                                            updateRow(index, 'location', event.target.value)
+                                                                        }
+                                                                        fullWidth
+                                                                        helperText=" "
+                                                                        InputProps={{
+                                                                            startAdornment: (
+                                                                                <InputAdornment position="start">
+                                                                                    <Place />
+                                                                                </InputAdornment>
+                                                                            ),
+                                                                        }}
+                                                                    />
+                                                                </Grid>
+
+                                                                <Grid item xs={12} md={3}>
+                                                                    <TextField
+                                                                        select
+                                                                        label="Condition"
+                                                                        value={row.condition}
+                                                                        onChange={(event) =>
+                                                                            updateRow(
+                                                                                index,
+                                                                                'condition',
+                                                                                event.target.value
+                                                                            )
+                                                                        }
+                                                                        fullWidth
+                                                                        helperText=" "
+                                                                    >
+                                                                        {conditionOptions.map((condition) => (
+                                                                            <MenuItem key={condition} value={condition}>
+                                                                                {condition === 'NeedsRepair'
+                                                                                    ? 'Needs Repair'
+                                                                                    : condition}
+                                                                            </MenuItem>
+                                                                        ))}
+                                                                    </TextField>
+                                                                </Grid>
+
+                                                                <Grid item xs={12} md={3}>
+                                                                    <TextField
+                                                                        label="Item Notes"
+                                                                        value={row.notes}
+                                                                        onChange={(event) =>
+                                                                            updateRow(index, 'notes', event.target.value)
+                                                                        }
+                                                                        fullWidth
+                                                                        helperText=" "
+                                                                    />
+                                                                </Grid>
+                                                            </Grid>
+                                                        </Stack>
+                                                    </CardContent>
+                                                </Card>
+                                            );
+                                        })}
+                                    </Stack>
+                                </Stack>
+                            </Grid>
+
+                            <Grid item xs={12} md={4}>
+                                <Paper
+                                    variant="outlined"
+                                    sx={{
+                                        p: 2.5,
+                                        borderRadius: 4,
+                                        bgcolor: '#f8fafc',
+                                        position: { md: 'sticky' },
+                                        top: { md: 16 },
+                                    }}
+                                >
+                                    <Stack spacing={2.5}>
+                                        <Box
+                                            sx={{
+                                                width: 56,
+                                                height: 56,
+                                                borderRadius: 4,
+                                                bgcolor: '#eff6ff',
+                                                color: 'primary.main',
+                                                display: 'grid',
+                                                placeItems: 'center',
+                                            }}
+                                        >
+                                            <AssignmentTurnedIn sx={{ fontSize: 30 }} />
+                                        </Box>
+
+                                        <Box>
+                                            <Typography variant="h6" fontWeight={900}>
+                                                Receipt Summary
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Review before submitting this receipt.
+                                            </Typography>
+                                        </Box>
+
+                                        <Divider />
+
+                                        <SummaryRow
+                                            label="Purchase Order"
+                                            value={selected?.purchaseOrderNumber || '-'}
+                                        />
+
+                                        <SummaryRow
+                                            label="Vendor"
+                                            value={selected?.vendorName || '-'}
+                                        />
+
+                                        <SummaryRow
+                                            label="Expected Date"
+                                            value={formatDate(selected?.expectedDate)}
+                                        />
+
+                                        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                                            <Chip
+                                                label={`${rows.length} item rows`}
+                                                color="primary"
+                                                variant="outlined"
+                                                sx={{ fontWeight: 800 }}
                                             />
-                                        </Grid>
 
-                                        <Grid item xs={12} md={6}>
-                                            <TextField
-                                                fullWidth
-                                                label="Receipt Notes"
-                                                value={receiptNotes}
-                                                onChange={(e) => setReceiptNotes(e.target.value)}
-                                                placeholder="Optional note for the remaining delivery"
+                                            <Chip
+                                                label={`${totalReceiving} total qty`}
+                                                color="success"
+                                                variant="outlined"
+                                                sx={{ fontWeight: 800 }}
                                             />
-                                        </Grid>
-                                    </Grid>
-                                </Card>
-                            )}
+                                        </Stack>
 
-                            {!requiresNextDeliveryDate && (
-                                <TextField
-                                    fullWidth
-                                    label="Receipt Notes"
-                                    value={receiptNotes}
-                                    onChange={(e) => setReceiptNotes(e.target.value)}
-                                    placeholder="Optional notes for this receipt"
-                                />
-                            )}
-                        </Stack>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setReceiveOpen(false)} disabled={submitting}>
-                        Cancel
-                    </Button>
-                    <Button variant="contained" onClick={handleReceiveSubmit} disabled={submitting}>
-                        {submitting ? 'Receiving...' : 'Receive and Add to Inventory'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
+                                        {!hasReceivableItems && (
+                                            <Alert severity="warning" sx={{ borderRadius: 3 }}>
+                                                Enter at least one received quantity before submitting.
+                                            </Alert>
+                                        )}
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={3000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    variant="filled"
-                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
+                                        {invalidRows.length > 0 && (
+                                            <Alert severity="error" sx={{ borderRadius: 3 }}>
+                                                Fix invalid quantities before submitting.
+                                            </Alert>
+                                        )}
+                                    </Stack>
+                                </Paper>
+                            </Grid>
+                        </Grid>
+                    </DialogContent>
+
+                    <DialogActions sx={{ px: 3, pb: 3 }}>
+                        <Button
+                            onClick={closeReceiveDialog}
+                            disabled={saving}
+                            sx={{
+                                borderRadius: 3,
+                                textTransform: 'none',
+                                fontWeight: 700,
+                            }}
+                        >
+                            Cancel
+                        </Button>
+
+                        <Button
+                            variant="contained"
+                            startIcon={<AssignmentTurnedIn />}
+                            onClick={submitReceive}
+                            disabled={isSubmitDisabled}
+                            sx={{
+                                borderRadius: 3,
+                                textTransform: 'none',
+                                fontWeight: 900,
+                                px: 3,
+                            }}
+                        >
+                            {saving ? 'Submitting...' : 'Submit Receipt'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </Box>
         </DashboardLayout>
     );
-};
+}
 
-export default PurchaseOrderDeliveryPage;
+function StatCard({
+                      icon,
+                      title,
+                      value,
+                      helper,
+                  }: {
+    icon: React.ReactNode;
+    title: string;
+    value: number;
+    helper: string;
+}) {
+    return (
+        <Card
+            elevation={0}
+            sx={{
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: 'divider',
+                height: '100%',
+            }}
+        >
+            <CardContent>
+                <Stack direction="row" spacing={2} alignItems="center">
+                    <Box
+                        sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 3,
+                            bgcolor: '#eff6ff',
+                            color: 'primary.main',
+                            display: 'grid',
+                            placeItems: 'center',
+                        }}
+                    >
+                        {icon}
+                    </Box>
+
+                    <Box>
+                        <Typography variant="body2" color="text.secondary">
+                            {title}
+                        </Typography>
+
+                        <Typography variant="h5" fontWeight={900}>
+                            {value}
+                        </Typography>
+
+                        <Typography variant="caption" color="text.secondary">
+                            {helper}
+                        </Typography>
+                    </Box>
+                </Stack>
+            </CardContent>
+        </Card>
+    );
+}
+
+function DeliveryCard({
+                          delivery,
+                          getStatusColor,
+                          formatDate,
+                          onReceive,
+                      }: {
+    delivery: Delivery;
+    getStatusColor: (status: unknown) => any;
+    formatDate: (value: string | null | undefined) => string;
+    onReceive: () => void;
+}) {
+    const receivableItems =
+        delivery.items?.filter((item) => Number(item.remainingQty || 0) > 0) || [];
+
+    return (
+        <Card
+            elevation={0}
+            sx={{
+                height: '100%',
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: 'divider',
+                transition: '0.2s ease',
+                '&:hover': {
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 16px 35px rgba(15,23,42,0.10)',
+                },
+            }}
+        >
+            <CardContent>
+                <Stack spacing={2}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box
+                                sx={{
+                                    width: 46,
+                                    height: 46,
+                                    borderRadius: 3,
+                                    bgcolor: '#eff6ff',
+                                    color: 'primary.main',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                }}
+                            >
+                                <ReceiptLong />
+                            </Box>
+
+                            <Box>
+                                <Typography variant="h6" fontWeight={900}>
+                                    {delivery.purchaseOrderNumber}
+                                </Typography>
+
+                                <Typography variant="caption" color="text.secondary">
+                                    {delivery.vendorName || 'Unknown vendor'}
+                                </Typography>
+                            </Box>
+                        </Stack>
+
+                        <Chip
+                            size="small"
+                            label={delivery.status || 'Pending'}
+                            color={getStatusColor(delivery.status)}
+                            sx={{ fontWeight: 800 }}
+                        />
+                    </Stack>
+
+                    <Divider />
+
+                    <Stack spacing={1}>
+                        <InfoLine
+                            icon={<Storefront />}
+                            label="Vendor"
+                            value={delivery.vendorName || '-'}
+                        />
+
+                        <InfoLine
+                            icon={<CalendarMonth />}
+                            label="Expected"
+                            value={formatDate(delivery.expectedDate)}
+                        />
+
+                        <InfoLine
+                            icon={<Inventory2 />}
+                            label="Total Items"
+                            value={String(delivery.totalItems ?? delivery.items?.length ?? 0)}
+                        />
+
+                        <InfoLine
+                            icon={<AssignmentTurnedIn />}
+                            label="Receivable"
+                            value={String(receivableItems.length)}
+                        />
+                    </Stack>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<AssignmentTurnedIn />}
+                        onClick={onReceive}
+                        disabled={receivableItems.length === 0}
+                        sx={{
+                            borderRadius: 3,
+                            textTransform: 'none',
+                            fontWeight: 900,
+                        }}
+                    >
+                        Receive Items
+                    </Button>
+                </Stack>
+            </CardContent>
+        </Card>
+    );
+}
+
+function InfoLine({
+                      icon,
+                      label,
+                      value,
+                  }: {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+}) {
+    return (
+        <Stack direction="row" spacing={1.25} alignItems="center">
+            <Box
+                sx={{
+                    color: 'text.secondary',
+                    display: 'grid',
+                    placeItems: 'center',
+                }}
+            >
+                {icon}
+            </Box>
+
+            <Typography variant="body2" color="text.secondary">
+                {label}:
+            </Typography>
+
+            <Typography variant="body2" fontWeight={800}>
+                {value}
+            </Typography>
+        </Stack>
+    );
+}
+
+function SummaryRow({
+                        label,
+                        value,
+                    }: {
+    label: string;
+    value: string;
+}) {
+    return (
+        <Box>
+            <Typography variant="caption" color="text.secondary">
+                {label}
+            </Typography>
+            <Typography fontWeight={900}>{value}</Typography>
+        </Box>
+    );
+}
+
+function EmptyState() {
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                py: 7,
+                px: 2,
+                borderRadius: 5,
+                textAlign: 'center',
+                bgcolor: 'white',
+            }}
+        >
+            <Box
+                sx={{
+                    width: 74,
+                    height: 74,
+                    borderRadius: 5,
+                    bgcolor: '#eff6ff',
+                    color: 'primary.main',
+                    display: 'grid',
+                    placeItems: 'center',
+                    mx: 'auto',
+                    mb: 2,
+                }}
+            >
+                <LocalShipping sx={{ fontSize: 36 }} />
+            </Box>
+
+            <Typography variant="h6" fontWeight={900}>
+                No deliveries found
+            </Typography>
+
+            <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                There are no purchase order deliveries matching your filters.
+            </Typography>
+        </Paper>
+    );
+}

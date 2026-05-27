@@ -35,6 +35,13 @@ import RequestQuoteOutlinedIcon from '@mui/icons-material/RequestQuoteOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
+import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
+import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined';
+import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
+import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
+import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
+import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
+import { ManageAccounts } from '@mui/icons-material';
 import {useNavigate, useLocation} from 'react-router-dom';
 import {useAuth} from '../../hooks/useAuth';
 import {useEffect, useMemo, useState} from 'react';
@@ -88,6 +95,13 @@ const menuItems: MenuItem[] = [
         path: '/departments',
         permissions: ['VIEW_DEPARTMENTS'],
     },
+
+    {
+        text: 'Delegations',
+        icon: <ManageAccounts />,
+        path: '/delegations',
+        permissions: ['PUBLIC'],
+    },
     {
         text: 'Vendors',
         icon: <StorefrontOutlinedIcon />,
@@ -106,9 +120,21 @@ const menuItems: MenuItem[] = [
         permissions: ['PUBLIC'],
         children: [
             {
-                text: 'Inventory Items',
+                text: 'Stock Catalog',
                 icon: <Inventory2OutlinedIcon />,
                 path: '/inventory',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Add Stock',
+                icon: <AddBoxOutlinedIcon />,
+                path: '/inventory/stocks/create',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Add Asset',
+                icon: <DevicesOutlinedIcon />,
+                path: '/inventory/assets/create',
                 permissions: ['PUBLIC'],
             },
             {
@@ -118,9 +144,46 @@ const menuItems: MenuItem[] = [
                 permissions: ['PUBLIC'],
             },
             {
-                text: 'Deliveries',
+                text: 'PO Deliveries',
                 icon: <LocalShippingOutlinedIcon />,
                 path: '/inventory/delivery',
+                permissions: ['PUBLIC'],
+            },
+        ],
+    },
+    {
+        text: 'Inventory Requests',
+        icon: <AssignmentTurnedInOutlinedIcon />,
+        permissions: ['PUBLIC'],
+        children: [
+            {
+                text: 'New Request',
+                icon: <AddBoxOutlinedIcon />,
+                path: '/inventory-requests/new',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'My Requests',
+                icon: <ReceiptLongOutlinedIcon />,
+                path: '/inventory-requests/my',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Request Approvals',
+                icon: <FactCheckOutlinedIcon />,
+                path: '/inventory-requests/manager-pending',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Processing Queue',
+                icon: <Inventory2OutlinedIcon />,
+                path: '/inventory-requests/inventory-pending',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Shortage Decisions',
+                icon: <FactCheckOutlinedIcon />,
+                path: '/inventory-requests/shortage-decisions',
                 permissions: ['PUBLIC'],
             },
         ],
@@ -177,8 +240,33 @@ const menuItems: MenuItem[] = [
     {
         text: 'Reports',
         icon: <AssessmentOutlinedIcon />,
-        path: '/reports',
-        permissions: ['VIEW_REPORTS'],
+        permissions: ['PUBLIC'],
+        children: [
+            {
+                text: 'Reports Dashboard',
+                icon: <DashboardRoundedIcon />,
+                path: '/reports',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Purchase Order Report',
+                icon: <ReceiptLongOutlinedIcon />,
+                path: '/reports/purchase-orders',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Inventory Reports',
+                icon: <InventoryOutlinedIcon />,
+                path: '/reports/inventory',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Spending Analytics',
+                icon: <PaidOutlinedIcon />,
+                path: '/reports/spending',
+                permissions: ['PUBLIC'],
+            },
+        ],
     },
 ];
 

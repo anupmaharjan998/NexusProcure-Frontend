@@ -1,16 +1,40 @@
-import api from "../services/api.ts";
-import {CategoryQueryParams} from "@/services/inventoryService.ts";
+import api from './api';
 
-export const getTodayPurchaseOrderDeliveries = async (
-    search?: string,
-    status?: string
-) => {
+export const getReceivingDeliveries = async (params?: {
+    date?: string;
+    search?: string;
+    status?: string;
+}) => {
     const res = await api.get('/PurchaseOrderReceipt/today', {
-        params: {
-            search,
-            status
-        }
+        params,
     });
 
     return res.data;
 };
+
+export const receivePurchaseOrderDelivery = async (
+    purchaseOrderId: string,
+    data: ReceivePurchaseOrderDto
+) => {
+    const res = await api.post(
+        `/PurchaseOrderReceipt/${purchaseOrderId}/receive`,
+        data
+    );
+
+    return res.data;
+};
+
+export interface ReceivePurchaseOrderDto {
+    purchaseOrderId: string;
+    receivedDate?: string;
+    notes?: string;
+    items: ReceivePurchaseOrderItemDto[];
+}
+
+export interface ReceivePurchaseOrderItemDto {
+    purchaseOrderItemId: string;
+    quantityReceived: number;
+    location?: string;
+    condition?: string;
+    notes?: string;
+}

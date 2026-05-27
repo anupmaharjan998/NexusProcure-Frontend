@@ -14,7 +14,6 @@ import { DashboardLayout } from '../../components/Layout/DashboardLayout';
 import {
     getLeafCategories,
     createInventoryItem,
-    previewSku
 } from '../../services/inventoryService';
 
 export const AddInventoryItemPage = () => {
@@ -28,7 +27,8 @@ export const AddInventoryItemPage = () => {
         name: '',
         sku: '',
         categoryId: '',
-        description: ''
+        description: '',
+        stockId: ''
     });
 
     const [loading, setLoading] = useState(false);
@@ -64,35 +64,35 @@ export const AddInventoryItemPage = () => {
     };
 
     // ✅ SKU GENERATION (Debounced)
-    useEffect(() => {
-        if (!form.name.trim() || !form.categoryId || created) return;
-
-        const delay = setTimeout(async () => {
-            setLoadingSku(true);
-
-            try {
-                const res = await previewSku({
-                    name: form.name,
-                    categoryId: form.categoryId
-                });
-
-                const skuValue = typeof res === "string" ? res : res.sku;
-
-                setForm(prev => ({
-                    ...prev,
-                    sku: skuValue
-                }));
-
-            } catch {
-                showMessage("Failed to generate SKU", "error");
-            } finally {
-                setLoadingSku(false);
-            }
-        }, 400);
-
-        return () => clearTimeout(delay);
-
-    }, [form.name, form.categoryId, created]);
+    // useEffect(() => {
+    //     if (!form.name.trim() || !form.categoryId || created) return;
+    //
+    //     const delay = setTimeout(async () => {
+    //         setLoadingSku(true);
+    //
+    //         try {
+    //             const res = await previewSku({
+    //                 name: form.name,
+    //                 categoryId: form.categoryId
+    //             });
+    //
+    //             const skuValue = typeof res === "string" ? res : res.sku;
+    //
+    //             setForm(prev => ({
+    //                 ...prev,
+    //                 sku: skuValue
+    //             }));
+    //
+    //         } catch {
+    //             showMessage("Failed to generate SKU", "error");
+    //         } finally {
+    //             setLoadingSku(false);
+    //         }
+    //     }, 400);
+    //
+    //     return () => clearTimeout(delay);
+    //
+    // }, [form.name, form.categoryId, created]);
 
     // ✅ SUBMIT
     const handleSubmit = async () => {
@@ -307,7 +307,8 @@ export const AddInventoryItemPage = () => {
                                             name: '',
                                             sku: '',
                                             categoryId: '',
-                                            description: ''
+                                            description: '',
+                                            stockId: ''
                                         });
                                         setCreated(false);
                                         window.scrollTo({ top: 0, behavior: 'smooth' });

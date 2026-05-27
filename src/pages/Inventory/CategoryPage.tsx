@@ -1,563 +1,596 @@
+import { useEffect, useMemo, useState } from 'react';
 import {
-    Box, Card, Typography, Grid, TextField,
-    Stack, Button, Chip, IconButton, Divider,
-    Dialog, DialogTitle, DialogContent, DialogActions,
-    CircularProgress, Pagination, MenuItem, AlertColor
+    Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    Divider,
+    FormControlLabel,
+    Grid,
+    IconButton,
+    InputAdornment,
+    LinearProgress,
+    Paper,
+    Stack,
+    Switch,
+    TextField,
+    Tooltip,
+    Typography,
 } from '@mui/material';
-
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CategoryIcon from '@mui/icons-material/Category';
-
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
 import {
-    getCategories,
+    Add,
+    Category,
+    DeleteOutline,
+    EditOutlined,
+    Inventory2,
+    Search,
+    Shield,
+    Storefront,
+    WarningAmber,
+} from '@mui/icons-material';
+import {
     createCategory,
     updateCategory,
     deleteCategory,
-    createSubCategory
+    getCategories,
 } from '../../services/inventoryService';
+import { InventoryCategoryDto } from '../../types/InventoryCategoryDto.ts';
+import { DashboardLayout } from '../../components/Layout/DashboardLayout.tsx';
 
-import { Snackbar, Alert } from '@mui/material';
+const initialForm = {
+    name: '',
+    description: '',
+    riskWeight: 0,
+    isAssetTracked: false,
+};
 
-export const CategoryPage = () => {
-
-    const navigate = useNavigate();
-
-    const [data, setData] = useState<any>({
-        categories: [],
-        categoryStats: {
-            totalCategories: 0,
-            totalSubcategories: 0,
-            totalItems: 0
-        }
-    });
-
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: AlertColor;
-    }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
-
-    const showMessage = (message: string, severity: any = 'success') => {
-        setSnackbar({ open: true, message, severity });
-    };
-
-    const [deleteDialog, setDeleteDialog] = useState({
-        open: false,
-        id: null,
-        type: '' // 'category' | 'subcategory'
-    });
+export default function CategoryPage() {
+    const [categories, setCategories] = useState<InventoryCategoryDto[]>([]);
+    const [form, setForm] = useState(initialForm);
 
     const [search, setSearch] = useState('');
-    const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState(5);
-    const [totalCount, setTotalCount] = useState(0);
-    const [editSubMode, setEditSubMode] = useState(false);
-    const [selectedSubCategory, setSelectedSubCategory] = useState<any>(null);
+    const [openCreate, setOpenCreate] = useState(false);
+    const [editTarget, setEditTarget] = useState<InventoryCategoryDto | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<InventoryCategoryDto | null>(null);
 
-    const [form, setForm] = useState({
-        name: '',
-        description: '',
-        riskWeight: 0,
-        parentCategoryId: null
-    });
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
-    const [editMode, setEditMode] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState<any>(null);
-
-    const [openSub, setOpenSub] = useState(false);
-    const [subForm, setSubForm] = useState({
-        name: '',
-        description: '',
-        riskWeight: 0,
-        parentCategoryId: null
-    });
-
-    // ✅ Fetch Data
-    const fetchData = async (searchValue = '', pageValue = page) => {
+    const load = async () => {
         setLoading(true);
-        try {
-            const res = await getCategories({
-                search: searchValue,
-                pageNumber: pageValue,
-                pageSize: pageSize
-            });
 
-            setData(res);
-            setTotalCount(res.totalCount || 0);
-        } catch (err) {
-            console.error(err);
+        try {
+            const res = await getCategories({ pageNumber: 1, pageSize: 100 });
+            setCategories(res.categories || []);
         } finally {
             setLoading(false);
         }
     };
 
-    // ✅ Debounced search + pagination
     useEffect(() => {
-        const delay = setTimeout(() => {
-            fetchData(search, page);
-        }, 400);
+        load();
+    }, []);
 
-        return () => clearTimeout(delay);
-    }, [search, page, pageSize]);
+    const filteredCategories = useMemo(() => {
+        const query = search.trim().toLowerCase();
 
-    // ✅ Add or Update Category
-    const handleSaveCategory = async () => {
-        if (!form.name) {
-            showMessage("Category name is required", "warning");
-            return;
-        }
+        if (!query) return categories;
+
+        return categories.filter((category) => {
+            return (
+                category.name?.toLowerCase().includes(query) ||
+                category.description?.toLowerCase().includes(query) ||
+                category.categoryCode?.toLowerCase().includes(query)
+            );
+        });
+    }, [categories, search]);
+
+    const stats = useMemo(() => {
+        const total = categories.length;
+        const assetTracked = categories.filter((cat) => cat.isAssetTracked).length;
+        const stockOnly = total - assetTracked;
+        const totalItems = categories.reduce((sum, cat) => sum + (cat.totalItems || 0), 0);
+
+        return {
+            total,
+            assetTracked,
+            stockOnly,
+            totalItems,
+        };
+    }, [categories]);
+
+    const resetForm = () => {
+        setForm(initialForm);
+    };
+
+    const openCreateDialog = () => {
+        setEditTarget(null);
+        resetForm();
+        setOpenCreate(true);
+    };
+
+    const openEditDialog = (category: InventoryCategoryDto) => {
+        setEditTarget(category);
+
+        setForm({
+            name: category.name || '',
+            description: category.description || '',
+            riskWeight: category.riskWeight || 0,
+            isAssetTracked: Boolean(category.isAssetTracked),
+        });
+
+        setOpenCreate(true);
+    };
+
+    const closeCategoryDialog = () => {
+        if (saving) return;
+
+        setOpenCreate(false);
+        setEditTarget(null);
+        resetForm();
+    };
+
+    const submit = async () => {
+        if (!form.name.trim()) return;
+
+        setSaving(true);
 
         try {
-            if (editMode && selectedCategory) {
-                await updateCategory(selectedCategory.id, form);
-                showMessage("Category updated successfully");
+            const payload = {
+                name: form.name.trim(),
+                description: form.description.trim(),
+                riskWeight: Number(form.riskWeight),
+                isAssetTracked: form.isAssetTracked,
+                parentCategoryId: null,
+            };
+
+            if (editTarget) {
+                await updateCategory(editTarget.id, payload);
             } else {
-                await createCategory(form);
-                showMessage("Category created successfully");
+                await createCategory(payload);
             }
 
-            await fetchData(search, page);
+            closeCategoryDialog();
+            await load();
+        } finally {
+            setSaving(false);
+        }
+    };
 
-            setForm({
-                name: '',
-                description: '',
-                riskWeight: 0,
-                parentCategoryId: null
-            });
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
 
-            setEditMode(false);
-            setSelectedCategory(null);
-            setOpen(false);
+        setDeleting(true);
 
-        } catch (err) {
-            showMessage("Operation failed", "error");
+        try {
+            await deleteCategory(deleteTarget.id);
+            setDeleteTarget(null);
+            await load();
+        } finally {
+            setDeleting(false);
         }
     };
 
     return (
         <DashboardLayout>
-            <Box p={3}>
-
-                {/* BACK */}
-                <Button
-                    startIcon={<ArrowBackIcon />}
-                    onClick={() => navigate('/inventory')}
-                    sx={{ mb: 2 }}
-                >
-                    Back to Inventory
-                </Button>
-
-                {/* HEADER */}
-                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Stack direction="row" spacing={2} alignItems="center">
-                        <Box sx={{ background: '#ede9fe', p: 1.5, borderRadius: 2 }}>
-                            <CategoryIcon color="primary" />
-                        </Box>
-
-                        <Box>
-                            <Typography variant="h5" fontWeight={700}>
-                                Category Management
-                            </Typography>
-                            <Typography color="text.secondary">
-                                Manage inventory categories and subcategories
-                            </Typography>
-                        </Box>
-                    </Stack>
-
-                    <Button
-                        variant="contained"
-                        startIcon={<AddIcon />}
-                        onClick={() => {
-                            setEditMode(false);
-                            setForm({
-                                name: '',
-                                description: '',
-                                riskWeight: 0,
-                                parentCategoryId: null
-                            });
-                            setOpen(true);
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    bgcolor: '#f8fafc',
+                    px: { xs: 2, md: 4 },
+                    py: { xs: 2, md: 4 },
+                }}
+            >
+                <Box sx={{ maxWidth: 1250, mx: 'auto' }}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: { xs: 2.5, md: 4 },
+                            mb: 3,
+                            borderRadius: 5,
+                            color: 'white',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            background:
+                                'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
                         }}
                     >
-                        Add Category
-                    </Button>
-                </Stack>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                width: 260,
+                                height: 260,
+                                borderRadius: '50%',
+                                right: -90,
+                                top: -100,
+                                bgcolor: 'rgba(255,255,255,0.08)',
+                            }}
+                        />
 
-                {/* KPI */}
-                <Grid container spacing={2} mt={2}>
-                    {[
-                        { label: 'Total Categories', value: data.categoryStats.totalCategories },
-                        { label: 'Total Subcategories', value: data.categoryStats.totalSubCategories },
-                        { label: 'Total Items', value: data.categoryStats.totalItems }
-                    ].map((c, i) => (
-                        <Grid item xs={12} md={4} key={i}>
-                            <Card sx={{ p: 2, borderRadius: 3 }}>
-                                <Typography color="text.secondary">{c.label}</Typography>
-                                <Typography variant="h5" fontWeight={700}>
-                                    {c.value}
-                                </Typography>
-                            </Card>
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                width: 160,
+                                height: 160,
+                                borderRadius: '50%',
+                                right: 120,
+                                bottom: -90,
+                                bgcolor: 'rgba(255,255,255,0.06)',
+                            }}
+                        />
+
+                        <Stack
+                            direction={{ xs: 'column', md: 'row' }}
+                            justifyContent="space-between"
+                            alignItems={{ xs: 'flex-start', md: 'center' }}
+                            spacing={3}
+                            sx={{ position: 'relative', zIndex: 1 }}
+                        >
+                            <Stack direction="row" spacing={2} alignItems="center">
+                                <Box
+                                    sx={{
+                                        width: 64,
+                                        height: 64,
+                                        borderRadius: 4,
+                                        bgcolor: 'rgba(255,255,255,0.14)',
+                                        display: 'grid',
+                                        placeItems: 'center',
+                                        backdropFilter: 'blur(8px)',
+                                    }}
+                                >
+                                    <Category sx={{ fontSize: 34 }} />
+                                </Box>
+
+                                <Box>
+                                    <Typography variant="h4" fontWeight={900}>
+                                        Inventory Categories
+                                    </Typography>
+
+                                    <Typography sx={{ mt: 0.5, color: 'rgba(255,255,255,0.75)' }}>
+                                        Organize stock items into clear categories and define whether they are
+                                        stock-only or asset-tracked.
+                                    </Typography>
+                                </Box>
+                            </Stack>
+
+                            <Button
+                                variant="contained"
+                                startIcon={<Add />}
+                                onClick={openCreateDialog}
+                                sx={{
+                                    bgcolor: 'white',
+                                    color: '#0f172a',
+                                    borderRadius: 3,
+                                    px: 3,
+                                    py: 1.1,
+                                    textTransform: 'none',
+                                    fontWeight: 800,
+                                    boxShadow: '0 12px 28px rgba(0,0,0,0.22)',
+                                    '&:hover': {
+                                        bgcolor: '#f1f5f9',
+                                    },
+                                }}
+                            >
+                                Create Category
+                            </Button>
+                        </Stack>
+                    </Paper>
+
+                    <Grid container spacing={2.5} sx={{ mb: 3 }}>
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<Category />}
+                                title="Total Categories"
+                                value={stats.total}
+                                helper="All category groups"
+                            />
                         </Grid>
-                    ))}
-                </Grid>
 
-                {/* SEARCH */}
-                <Card sx={{ p: 2, mt: 2, borderRadius: 3 }}>
-                    <TextField
-                        fullWidth
-                        placeholder="Search categories and subcategories..."
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setPage(1);
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<Shield />}
+                                title="Asset Tracked"
+                                value={stats.assetTracked}
+                                helper="Physical assets enabled"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<Storefront />}
+                                title="Stock Only"
+                                value={stats.stockOnly}
+                                helper="Quantity tracking only"
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                            <StatCard
+                                icon={<Inventory2 />}
+                                title="Total Items"
+                                value={stats.totalItems}
+                                helper="Items under categories"
+                            />
+                        </Grid>
+                    </Grid>
+
+                    <Card
+                        elevation={0}
+                        sx={{
+                            borderRadius: 5,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            boxShadow: '0 18px 45px rgba(15,23,42,0.06)',
                         }}
-                    />
-                </Card>
-
-                {/* CATEGORY LIST */}
-                {loading ? (
-                    <Box display="flex" justifyContent="center" mt={4}>
-                        <CircularProgress />
-                    </Box>
-                ) : (
-                    <Box mt={2}>
-                        {data.categories.map((cat: any) => (
-                            <Card key={cat.id} sx={{ mb: 3, p: 2, borderRadius: 3 }}>
-
-                                <Stack direction="row" justifyContent="space-between">
-                                    <Box>
-                                        <Typography fontWeight={700}>{cat.name}</Typography>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {cat.description}
-                                        </Typography>
-                                        <Chip label={`${cat.totalItems} items`} size="small" sx={{ mt: 1 }} />
-                                    </Box>
-
-                                    <Stack direction="row" spacing={1}>
-
-                                        {/* ADD SUBCATEGORY */}
-                                        <Button
-                                            size="small"
-                                            startIcon={<AddIcon />}
-                                            onClick={() => {
-                                                setEditSubMode(false);
-                                                setSelectedSubCategory(null);
-
-                                                setSubForm({
-                                                    name: '',
-                                                    description: '',
-                                                    parentCategoryId: cat.id,
-                                                    riskWeight: 0
-                                                });
-
-                                                setOpenSub(true);
-                                            }}
-                                        >
-                                            Add Subcategory
-                                        </Button>
-
-                                        {/* EDIT */}
-                                        <IconButton onClick={() => {
-                                            setEditMode(true);
-                                            setSelectedCategory(cat);
-                                            setForm({
-                                                name: cat.name,
-                                                description: cat.description || '',
-                                                riskWeight: cat.riskWeight || 0,
-                                                parentCategoryId: null
-                                            });
-                                            setOpen(true);
-                                        }}>
-                                            <EditIcon />
-                                        </IconButton>
-
-                                        {/* DELETE */}
-                                        <IconButton
-                                            color="error"
-                                            onClick={() => {
-                                                setDeleteDialog({
-                                                    open: true,
-                                                    id: cat.id,
-                                                    type: 'category'
-                                                });
-                                            }}
-                                        >
-                                            <DeleteIcon />
-                                        </IconButton>
-
-                                    </Stack>
-                                </Stack>
-
-                                <Divider sx={{ my: 2 }} />
-
-                                <Grid container sx={{ fontWeight: 600, mb: 1 }}>
-                                    <Grid item xs={3}>Subcategory Name</Grid>
-                                    <Grid item xs={2}>Code</Grid>
-                                    <Grid item xs={4}>Description</Grid>
-                                    <Grid item xs={1}>Items</Grid>
-                                    <Grid item xs={2}>Actions</Grid>
-                                </Grid>
-
-                                {cat.subCategories?.map((sub: any) => (
-                                    <Grid container key={sub.id} alignItems="center" py={1} sx={{ '&:hover': { background: '#f9fafb' } }}>
-                                        <Grid item xs={3}>{sub.name}</Grid>
-                                        <Grid item xs={2}>
-                                            <Typography variant="body2" color="text.secondary">{sub.categoryCode}</Typography>
-                                        </Grid>
-                                        <Grid item xs={4}>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {sub.description}
-                                            </Typography>
-                                        </Grid>
-                                        <Grid item xs={1}>
-                                            <Chip label={sub.totalItems} size="small" />
-                                        </Grid>
-                                        <Grid item xs={2}>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => {
-                                                    setEditSubMode(true);
-                                                    setSelectedSubCategory(sub);
-
-                                                    setSubForm({
-                                                        name: sub.name,
-                                                        description: sub.description || '',
-                                                        parentCategoryId: cat.id,
-                                                        riskWeight: sub.riskWeight || 0
-                                                    });
-
-                                                    setOpenSub(true);
-                                                }}
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => {
-                                                    setDeleteDialog({
-                                                        open: true,
-                                                        id: sub.id,
-                                                        type: 'subcategory'
-                                                    });
-                                                }}
-                                                disabled={sub.totalItems > 0}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Grid>
-                                    </Grid>
-                                ))}
-                            </Card>
-                        ))}
-                    </Box>
-                )}
-
-                <Box display="flex" justifyContent="space-between" alignItems="center" mt={2}>
-
-                    <Typography variant="body2">
-                        Showing {pageSize} per page
-                    </Typography>
-
-                    <TextField
-                        select
-                        size="small"
-                        value={pageSize}
-                        onChange={(e) => {
-                            setPageSize(Number(e.target.value));
-                            setPage(1);
-                        }}
-                        sx={{ width: 120 }}
                     >
-                        {[5, 10, 20, 50].map(size => (
-                            <MenuItem key={size} value={size}>
-                                {size} / page
-                            </MenuItem>
-                        ))}
-                    </TextField>
+                        {loading && <LinearProgress />}
 
+                        <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+                            <Stack
+                                direction={{ xs: 'column', md: 'row' }}
+                                spacing={2}
+                                justifyContent="space-between"
+                                alignItems={{ xs: 'stretch', md: 'center' }}
+                                mb={3}
+                            >
+                                <Box>
+                                    <Typography variant="h6" fontWeight={900}>
+                                        Category List
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Manage inventory grouping, risk weight, and tracking type.
+                                    </Typography>
+                                </Box>
+
+                                <TextField
+                                    value={search}
+                                    onChange={(event) => setSearch(event.target.value)}
+                                    placeholder="Search category, code, description..."
+                                    size="small"
+                                    sx={{
+                                        minWidth: { xs: '100%', md: 360 },
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 3,
+                                            bgcolor: '#f8fafc',
+                                        },
+                                    }}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <Search />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Stack>
+
+                            {!loading && filteredCategories.length === 0 ? (
+                                <EmptyState
+                                    hasSearch={Boolean(search.trim())}
+                                    onCreate={openCreateDialog}
+                                />
+                            ) : (
+                                <Grid container spacing={2.5}>
+                                    {filteredCategories.map((cat) => (
+                                        <Grid item xs={12} md={6} lg={4} key={cat.id}>
+                                            <CategoryCard
+                                                category={cat}
+                                                onEdit={() => openEditDialog(cat)}
+                                                onDelete={() => setDeleteTarget(cat)}
+                                            />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            )}
+                        </CardContent>
+                    </Card>
                 </Box>
 
-                {/* PAGINATION */}
-                <Box display="flex" justifyContent="center" mt={3}>
-                    <Pagination
-                        count={Math.ceil(totalCount / pageSize)}
-                        page={page}
-                        onChange={(e, value) => setPage(value)}
-                        color="primary"
-                    />
-                </Box>
+                <Dialog
+                    open={openCreate}
+                    onClose={closeCategoryDialog}
+                    fullWidth
+                    maxWidth="sm"
+                    PaperProps={{
+                        sx: {
+                            borderRadius: 5,
+                        },
+                    }}
+                >
+                    <DialogTitle sx={{ pb: 1 }}>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box
+                                sx={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 3,
+                                    bgcolor: 'primary.main',
+                                    color: 'white',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                }}
+                            >
+                                {editTarget ? <EditOutlined /> : <Add />}
+                            </Box>
 
-                {/* ADD/EDIT CATEGORY DIALOG */}
-                <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-                    <DialogTitle>{editMode ? "Edit Category" : "Add Category"}</DialogTitle>
+                            <Box>
+                                <Typography variant="h6" fontWeight={900}>
+                                    {editTarget ? 'Edit Category' : 'Create Category'}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {editTarget
+                                        ? 'Update this inventory category.'
+                                        : 'Add a new inventory category.'}
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    </DialogTitle>
 
-                    <DialogContent>
-                        <Stack spacing={2} mt={1}>
+                    <DialogContent sx={{ pt: 2 }}>
+                        <Stack spacing={2.5}>
+                            <Alert severity="info" sx={{ borderRadius: 3 }}>
+                                Use asset tracking for items that need individual physical records, such as
+                                laptops, monitors, or equipment.
+                            </Alert>
 
                             <TextField
                                 label="Category Name"
-                                fullWidth
+                                placeholder="Example: Laptops, Stationery, Network Devices"
                                 value={form.name}
-                                onChange={(e) =>
-                                    setForm({ ...form, name: e.target.value })
+                                onChange={(event) =>
+                                    setForm({ ...form, name: event.target.value })
                                 }
-                            />
-
-                            <TextField
-                                label="Risk Weight (%)"
-                                type="number"
                                 fullWidth
-                                value={form.riskWeight}
-                                inputProps={{ min: 0, max: 100 }}
-                                helperText="Enter a value between 0 and 100"
-                                onChange={(e) => {
-                                    let value = Number(e.target.value);
-                                    if (value > 100) value = 100;
-                                    if (value < 0) value = 0;
-                                    setForm({ ...form, riskWeight: value });
-                                }}
+                                required
+                                autoFocus
                             />
 
                             <TextField
                                 label="Description"
+                                placeholder="Briefly describe this category"
+                                value={form.description}
+                                onChange={(event) =>
+                                    setForm({ ...form, description: event.target.value })
+                                }
                                 fullWidth
                                 multiline
-                                rows={3}
-                                value={form.description}
-                                onChange={(e) =>
-                                    setForm({ ...form, description: e.target.value })
-                                }
+                                minRows={3}
                             />
 
-                        </Stack>
-                    </DialogContent>
-
-                    <DialogActions>
-                        <Button onClick={() => setOpen(false)}>Cancel</Button>
-                        <Button variant="contained" onClick={handleSaveCategory}>
-                            {editMode ? "Update" : "Create"}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
-
-                {/* ADD SUBCATEGORY DIALOG */}
-                <Dialog open={openSub} onClose={() => setOpenSub(false)} fullWidth maxWidth="sm">
-                    <DialogTitle>
-                        {editSubMode ? "Edit Subcategory" : "Add Subcategory"}
-                    </DialogTitle>
-
-                    <DialogContent>
-                        <Stack spacing={2} mt={1}>
-
-                            <TextField
-                                label="Subcategory Name"
-                                fullWidth
-                                value={subForm.name}
-                                onChange={(e) =>
-                                    setSubForm({ ...subForm, name: e.target.value })
-                                }
-                            />
                             <TextField
                                 label="Risk Weight"
+                                type="number"
+                                value={form.riskWeight}
+                                onChange={(event) =>
+                                    setForm({
+                                        ...form,
+                                        riskWeight: Number(event.target.value),
+                                    })
+                                }
                                 fullWidth
-                                value={subForm.riskWeight}
-                                onChange={(e) => {
-                                    let value = Number(e.target.value);
-                                    if (value > 100) value = 100;
-                                    if (value < 0) value = 0;
-                                    setForm({ ...subForm, riskWeight: value });
+                                helperText="Higher value means this category is more critical or sensitive."
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <WarningAmber />
+                                        </InputAdornment>
+                                    ),
                                 }}
                             />
 
-                            <TextField
-                                label="Description"
-                                fullWidth
-                                multiline
-                                rows={3}
-                                value={subForm.description}
-                                onChange={(e) =>
-                                    setSubForm({ ...subForm, description: e.target.value })
-                                }
-                            />
-
+                            <Paper
+                                variant="outlined"
+                                sx={{
+                                    p: 2,
+                                    borderRadius: 3,
+                                    bgcolor: form.isAssetTracked ? '#eff6ff' : '#f8fafc',
+                                    borderColor: form.isAssetTracked ? 'primary.light' : 'divider',
+                                }}
+                            >
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={form.isAssetTracked}
+                                            onChange={(event) =>
+                                                setForm({
+                                                    ...form,
+                                                    isAssetTracked: event.target.checked,
+                                                })
+                                            }
+                                        />
+                                    }
+                                    label={
+                                        <Box>
+                                            <Typography fontWeight={800}>
+                                                Asset Tracked Category
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Enable this when each item needs its own asset record.
+                                            </Typography>
+                                        </Box>
+                                    }
+                                    sx={{ alignItems: 'flex-start', m: 0 }}
+                                />
+                            </Paper>
                         </Stack>
                     </DialogContent>
 
-                    <DialogActions>
-                        <Button onClick={() => setOpenSub(false)}>Cancel</Button>
+                    <DialogActions sx={{ px: 3, pb: 3 }}>
+                        <Button
+                            onClick={closeCategoryDialog}
+                            disabled={saving}
+                            sx={{
+                                borderRadius: 3,
+                                textTransform: 'none',
+                                fontWeight: 700,
+                            }}
+                        >
+                            Cancel
+                        </Button>
 
                         <Button
                             variant="contained"
-                            onClick={async () => {
-                                if (!subForm.name) {
-                                    showMessage("Subcategory name is required", "warning");
-                                    return;
-                                }
-
-                                try {
-                                    if (editSubMode && selectedSubCategory) {
-                                        await updateCategory(selectedSubCategory.id, {
-                                            name: subForm.name,
-                                            description: subForm.description
-                                        });
-
-                                        showMessage("Subcategory updated successfully");
-
-                                    } else {
-                                        await createSubCategory(subForm);
-                                        showMessage("Subcategory created successfully");
-                                    }
-
-                                    await fetchData(search, page);
-
-                                    setOpenSub(false);
-                                    setEditSubMode(false);
-                                    setSelectedSubCategory(null);
-
-                                } catch (err) {
-                                    showMessage("Operation failed", "error");
-                                }
+                            onClick={submit}
+                            disabled={saving || !form.name.trim()}
+                            startIcon={editTarget ? <EditOutlined /> : <Add />}
+                            sx={{
+                                borderRadius: 3,
+                                textTransform: 'none',
+                                fontWeight: 800,
+                                px: 3,
                             }}
                         >
-                            {editSubMode ? "Update" : "Create"}
+                            {saving
+                                ? editTarget
+                                    ? 'Updating...'
+                                    : 'Creating...'
+                                : editTarget
+                                    ? 'Update Category'
+                                    : 'Create Category'}
                         </Button>
                     </DialogActions>
                 </Dialog>
 
                 <Dialog
-                    open={deleteDialog.open}
-                    onClose={() => setDeleteDialog({ open: false, id: null, type: '' })}
+                    open={Boolean(deleteTarget)}
+                    onClose={() => !deleting && setDeleteTarget(null)}
+                    fullWidth
+                    maxWidth="xs"
+                    PaperProps={{
+                        sx: {
+                            borderRadius: 5,
+                        },
+                    }}
                 >
                     <DialogTitle>
-                        Confirm Delete
+                        <Typography variant="h6" fontWeight={900}>
+                            Delete Category?
+                        </Typography>
                     </DialogTitle>
 
                     <DialogContent>
-                        <Typography>
-                            Are you sure you want to delete this {deleteDialog.type}?
-                            This action cannot be undone.
-                        </Typography>
+                        <Alert severity="warning" sx={{ borderRadius: 3 }}>
+                            Are you sure you want to delete{' '}
+                            <strong>{deleteTarget?.name}</strong>? This action cannot be undone.
+                        </Alert>
                     </DialogContent>
 
-                    <DialogActions>
+                    <DialogActions sx={{ px: 3, pb: 3 }}>
                         <Button
-                            onClick={() =>
-                                setDeleteDialog({ open: false, id: null, type: '' })
-                            }
+                            onClick={() => setDeleteTarget(null)}
+                            disabled={deleting}
+                            sx={{
+                                borderRadius: 3,
+                                textTransform: 'none',
+                                fontWeight: 700,
+                            }}
                         >
                             Cancel
                         </Button>
@@ -565,43 +598,296 @@ export const CategoryPage = () => {
                         <Button
                             color="error"
                             variant="contained"
-                            onClick={async () => {
-                                try {
-                                    await deleteCategory(deleteDialog.id ?? "");
-
-                                    showMessage(
-                                        `${deleteDialog.type === 'category' ? 'Category' : 'Subcategory'} deleted successfully`
-                                    );
-
-                                    await fetchData(search, page);
-
-                                } catch (err) {
-                                    showMessage("Delete failed", "error");
-                                } finally {
-                                    setDeleteDialog({ open: false, id: null, type: '' });
-                                }
+                            onClick={confirmDelete}
+                            disabled={deleting}
+                            sx={{
+                                borderRadius: 3,
+                                textTransform: 'none',
+                                fontWeight: 800,
                             }}
                         >
-                            Delete
+                            {deleting ? 'Deleting...' : 'Delete'}
                         </Button>
                     </DialogActions>
                 </Dialog>
-
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={3000}
-                    onClose={() => setSnackbar({ ...snackbar, open: false })}
-                >
-                    <Alert
-                        severity={snackbar.severity}
-                        onClose={() => setSnackbar({ ...snackbar, open: false })}
-                        variant="filled"
-                    >
-                        {snackbar.message}
-                    </Alert>
-                </Snackbar>
-
             </Box>
         </DashboardLayout>
     );
-};
+}
+
+function StatCard({
+                      icon,
+                      title,
+                      value,
+                      helper,
+                  }: {
+    icon: React.ReactNode;
+    title: string;
+    value: number;
+    helper: string;
+}) {
+    return (
+        <Card
+            elevation={0}
+            sx={{
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: 'divider',
+                height: '100%',
+            }}
+        >
+            <CardContent>
+                <Stack direction="row" spacing={2} alignItems="center">
+                    <Box
+                        sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 3,
+                            bgcolor: '#eff6ff',
+                            color: 'primary.main',
+                            display: 'grid',
+                            placeItems: 'center',
+                        }}
+                    >
+                        {icon}
+                    </Box>
+
+                    <Box>
+                        <Typography variant="body2" color="text.secondary">
+                            {title}
+                        </Typography>
+                        <Typography variant="h5" fontWeight={900}>
+                            {value}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            {helper}
+                        </Typography>
+                    </Box>
+                </Stack>
+            </CardContent>
+        </Card>
+    );
+}
+
+function CategoryCard({
+                          category,
+                          onEdit,
+                          onDelete,
+                      }: {
+    category: InventoryCategoryDto;
+    onEdit: () => void;
+    onDelete: () => void;
+}) {
+    return (
+        <Card
+            elevation={0}
+            sx={{
+                height: '100%',
+                borderRadius: 4,
+                border: '1px solid',
+                borderColor: 'divider',
+                transition: '0.2s ease',
+                '&:hover': {
+                    transform: 'translateY(-3px)',
+                    boxShadow: '0 16px 35px rgba(15,23,42,0.10)',
+                },
+            }}
+        >
+            <CardContent>
+                <Stack spacing={2}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                            <Box
+                                sx={{
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 3,
+                                    bgcolor: category.isAssetTracked ? '#eff6ff' : '#f1f5f9',
+                                    color: category.isAssetTracked ? 'primary.main' : 'text.secondary',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                }}
+                            >
+                                {category.isAssetTracked ? <Shield /> : <Storefront />}
+                            </Box>
+
+                            <Box>
+                                <Typography variant="h6" fontWeight={900}>
+                                    {category.name}
+                                </Typography>
+
+                                <Typography variant="caption" color="text.secondary">
+                                    Code: {category.categoryCode || 'N/A'}
+                                </Typography>
+                            </Box>
+                        </Stack>
+
+                        <Stack direction="row" spacing={0.5}>
+                            <Tooltip title="Edit category">
+                                <IconButton color="primary" onClick={onEdit}>
+                                    <EditOutlined />
+                                </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Delete category">
+                                <IconButton color="error" onClick={onDelete}>
+                                    <DeleteOutline />
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
+                    </Stack>
+
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                        <Chip
+                            size="small"
+                            label={category.isAssetTracked ? 'Asset Tracked' : 'Stock Only'}
+                            color={category.isAssetTracked ? 'primary' : 'default'}
+                            sx={{ fontWeight: 700 }}
+                        />
+
+                        <Chip
+                            size="small"
+                            label={`Risk: ${category.riskWeight ?? 0}`}
+                            variant="outlined"
+                            sx={{ fontWeight: 700 }}
+                        />
+
+                        <Chip
+                            size="small"
+                            label={`${category.totalItems || 0} Items`}
+                            variant="outlined"
+                            sx={{ fontWeight: 700 }}
+                        />
+                    </Stack>
+
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            minHeight: 42,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                        }}
+                    >
+                        {category.description || 'No description added for this category.'}
+                    </Typography>
+
+                    {Boolean(category.subCategories?.length) && (
+                        <>
+                            <Divider />
+
+                            <Box>
+                                <Typography variant="subtitle2" fontWeight={900} mb={1}>
+                                    Sub Categories
+                                </Typography>
+
+                                <Stack spacing={1}>
+                                    {category.subCategories?.map((sub) => (
+                                        <Paper
+                                            key={sub.id}
+                                            variant="outlined"
+                                            sx={{
+                                                p: 1.25,
+                                                borderRadius: 3,
+                                                bgcolor: '#f8fafc',
+                                            }}
+                                        >
+                                            <Stack
+                                                direction="row"
+                                                justifyContent="space-between"
+                                                alignItems="center"
+                                                spacing={1}
+                                            >
+                                                <Typography fontWeight={700} variant="body2">
+                                                    {sub.name}
+                                                </Typography>
+
+                                                <Chip
+                                                    size="small"
+                                                    label={
+                                                        sub.isAssetTracked
+                                                            ? 'Asset'
+                                                            : 'Stock'
+                                                    }
+                                                    color={
+                                                        sub.isAssetTracked
+                                                            ? 'primary'
+                                                            : 'default'
+                                                    }
+                                                />
+                                            </Stack>
+                                        </Paper>
+                                    ))}
+                                </Stack>
+                            </Box>
+                        </>
+                    )}
+                </Stack>
+            </CardContent>
+        </Card>
+    );
+}
+
+function EmptyState({
+                        hasSearch,
+                        onCreate,
+                    }: {
+    hasSearch: boolean;
+    onCreate: () => void;
+}) {
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                py: 7,
+                px: 2,
+                borderRadius: 4,
+                textAlign: 'center',
+                bgcolor: '#f8fafc',
+            }}
+        >
+            <Box
+                sx={{
+                    width: 70,
+                    height: 70,
+                    borderRadius: 5,
+                    bgcolor: '#eff6ff',
+                    color: 'primary.main',
+                    display: 'grid',
+                    placeItems: 'center',
+                    mx: 'auto',
+                    mb: 2,
+                }}
+            >
+                <Category sx={{ fontSize: 36 }} />
+            </Box>
+
+            <Typography variant="h6" fontWeight={900}>
+                {hasSearch ? 'No matching categories found' : 'No categories created yet'}
+            </Typography>
+
+            <Typography color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
+                {hasSearch
+                    ? 'Try searching with another category name, code, or description.'
+                    : 'Create your first inventory category to start organizing stock items.'}
+            </Typography>
+
+            {!hasSearch && (
+                <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={onCreate}
+                    sx={{
+                        borderRadius: 3,
+                        textTransform: 'none',
+                        fontWeight: 800,
+                    }}
+                >
+                    Create Category
+                </Button>
+            )}
+        </Paper>
+    );
+}

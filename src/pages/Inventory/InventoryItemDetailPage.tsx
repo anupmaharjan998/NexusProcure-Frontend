@@ -1,759 +1,992 @@
+import { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
-    Autocomplete,
+    Avatar,
     Box,
     Button,
     Card,
+    CardContent,
     Chip,
     CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
     Divider,
     Grid,
-    IconButton,
-    Link,
+    InputAdornment,
+    LinearProgress,
+    MenuItem,
     Paper,
-    Skeleton,
-    Snackbar,
     Stack,
     TextField,
+    Tooltip,
     Typography,
-    Breadcrumbs
 } from '@mui/material';
-import Barcode from 'react-barcode';
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
-
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import Inventory2OutlinedIcon from '@mui/icons-material/Inventory2Outlined';
-import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
-import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
-import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
-import NumbersOutlinedIcon from '@mui/icons-material/NumbersOutlined';
-import BuildCircleOutlinedIcon from '@mui/icons-material/BuildCircleOutlined';
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
-import AssignmentIndOutlinedIcon from '@mui/icons-material/AssignmentIndOutlined';
-import HistoryOutlinedIcon from '@mui/icons-material/HistoryOutlined';
-import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-
-import { DashboardLayout } from '../../components/Layout/DashboardLayout';
+import {
+    ArrowBack,
+    AssignmentReturn,
+    Badge,
+    Category,
+    CheckCircle,
+    History,
+    Inventory2,
+    LocationOn,
+    Notes,
+    Person,
+    QrCode2,
+    Search,
+    Tag,
+    WarningAmber,
+} from '@mui/icons-material';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
     assignItem,
     getInventoryItemById,
     searchUsers,
-    unassignItem
+    unassignItem,
 } from '../../services/inventoryService';
+import { DashboardLayout } from '../../components/Layout/DashboardLayout.tsx';
+import { InventoryItemDetailDto } from '../../types/InventoryItemDetailDto.ts';
 
-interface AssignmentHistory {
-    userName: string;
-    assignedDate: string;
-    returnedDate?: string | null;
+enum InventoryItemStatus {
+    Available = 1,
+    Assigned = 2,
+    Maintenance = 3,
+    Damaged = 4,
+    Lost = 5,
+    Retired = 6,
 }
 
-interface InventoryItemDetail {
-    id: string;
-    name: string;
-    sku: string;
-    status: 'Available' | 'Assigned' | 'Maintenance' | string;
-    category?: string;
-    location?: string;
-    assignedTo?: string | null;
-    serialNumber?: string | null;
-    condition?: string | null;
-    barcode?: string | null;
-    description?: string | null;
-    assignmentHistory?: AssignmentHistory[];
-}
-
-interface UserOption {
-    id: string;
-    fullName: string;
-    email?: string;
-    department?: string;
-}
-
-export const InventoryItemDetailPage = () => {
-    const navigate = useNavigate();
+export default function InventoryItemDetailPage() {
     const { id } = useParams();
-    const location = useLocation();
+    const navigate = useNavigate();
 
-    const [item, setItem] = useState<InventoryItemDetail | null>(null);
+    const [item, setItem] = useState<InventoryItemDetailDto | null>(null);
+
     const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
-    const [error, setError] = useState('');
-
-    const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+    const [searchingUsers, setSearchingUsers] = useState(false);
     const [assigning, setAssigning] = useState(false);
+    const [unassigning, setUnassigning] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+
     const [userSearch, setUserSearch] = useState('');
-    const [userOptions, setUserOptions] = useState<UserOption[]>([]);
-    const [usersLoading, setUsersLoading] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<UserOption | null>(null);
-    const [assignNotes, setAssignNotes] = useState('');
+    const [users, setUsers] = useState<any[]>([]);
+    const [selectedUserId, setSelectedUserId] = useState('');
+    const [notes, setNotes] = useState('');
 
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: 'success' | 'error' | 'warning' | 'info';
-    }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
-
-    useEffect(() => {
-        loadItem();
-    }, [id]);
-
-    useEffect(() => {
-        if (location.state?.message) {
-            setSnackbar({
-                open: true,
-                message: location.state.message,
-                severity: location.state.severity || 'success',
-            });
-
-            window.history.replaceState({}, document.title);
-        }
-    }, [location.state]);
-
-    useEffect(() => {
-        const delay = setTimeout(async () => {
-            if (!assignDialogOpen) return;
-
-            const q = userSearch.trim();
-            if (q.length < 2) {
-                setUserOptions([]);
-                return;
-            }
-
-            setUsersLoading(true);
-            try {
-                const res = await searchUsers(q);
-                setUserOptions(res || []);
-            } catch (err: any) {
-                setSnackbar({
-                    open: true,
-                    message: err?.response?.data?.message || 'Failed to search users',
-                    severity: 'error',
-                });
-            } finally {
-                setUsersLoading(false);
-            }
-        }, 300);
-
-        return () => clearTimeout(delay);
-    }, [userSearch, assignDialogOpen]);
-
-    const loadItem = async () => {
+    const load = async () => {
         if (!id) return;
 
         setLoading(true);
-        setError('');
+        setErrorMessage('');
 
         try {
-            const res = await getInventoryItemById(id);
-            setItem(res);
-        } catch (err: any) {
-            setError(err?.response?.data?.message || 'Failed to load inventory item');
+            const data = await getInventoryItemById(id);
+            setItem(data);
+        } catch {
+            setErrorMessage('Failed to load asset details.');
         } finally {
             setLoading(false);
         }
     };
 
-    const getStatusColor = (
-        status: string
-    ): 'success' | 'warning' | 'error' | 'default' => {
-        switch (status) {
-            case 'Available':
-                return 'success';
-            case 'Assigned':
-                return 'warning';
-            case 'Maintenance':
-                return 'error';
-            default:
-                return 'default';
-        }
+    useEffect(() => {
+        load();
+    }, [id]);
+
+    const isAssigned = useMemo(() => {
+        if (!item) return false;
+
+        return (
+            Number(item.status) === InventoryItemStatus.Assigned ||
+            String(item.status).toLowerCase() === 'assigned'
+        );
+    }, [item]);
+
+    const selectedUser = useMemo(() => {
+        return users.find((user) => user.id === selectedUserId);
+    }, [users, selectedUserId]);
+
+    const getStatusLabel = (status: unknown) => {
+        const value = String(status).toLowerCase();
+
+        if (value === '1') return 'Available';
+        if (value === '2') return 'Assigned';
+        if (value === '3') return 'Maintenance';
+        if (value === '4') return 'Damaged';
+        if (value === '5') return 'Lost';
+        if (value === '6') return 'Retired';
+
+        return String(status);
     };
 
-    const handleOpenAssignDialog = () => {
-        setSelectedUser(null);
-        setUserSearch('');
-        setUserOptions([]);
-        setAssignNotes('');
-        setAssignDialogOpen(true);
+    const getConditionLabel = (condition: unknown) => {
+        const value = String(condition).toLowerCase();
+
+        if (value === '1') return 'Good';
+        if (value === '2') return 'Damaged';
+        if (value === '3') return 'Needs Repair';
+
+        return String(condition);
+    };
+
+    const getStatusColor = (status: unknown) => {
+        const value = String(status).toLowerCase();
+
+        if (value.includes('assigned') || value === '2') return 'warning';
+        if (value.includes('available') || value === '1') return 'success';
+        if (value.includes('maintenance') || value === '3') return 'info';
+        if (
+            value.includes('damaged') ||
+            value.includes('lost') ||
+            value === '4' ||
+            value === '5'
+        ) {
+            return 'error';
+        }
+        if (value.includes('retired') || value === '6') return 'default';
+
+        return 'default';
+    };
+
+    const getConditionColor = (condition: unknown) => {
+        const value = String(condition).toLowerCase();
+
+        if (value.includes('good') || value === '1') return 'success';
+        if (value.includes('needs') || value.includes('repair') || value === '3') {
+            return 'warning';
+        }
+        if (value.includes('damaged') || value === '2') return 'error';
+
+        return 'default';
+    };
+
+    const handleSearchUsers = async () => {
+        if (!userSearch.trim()) return;
+
+        setSearchingUsers(true);
+        setErrorMessage('');
+
+        try {
+            const data = await searchUsers(userSearch.trim());
+            setUsers(data || []);
+        } catch {
+            setErrorMessage('Failed to search users.');
+        } finally {
+            setSearchingUsers(false);
+        }
     };
 
     const handleAssign = async () => {
-        if (!item || !selectedUser) {
-            setSnackbar({
-                open: true,
-                message: 'Please select a user to assign this item.',
-                severity: 'warning',
-            });
-            return;
-        }
+        if (!id || !selectedUserId) return;
 
         setAssigning(true);
-        setError('');
+        setErrorMessage('');
 
         try {
-            await assignItem(item.id, selectedUser.id, assignNotes.trim() || undefined);
-            setAssignDialogOpen(false);
-            await loadItem();
+            await assignItem(id, selectedUserId, notes.trim());
 
-            setSnackbar({
-                open: true,
-                message: `Item assigned to ${selectedUser.fullName} successfully`,
-                severity: 'success',
-            });
-        } catch (err: any) {
-            setError(err?.response?.data?.message || 'Failed to assign item');
+            setSelectedUserId('');
+            setUserSearch('');
+            setUsers([]);
+            setNotes('');
+
+            await load();
+        } catch {
+            setErrorMessage('Failed to assign asset.');
         } finally {
             setAssigning(false);
         }
     };
 
     const handleUnassign = async () => {
-        if (!item) return;
-        setActionLoading(true);
-        setError('');
+        if (!id) return;
+
+        setUnassigning(true);
+        setErrorMessage('');
 
         try {
-            await unassignItem(item.id);
-            await loadItem();
-
-            setSnackbar({
-                open: true,
-                message: 'Item unassigned successfully',
-                severity: 'success',
-            });
-        } catch (err: any) {
-            setError(err?.response?.data?.message || 'Failed to unassign item');
+            await unassignItem(id);
+            await load();
+        } catch {
+            setErrorMessage('Failed to return asset.');
         } finally {
-            setActionLoading(false);
+            setUnassigning(false);
         }
     };
 
-    const DetailRow = ({
-                           icon,
-                           label,
-                           value,
-                       }: {
-        icon: React.ReactNode;
-        label: string;
-        value: React.ReactNode;
-    }) => (
-        <Stack direction="row" spacing={1.25} alignItems="flex-start">
-            <Box sx={{ color: 'text.secondary', mt: '2px' }}>{icon}</Box>
-            <Box>
-                <Typography variant="body2" color="text.secondary">
-                    {label}
-                </Typography>
-                <Typography variant="body1" fontWeight={600}>
-                    {value}
-                </Typography>
-            </Box>
-        </Stack>
-    );
+    if (loading) {
+        return (
+            <DashboardLayout>
+                <Box
+                    sx={{
+                        minHeight: '100vh',
+                        bgcolor: '#f8fafc',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Stack spacing={2} alignItems="center">
+                        <CircularProgress />
+                        <Typography color="text.secondary">
+                            Loading asset details...
+                        </Typography>
+                    </Stack>
+                </Box>
+            </DashboardLayout>
+        );
+    }
 
-    const formatDate = (value?: string | null) => {
-        if (!value) return '-';
-        return new Date(value).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-        });
-    };
+    if (!item) {
+        return (
+            <DashboardLayout>
+                <Box sx={{ p: 4 }}>
+                    <Alert severity="error" sx={{ borderRadius: 3 }}>
+                        Asset details could not be found.
+                    </Alert>
+                </Box>
+            </DashboardLayout>
+        );
+    }
 
     return (
         <DashboardLayout>
-            <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>
-                <Stack spacing={3}>
-                    <Stack
-                        direction={{ xs: 'column', md: 'row' }}
-                        justifyContent="space-between"
-                        spacing={2}
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    bgcolor: '#f8fafc',
+                    px: { xs: 2, md: 4 },
+                    py: { xs: 2, md: 4 },
+                }}
+            >
+                <Box sx={{ maxWidth: 1250, mx: 'auto' }}>
+                    <Button
+                        startIcon={<ArrowBack />}
+                        onClick={() => navigate('/inventory')}
+                        sx={{
+                            mb: 3,
+                            color: 'text.secondary',
+                            textTransform: 'none',
+                            fontWeight: 700,
+                        }}
                     >
-                        <Box>
-                            <Breadcrumbs sx={{ mb: 1 }}>
-                                <Link
-                                    underline="hover"
-                                    color="inherit"
+                        Back to Inventory
+                    </Button>
+
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: { xs: 2.5, md: 4 },
+                            mb: 3,
+                            borderRadius: 5,
+                            color: 'white',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            background:
+                                'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                width: 260,
+                                height: 260,
+                                borderRadius: '50%',
+                                right: -90,
+                                top: -100,
+                                bgcolor: 'rgba(255,255,255,0.08)',
+                            }}
+                        />
+
+                        <Stack
+                            direction={{ xs: 'column', md: 'row' }}
+                            spacing={3}
+                            justifyContent="space-between"
+                            alignItems={{ xs: 'flex-start', md: 'center' }}
+                            sx={{ position: 'relative', zIndex: 1 }}
+                        >
+                            <Stack direction="row" spacing={2} alignItems="center">
+                                <Box
                                     sx={{
-                                        cursor: 'pointer',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
+                                        width: 68,
+                                        height: 68,
+                                        borderRadius: 4,
+                                        bgcolor: 'rgba(255,255,255,0.14)',
+                                        display: 'grid',
+                                        placeItems: 'center',
+                                        backdropFilter: 'blur(8px)',
                                     }}
-                                    onClick={() => navigate('/inventory')}
                                 >
-                                    <ArrowBackRoundedIcon sx={{ fontSize: 18 }} />
-                                    Inventory
-                                </Link>
-                                <Typography color="text.primary">Item Details</Typography>
-                            </Breadcrumbs>
+                                    <Inventory2 sx={{ fontSize: 36 }} />
+                                </Box>
 
-                            <Typography variant="h4" fontWeight={800}>
-                                Inventory Item Details
-                            </Typography>
-                            <Typography color="text.secondary">
-                                View item information, barcode, current assignment, and assignment history
-                            </Typography>
-                        </Box>
-
-                        <Stack direction="row" spacing={1} alignItems="flex-start">
-                            <IconButton onClick={loadItem} disabled={loading || actionLoading}>
-                                <RefreshRoundedIcon />
-                            </IconButton>
-                        </Stack>
-                    </Stack>
-
-                    {error && <Alert severity="error">{error}</Alert>}
-
-                    {loading ? (
-                        <Stack spacing={2}>
-                            <Skeleton variant="rounded" height={110} />
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} lg={8}>
-                                    <Skeleton variant="rounded" height={260} />
-                                </Grid>
-                                <Grid item xs={12} lg={4}>
-                                    <Skeleton variant="rounded" height={260} />
-                                </Grid>
-                            </Grid>
-                            <Skeleton variant="rounded" height={140} />
-                            <Skeleton variant="rounded" height={220} />
-                        </Stack>
-                    ) : !item ? (
-                        <Alert severity="warning">Item not found.</Alert>
-                    ) : (
-                        <>
-                            <Card
-                                sx={{
-                                    p: 3,
-                                    borderRadius: 3,
-                                    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.06)',
-                                }}
-                            >
-                                <Stack
-                                    direction={{ xs: 'column', md: 'row' }}
-                                    justifyContent="space-between"
-                                    spacing={2}
-                                >
-                                    <Stack direction="row" spacing={2} alignItems="center">
-                                        <Box
-                                            sx={{
-                                                width: 64,
-                                                height: 64,
-                                                display: 'grid',
-                                                placeItems: 'center',
-                                                bgcolor: 'primary.light',
-                                                color: 'primary.contrastText',
-                                                borderRadius: 3,
-                                            }}
-                                        >
-                                            <Inventory2OutlinedIcon />
-                                        </Box>
-
-                                        <Box>
-                                            <Stack
-                                                direction="row"
-                                                spacing={1}
-                                                alignItems="center"
-                                                flexWrap="wrap"
-                                            >
-                                                <Typography variant="h5" fontWeight={800}>
-                                                    {item.name}
-                                                </Typography>
-
-                                                <Chip
-                                                    label={item.status}
-                                                    color={getStatusColor(item.status)}
-                                                    sx={{ fontWeight: 700 }}
-                                                />
-                                            </Stack>
-
-                                            <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                                                SKU: {item.sku}
-                                            </Typography>
-                                        </Box>
-                                    </Stack>
+                                <Box>
+                                    <Typography variant="h4" fontWeight={900}>
+                                        {item.name}
+                                    </Typography>
 
                                     <Stack
-                                        direction={{ xs: 'column', sm: 'row' }}
-                                        spacing={1.5}
-                                        alignItems={{ xs: 'stretch', sm: 'center' }}
+                                        direction="row"
+                                        spacing={1}
+                                        alignItems="center"
+                                        flexWrap="wrap"
+                                        useFlexGap
+                                        sx={{ mt: 1 }}
                                     >
-                                        <Button
-                                            variant="contained"
-                                            disabled={item.status !== 'Available' || actionLoading}
-                                            onClick={handleOpenAssignDialog}
-                                            startIcon={
-                                                actionLoading && item.status === 'Available' ? (
-                                                    <CircularProgress size={16} color="inherit" />
-                                                ) : (
-                                                    <AssignmentIndOutlinedIcon />
-                                                )
-                                            }
-                                        >
-                                            Assign
-                                        </Button>
+                                        <Chip
+                                            size="small"
+                                            label={`SKU: ${item.sku}`}
+                                            sx={{
+                                                bgcolor: 'rgba(255,255,255,0.14)',
+                                                color: 'white',
+                                                fontWeight: 700,
+                                            }}
+                                        />
 
-                                        <Button
-                                            variant="outlined"
-                                            disabled={item.status !== 'Assigned' || actionLoading}
-                                            onClick={handleUnassign}
-                                        >
-                                            Unassign
-                                        </Button>
+                                        <Chip
+                                            size="small"
+                                            label={getStatusLabel(item.status)}
+                                            color={getStatusColor(item.status)}
+                                            sx={{ fontWeight: 800 }}
+                                        />
 
-                                        <Button
-                                            variant="outlined"
-                                            startIcon={<EditOutlinedIcon />}
-                                            onClick={() => navigate(`/inventory/item-edit/${id}`)}
-                                            disabled={actionLoading}
-                                        >
-                                            Edit Item
-                                        </Button>
+                                        <Chip
+                                            size="small"
+                                            label={`Condition: ${getConditionLabel(item.condition)}`}
+                                            color={getConditionColor(item.condition)}
+                                            sx={{ fontWeight: 800 }}
+                                        />
                                     </Stack>
-                                </Stack>
-                            </Card>
+                                </Box>
+                            </Stack>
 
-                            <Grid container spacing={2}>
-                                <Grid item xs={12} lg={8}>
-                                    <Card
-                                        sx={{
-                                            p: 3,
-                                            borderRadius: 3,
-                                            height: '100%',
-                                            boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)',
-                                        }}
-                                    >
-                                        <Typography variant="h6" fontWeight={700} mb={2}>
-                                            Item Overview
-                                        </Typography>
+                            {isAssigned ? (
+                                <Button
+                                    variant="contained"
+                                    color="warning"
+                                    startIcon={<AssignmentReturn />}
+                                    onClick={handleUnassign}
+                                    disabled={unassigning}
+                                    sx={{
+                                        borderRadius: 3,
+                                        px: 3,
+                                        py: 1.1,
+                                        textTransform: 'none',
+                                        fontWeight: 900,
+                                    }}
+                                >
+                                    {unassigning ? 'Returning...' : 'Return Asset'}
+                                </Button>
+                            ) : (
+                                <Chip
+                                    icon={<CheckCircle />}
+                                    label="Ready to assign"
+                                    color="success"
+                                    sx={{
+                                        fontWeight: 800,
+                                        height: 42,
+                                        px: 1,
+                                    }}
+                                />
+                            )}
+                        </Stack>
+                    </Paper>
 
-                                        <Grid container spacing={3}>
+                    {errorMessage && (
+                        <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>
+                            {errorMessage}
+                        </Alert>
+                    )}
+
+                    {(assigning || unassigning) && (
+                        <LinearProgress sx={{ mb: 3, borderRadius: 99 }} />
+                    )}
+
+                    <Grid container spacing={3}>
+                        <Grid item xs={12} md={8}>
+                            <Card
+                                elevation={0}
+                                sx={{
+                                    borderRadius: 5,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    boxShadow: '0 18px 45px rgba(15,23,42,0.06)',
+                                }}
+                            >
+                                <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+                                    <Stack spacing={3}>
+                                        <Box>
+                                            <Typography variant="h6" fontWeight={900}>
+                                                Asset Information
+                                            </Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Complete details of this physical inventory asset.
+                                            </Typography>
+                                        </Box>
+
+                                        <Grid container spacing={2}>
                                             <Grid item xs={12} sm={6}>
-                                                <Stack spacing={2.5}>
-                                                    <DetailRow
-                                                        icon={<CategoryOutlinedIcon fontSize="small" />}
-                                                        label="Category"
-                                                        value={item.category || '-'}
-                                                    />
-                                                    <DetailRow
-                                                        icon={<LocationOnOutlinedIcon fontSize="small" />}
-                                                        label="Location"
-                                                        value={item.location || '-'}
-                                                    />
-                                                    <DetailRow
-                                                        icon={<PersonOutlineOutlinedIcon fontSize="small" />}
-                                                        label="Assigned To"
-                                                        value={item.assignedTo || 'Not Assigned'}
-                                                    />
-                                                </Stack>
+                                                <InfoTile
+                                                    icon={<QrCode2 />}
+                                                    label="Barcode"
+                                                    value={item.barcode || '-'}
+                                                />
                                             </Grid>
 
                                             <Grid item xs={12} sm={6}>
-                                                <Stack spacing={2.5}>
-                                                    <DetailRow
-                                                        icon={<NumbersOutlinedIcon fontSize="small" />}
-                                                        label="Serial Number"
-                                                        value={item.serialNumber || '-'}
-                                                    />
-                                                    <DetailRow
-                                                        icon={<BuildCircleOutlinedIcon fontSize="small" />}
-                                                        label="Condition"
-                                                        value={item.condition || '-'}
-                                                    />
-                                                    <DetailRow
-                                                        icon={<Inventory2OutlinedIcon fontSize="small" />}
-                                                        label="SKU"
-                                                        value={item.sku}
-                                                    />
-                                                </Stack>
+                                                <InfoTile
+                                                    icon={<Category />}
+                                                    label="Category"
+                                                    value={item.category || '-'}
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={12} sm={6}>
+                                                <InfoTile
+                                                    icon={<Tag />}
+                                                    label="Serial Number"
+                                                    value={item.serialNumber || '-'}
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={12} sm={6}>
+                                                <InfoTile
+                                                    icon={<LocationOn />}
+                                                    label="Location"
+                                                    value={item.location || '-'}
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={12} sm={6}>
+                                                <InfoTile
+                                                    icon={<Badge />}
+                                                    label="Assigned To"
+                                                    value={item.assignedTo || 'Not assigned'}
+                                                />
+                                            </Grid>
+
+                                            <Grid item xs={12} sm={6}>
+                                                <InfoTile
+                                                    icon={<WarningAmber />}
+                                                    label="Condition"
+                                                    value={getConditionLabel(item.condition)}
+                                                    chipColor={getConditionColor(item.condition)}
+                                                />
                                             </Grid>
                                         </Grid>
-                                    </Card>
-                                </Grid>
 
-                                <Grid item xs={12} lg={4}>
-                                    <Card
-                                        sx={{
-                                            p: 3,
-                                            borderRadius: 3,
-                                            height: '100%',
-                                            boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)',
-                                        }}
-                                    >
-                                        <Typography variant="h6" fontWeight={700} mb={2}>
-                                            Barcode
-                                        </Typography>
+                                        <Divider />
 
-                                        <Paper
-                                            variant="outlined"
-                                            sx={{
-                                                p: 3,
-                                                textAlign: 'center',
-                                                borderRadius: 2.5,
-                                                bgcolor: '#fcfcfd',
-                                            }}
-                                        >
-                                            {item.barcode ? (
-                                                <Stack spacing={1.5} alignItems="center">
-                                                    <Barcode
-                                                        value={item.barcode}
-                                                        height={60}
-                                                        displayValue={false}
-                                                        margin={0}
-                                                        width={1.6}
-                                                    />
-                                                    <Typography fontWeight={700}>
-                                                        {item.barcode}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="body2"
-                                                        color="text.secondary"
-                                                    >
-                                                        Scan to identify this item
-                                                    </Typography>
-                                                </Stack>
-                                            ) : (
-                                                <Typography color="text.secondary">
-                                                    No barcode available
+                                        <Box>
+                                            <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                                                <Notes color="action" />
+                                                <Typography variant="h6" fontWeight={900}>
+                                                    Description
                                                 </Typography>
-                                            )}
-                                        </Paper>
-                                    </Card>
-                                </Grid>
-                            </Grid>
+                                            </Stack>
 
-                            <Card
-                                sx={{
-                                    p: 3,
-                                    borderRadius: 3,
-                                    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)',
-                                }}
-                            >
-                                <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
-                                    <DescriptionOutlinedIcon fontSize="small" color="action" />
-                                    <Typography variant="h6" fontWeight={700}>
-                                        Description
-                                    </Typography>
-                                </Stack>
-
-                                <Divider sx={{ mb: 2 }} />
-
-                                <Typography color={item.description ? 'text.primary' : 'text.secondary'}>
-                                    {item.description || 'No description available for this item.'}
-                                </Typography>
-                            </Card>
-
-                            <Card
-                                sx={{
-                                    p: 3,
-                                    borderRadius: 3,
-                                    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.05)',
-                                }}
-                            >
-                                <Stack direction="row" spacing={1} alignItems="center" mb={2}>
-                                    <HistoryOutlinedIcon fontSize="small" color="action" />
-                                    <Typography variant="h6" fontWeight={700}>
-                                        Assignment History
-                                    </Typography>
-                                </Stack>
-
-                                {!item.assignmentHistory || item.assignmentHistory.length === 0 ? (
-                                    <Box
-                                        sx={{
-                                            p: 3,
-                                            textAlign: 'center',
-                                            bgcolor: '#f9fafb',
-                                            borderRadius: 2,
-                                            border: '1px dashed',
-                                            borderColor: 'divider',
-                                        }}
-                                    >
-                                        <Typography color="text.secondary">
-                                            No assignment history available for this item.
-                                        </Typography>
-                                    </Box>
-                                ) : (
-                                    <Stack spacing={2}>
-                                        {item.assignmentHistory.map((history, index) => (
                                             <Paper
-                                                key={index}
                                                 variant="outlined"
                                                 sx={{
                                                     p: 2,
-                                                    borderRadius: 2,
-                                                    bgcolor: '#fff',
+                                                    borderRadius: 3,
+                                                    bgcolor: '#f8fafc',
+                                                    minHeight: 80,
                                                 }}
                                             >
-                                                <Stack
-                                                    direction={{ xs: 'column', sm: 'row' }}
-                                                    justifyContent="space-between"
-                                                    spacing={1}
-                                                >
-                                                    <Typography fontWeight={700}>
-                                                        {history.userName}
-                                                    </Typography>
-
-                                                    <Chip
-                                                        size="small"
-                                                        label={
-                                                            history.returnedDate
-                                                                ? 'Returned'
-                                                                : 'Currently Assigned'
-                                                        }
-                                                        color={
-                                                            history.returnedDate
-                                                                ? 'default'
-                                                                : 'warning'
-                                                        }
-                                                    />
-                                                </Stack>
-
                                                 <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    mt={1}
+                                                    color={
+                                                        item.description
+                                                            ? 'text.primary'
+                                                            : 'text.secondary'
+                                                    }
                                                 >
-                                                    Assigned on {formatDate(history.assignedDate)}
-                                                </Typography>
-
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                >
-                                                    {history.returnedDate
-                                                        ? `Returned on ${formatDate(history.returnedDate)}`
-                                                        : 'Still assigned'}
+                                                    {item.description ||
+                                                        'No description added for this asset.'}
                                                 </Typography>
                                             </Paper>
-                                        ))}
+                                        </Box>
                                     </Stack>
-                                )}
+                                </CardContent>
                             </Card>
-                        </>
-                    )}
-                </Stack>
 
-                <Snackbar
-                    open={snackbar.open}
-                    autoHideDuration={3000}
-                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                >
-                    <Alert
-                        severity={snackbar.severity}
-                        variant="filled"
-                        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                    >
-                        {snackbar.message}
-                    </Alert>
-                </Snackbar>
+                            <Card
+                                elevation={0}
+                                sx={{
+                                    mt: 3,
+                                    borderRadius: 5,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                }}
+                            >
+                                <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+                                    <Stack spacing={2.5}>
+                                        <Stack direction="row" spacing={1.5} alignItems="center">
+                                            <Box
+                                                sx={{
+                                                    width: 46,
+                                                    height: 46,
+                                                    borderRadius: 3,
+                                                    bgcolor: '#eff6ff',
+                                                    color: 'primary.main',
+                                                    display: 'grid',
+                                                    placeItems: 'center',
+                                                }}
+                                            >
+                                                <History />
+                                            </Box>
 
-                <Dialog
-                    open={assignDialogOpen}
-                    onClose={() => !assigning && setAssignDialogOpen(false)}
-                    fullWidth
-                    maxWidth="sm"
-                >
-                    <DialogTitle>Assign Item</DialogTitle>
-                    <DialogContent dividers>
-                        <Stack spacing={2.5} sx={{ mt: 0.5 }}>
-                            <Typography color="text.secondary">
-                                Search and select a user to assign this inventory item.
-                            </Typography>
-
-                            <Autocomplete
-                                options={userOptions}
-                                loading={usersLoading}
-                                value={selectedUser}
-                                onChange={(_, value) => setSelectedUser(value)}
-                                onInputChange={(_, value) => setUserSearch(value)}
-                                getOptionLabel={(option) =>
-                                    `${option.fullName}${option.email ? ` (${option.email})` : ''}`
-                                }
-                                isOptionEqualToValue={(option, value) => option.id === value.id}
-                                noOptionsText={
-                                    userSearch.trim().length < 2
-                                        ? 'Type at least 2 characters to search'
-                                        : 'No users found'
-                                }
-                                renderOption={(props, option) => (
-                                    <Box component="li" {...props} key={option.id}>
-                                        <Stack spacing={0.25}>
-                                            <Typography fontWeight={600}>
-                                                {option.fullName}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {option.email || 'No email'}
-                                                {option.department ? ` • ${option.department}` : ''}
-                                            </Typography>
+                                            <Box>
+                                                <Typography variant="h6" fontWeight={900}>
+                                                    Assignment History
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Track who used this asset and when it was returned.
+                                                </Typography>
+                                            </Box>
                                         </Stack>
-                                    </Box>
-                                )}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Search User"
-                                        placeholder="Type name or email..."
-                                        InputProps={{
-                                            ...params.InputProps,
-                                            endAdornment: (
-                                                <>
-                                                    {usersLoading ? (
-                                                        <CircularProgress color="inherit" size={18} />
-                                                    ) : null}
-                                                    {params.InputProps.endAdornment}
-                                                </>
-                                            ),
-                                        }}
-                                    />
-                                )}
-                            />
 
-                            <TextField
-                                label="Notes"
-                                placeholder="Optional assignment note"
-                                multiline
-                                minRows={3}
-                                value={assignNotes}
-                                onChange={(e) => setAssignNotes(e.target.value)}
-                            />
-                        </Stack>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button
-                            onClick={() => setAssignDialogOpen(false)}
-                            disabled={assigning}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            onClick={handleAssign}
-                            disabled={!selectedUser || assigning}
-                            startIcon={
-                                assigning ? (
-                                    <CircularProgress size={16} color="inherit" />
-                                ) : (
-                                    <AssignmentIndOutlinedIcon />
-                                )
-                            }
-                        >
-                            {assigning ? 'Assigning...' : 'Assign Item'}
-                        </Button>
-                    </DialogActions>
-                </Dialog>
+                                        <Divider />
+
+                                        {item.assignmentHistory?.length ? (
+                                            <Stack spacing={2}>
+                                                {item.assignmentHistory.map((history, index) => (
+                                                    <Stack
+                                                        key={index}
+                                                        direction="row"
+                                                        spacing={2}
+                                                        alignItems="stretch"
+                                                    >
+                                                        <Stack alignItems="center">
+                                                            <Box
+                                                                sx={{
+                                                                    width: 14,
+                                                                    height: 14,
+                                                                    borderRadius: '50%',
+                                                                    bgcolor: history.returnedDate
+                                                                        ? 'success.main'
+                                                                        : 'warning.main',
+                                                                    mt: 1,
+                                                                }}
+                                                            />
+
+                                                            {index <
+                                                                item.assignmentHistory.length - 1 && (
+                                                                    <Box
+                                                                        sx={{
+                                                                            width: 2,
+                                                                            flex: 1,
+                                                                            bgcolor: 'divider',
+                                                                            mt: 0.5,
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                        </Stack>
+
+                                                        <Paper
+                                                            variant="outlined"
+                                                            sx={{
+                                                                p: 2,
+                                                                borderRadius: 3,
+                                                                bgcolor: '#f8fafc',
+                                                                flex: 1,
+                                                            }}
+                                                        >
+                                                            <Stack spacing={0.5}>
+                                                                <Typography fontWeight={900}>
+                                                                    {history.userName || 'Unknown user'}
+                                                                </Typography>
+
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    color="text.secondary"
+                                                                >
+                                                                    Assigned:{' '}
+                                                                    {formatDate(history.assignedDate)}
+                                                                </Typography>
+
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    color="text.secondary"
+                                                                >
+                                                                    Returned:{' '}
+                                                                    {history.returnedDate
+                                                                        ? formatDate(history.returnedDate)
+                                                                        : 'Not returned'}
+                                                                </Typography>
+
+                                                                <Chip
+                                                                    size="small"
+                                                                    label={
+                                                                        history.returnedDate
+                                                                            ? 'Returned'
+                                                                            : 'Currently assigned'
+                                                                    }
+                                                                    color={
+                                                                        history.returnedDate
+                                                                            ? 'success'
+                                                                            : 'warning'
+                                                                    }
+                                                                    sx={{
+                                                                        width: 'fit-content',
+                                                                        fontWeight: 800,
+                                                                        mt: 1,
+                                                                    }}
+                                                                />
+                                                            </Stack>
+                                                        </Paper>
+                                                    </Stack>
+                                                ))}
+                                            </Stack>
+                                        ) : (
+                                            <EmptyHistory />
+                                        )}
+                                    </Stack>
+                                </CardContent>
+                            </Card>
+                        </Grid>
+
+                        <Grid item xs={12} md={4}>
+                            <Card
+                                elevation={0}
+                                sx={{
+                                    borderRadius: 5,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    position: { md: 'sticky' },
+                                    top: { md: 24 },
+                                }}
+                            >
+                                <CardContent sx={{ p: 3 }}>
+                                    {isAssigned ? (
+                                        <Stack spacing={2.5}>
+                                            <Box
+                                                sx={{
+                                                    width: 56,
+                                                    height: 56,
+                                                    borderRadius: 4,
+                                                    bgcolor: '#fff7ed',
+                                                    color: 'warning.main',
+                                                    display: 'grid',
+                                                    placeItems: 'center',
+                                                }}
+                                            >
+                                                <Person sx={{ fontSize: 30 }} />
+                                            </Box>
+
+                                            <Box>
+                                                <Typography variant="h6" fontWeight={900}>
+                                                    Currently Assigned
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    This asset is already assigned to a user.
+                                                </Typography>
+                                            </Box>
+
+                                            <Divider />
+
+                                            <InfoTile
+                                                icon={<Person />}
+                                                label="Assigned To"
+                                                value={item.assignedTo || 'Unknown user'}
+                                            />
+
+                                            <Button
+                                                variant="contained"
+                                                color="warning"
+                                                startIcon={<AssignmentReturn />}
+                                                onClick={handleUnassign}
+                                                disabled={unassigning}
+                                                fullWidth
+                                                sx={{
+                                                    borderRadius: 3,
+                                                    textTransform: 'none',
+                                                    fontWeight: 900,
+                                                    py: 1.1,
+                                                }}
+                                            >
+                                                {unassigning
+                                                    ? 'Returning...'
+                                                    : 'Unassign / Return Asset'}
+                                            </Button>
+                                        </Stack>
+                                    ) : (
+                                        <Stack spacing={2.5}>
+                                            <Box
+                                                sx={{
+                                                    width: 56,
+                                                    height: 56,
+                                                    borderRadius: 4,
+                                                    bgcolor: '#eff6ff',
+                                                    color: 'primary.main',
+                                                    display: 'grid',
+                                                    placeItems: 'center',
+                                                }}
+                                            >
+                                                <Person sx={{ fontSize: 30 }} />
+                                            </Box>
+
+                                            <Box>
+                                                <Typography variant="h6" fontWeight={900}>
+                                                    Assign Asset
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Search for a user and assign this asset with optional notes.
+                                                </Typography>
+                                            </Box>
+
+                                            <Divider />
+
+                                            <Stack direction="row" spacing={1}>
+                                                <TextField
+                                                    label="Search User"
+                                                    placeholder="Name or email"
+                                                    value={userSearch}
+                                                    onChange={(event) =>
+                                                        setUserSearch(event.target.value)
+                                                    }
+                                                    onKeyDown={(event) =>
+                                                        event.key === 'Enter' && handleSearchUsers()
+                                                    }
+                                                    fullWidth
+                                                    size="small"
+                                                    InputProps={{
+                                                        startAdornment: (
+                                                            <InputAdornment position="start">
+                                                                <Search />
+                                                            </InputAdornment>
+                                                        ),
+                                                    }}
+                                                />
+
+                                                <Tooltip title="Search users">
+                                                    <span>
+                                                        <Button
+                                                            variant="outlined"
+                                                            onClick={handleSearchUsers}
+                                                            disabled={
+                                                                searchingUsers || !userSearch.trim()
+                                                            }
+                                                            sx={{
+                                                                minHeight: 40,
+                                                                borderRadius: 3,
+                                                                textTransform: 'none',
+                                                                fontWeight: 800,
+                                                            }}
+                                                        >
+                                                            {searchingUsers ? '...' : 'Search'}
+                                                        </Button>
+                                                    </span>
+                                                </Tooltip>
+                                            </Stack>
+
+                                            <TextField
+                                                select
+                                                label="Select User"
+                                                value={selectedUserId}
+                                                onChange={(event) =>
+                                                    setSelectedUserId(event.target.value)
+                                                }
+                                                fullWidth
+                                                size="small"
+                                                disabled={users.length === 0}
+                                                helperText={
+                                                    users.length === 0
+                                                        ? 'Search users first.'
+                                                        : `${users.length} user(s) found.`
+                                                }
+                                            >
+                                                {users.map((user) => (
+                                                    <MenuItem key={user.id} value={user.id}>
+                                                        <Stack
+                                                            direction="row"
+                                                            spacing={1.5}
+                                                            alignItems="center"
+                                                        >
+                                                            <Avatar sx={{ width: 28, height: 28 }}>
+                                                                {(
+                                                                    user.fullName ||
+                                                                    user.name ||
+                                                                    user.email ||
+                                                                    '?'
+                                                                )
+                                                                    .charAt(0)
+                                                                    .toUpperCase()}
+                                                            </Avatar>
+
+                                                            <Box>
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    fontWeight={800}
+                                                                >
+                                                                    {user.fullName ||
+                                                                        user.name ||
+                                                                        user.email}
+                                                                </Typography>
+                                                                {user.email && (
+                                                                    <Typography
+                                                                        variant="caption"
+                                                                        color="text.secondary"
+                                                                    >
+                                                                        {user.email}
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                        </Stack>
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+
+                                            {selectedUser && (
+                                                <Alert severity="success" sx={{ borderRadius: 3 }}>
+                                                    Selected user:{' '}
+                                                    <strong>
+                                                        {selectedUser.fullName ||
+                                                            selectedUser.name ||
+                                                            selectedUser.email}
+                                                    </strong>
+                                                </Alert>
+                                            )}
+
+                                            <TextField
+                                                label="Assignment Notes"
+                                                placeholder="Example: Assigned for office use"
+                                                value={notes}
+                                                onChange={(event) => setNotes(event.target.value)}
+                                                fullWidth
+                                                multiline
+                                                minRows={3}
+                                            />
+
+                                            <Button
+                                                variant="contained"
+                                                startIcon={<CheckCircle />}
+                                                onClick={handleAssign}
+                                                disabled={assigning || !selectedUserId}
+                                                fullWidth
+                                                sx={{
+                                                    borderRadius: 3,
+                                                    textTransform: 'none',
+                                                    fontWeight: 900,
+                                                    py: 1.1,
+                                                }}
+                                            >
+                                                {assigning ? 'Assigning...' : 'Assign Asset'}
+                                            </Button>
+                                        </Stack>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </Grid>
+                    </Grid>
+                </Box>
             </Box>
         </DashboardLayout>
     );
-};
+}
 
-export default InventoryItemDetailPage;
+function InfoTile({
+                      icon,
+                      label,
+                      value,
+                      chipColor,
+                  }: {
+    icon: React.ReactNode;
+    label: string;
+    value: string;
+    chipColor?: any;
+}) {
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 2,
+                borderRadius: 3,
+                bgcolor: 'white',
+                height: '100%',
+            }}
+        >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+                <Box
+                    sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 3,
+                        bgcolor: '#f1f5f9',
+                        color: 'text.secondary',
+                        display: 'grid',
+                        placeItems: 'center',
+                        flexShrink: 0,
+                    }}
+                >
+                    {icon}
+                </Box>
+
+                <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" color="text.secondary">
+                        {label}
+                    </Typography>
+
+                    {chipColor ? (
+                        <Chip
+                            size="small"
+                            label={value}
+                            color={chipColor}
+                            sx={{ mt: 0.5, fontWeight: 800 }}
+                        />
+                    ) : (
+                        <Typography fontWeight={800} noWrap title={value}>
+                            {value}
+                        </Typography>
+                    )}
+                </Box>
+            </Stack>
+        </Paper>
+    );
+}
+
+function EmptyHistory() {
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                py: 5,
+                px: 2,
+                borderRadius: 4,
+                textAlign: 'center',
+                bgcolor: '#f8fafc',
+            }}
+        >
+            <Box
+                sx={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: 4,
+                    bgcolor: '#eff6ff',
+                    color: 'primary.main',
+                    display: 'grid',
+                    placeItems: 'center',
+                    mx: 'auto',
+                    mb: 2,
+                }}
+            >
+                <History sx={{ fontSize: 32 }} />
+            </Box>
+
+            <Typography fontWeight={900}>No assignment history</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Assignment activity will appear here after this asset is assigned.
+            </Typography>
+        </Paper>
+    );
+}
+
+function formatDate(value: string) {
+    if (!value) return '-';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return date.toLocaleString();
+}
