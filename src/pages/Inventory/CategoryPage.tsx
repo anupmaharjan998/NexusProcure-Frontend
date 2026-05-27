@@ -27,6 +27,7 @@ import {
     Add,
     Category,
     DeleteOutline,
+    EditOutlined,
     Inventory2,
     Search,
     Shield,
@@ -35,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import {
     createCategory,
+    updateCategory,
     deleteCategory,
     getCategories,
 } from '../../services/inventoryService';
@@ -54,6 +56,7 @@ export default function CategoryPage() {
 
     const [search, setSearch] = useState('');
     const [openCreate, setOpenCreate] = useState(false);
+    const [editTarget, setEditTarget] = useState<InventoryCategoryDto | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<InventoryCategoryDto | null>(null);
 
     const [loading, setLoading] = useState(true);
@@ -107,10 +110,30 @@ export default function CategoryPage() {
         setForm(initialForm);
     };
 
-    const closeCreateDialog = () => {
+    const openCreateDialog = () => {
+        setEditTarget(null);
+        resetForm();
+        setOpenCreate(true);
+    };
+
+    const openEditDialog = (category: InventoryCategoryDto) => {
+        setEditTarget(category);
+
+        setForm({
+            name: category.name || '',
+            description: category.description || '',
+            riskWeight: category.riskWeight || 0,
+            isAssetTracked: Boolean(category.isAssetTracked),
+        });
+
+        setOpenCreate(true);
+    };
+
+    const closeCategoryDialog = () => {
         if (saving) return;
 
         setOpenCreate(false);
+        setEditTarget(null);
         resetForm();
     };
 
@@ -120,15 +143,21 @@ export default function CategoryPage() {
         setSaving(true);
 
         try {
-            await createCategory({
+            const payload = {
                 name: form.name.trim(),
                 description: form.description.trim(),
                 riskWeight: Number(form.riskWeight),
                 isAssetTracked: form.isAssetTracked,
                 parentCategoryId: null,
-            });
+            };
 
-            closeCreateDialog();
+            if (editTarget) {
+                await updateCategory(editTarget.id, payload);
+            } else {
+                await createCategory(payload);
+            }
+
+            closeCategoryDialog();
             await load();
         } finally {
             setSaving(false);
@@ -234,7 +263,7 @@ export default function CategoryPage() {
                             <Button
                                 variant="contained"
                                 startIcon={<Add />}
-                                onClick={() => setOpenCreate(true)}
+                                onClick={openCreateDialog}
                                 sx={{
                                     bgcolor: 'white',
                                     color: '#0f172a',
@@ -345,7 +374,7 @@ export default function CategoryPage() {
                             {!loading && filteredCategories.length === 0 ? (
                                 <EmptyState
                                     hasSearch={Boolean(search.trim())}
-                                    onCreate={() => setOpenCreate(true)}
+                                    onCreate={openCreateDialog}
                                 />
                             ) : (
                                 <Grid container spacing={2.5}>
@@ -353,6 +382,7 @@ export default function CategoryPage() {
                                         <Grid item xs={12} md={6} lg={4} key={cat.id}>
                                             <CategoryCard
                                                 category={cat}
+                                                onEdit={() => openEditDialog(cat)}
                                                 onDelete={() => setDeleteTarget(cat)}
                                             />
                                         </Grid>
@@ -365,7 +395,7 @@ export default function CategoryPage() {
 
                 <Dialog
                     open={openCreate}
-                    onClose={closeCreateDialog}
+                    onClose={closeCategoryDialog}
                     fullWidth
                     maxWidth="sm"
                     PaperProps={{
@@ -387,15 +417,17 @@ export default function CategoryPage() {
                                     placeItems: 'center',
                                 }}
                             >
-                                <Add />
+                                {editTarget ? <EditOutlined /> : <Add />}
                             </Box>
 
                             <Box>
                                 <Typography variant="h6" fontWeight={900}>
-                                    Create Category
+                                    {editTarget ? 'Edit Category' : 'Create Category'}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    Add a new inventory category.
+                                    {editTarget
+                                        ? 'Update this inventory category.'
+                                        : 'Add a new inventory category.'}
                                 </Typography>
                             </Box>
                         </Stack>
@@ -492,7 +524,7 @@ export default function CategoryPage() {
 
                     <DialogActions sx={{ px: 3, pb: 3 }}>
                         <Button
-                            onClick={closeCreateDialog}
+                            onClick={closeCategoryDialog}
                             disabled={saving}
                             sx={{
                                 borderRadius: 3,
@@ -507,7 +539,7 @@ export default function CategoryPage() {
                             variant="contained"
                             onClick={submit}
                             disabled={saving || !form.name.trim()}
-                            startIcon={<Add />}
+                            startIcon={editTarget ? <EditOutlined /> : <Add />}
                             sx={{
                                 borderRadius: 3,
                                 textTransform: 'none',
@@ -515,7 +547,13 @@ export default function CategoryPage() {
                                 px: 3,
                             }}
                         >
-                            {saving ? 'Creating...' : 'Create Category'}
+                            {saving
+                                ? editTarget
+                                    ? 'Updating...'
+                                    : 'Creating...'
+                                : editTarget
+                                    ? 'Update Category'
+                                    : 'Create Category'}
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -633,9 +671,11 @@ function StatCard({
 
 function CategoryCard({
                           category,
+                          onEdit,
                           onDelete,
                       }: {
     category: InventoryCategoryDto;
+    onEdit: () => void;
     onDelete: () => void;
 }) {
     return (
@@ -682,11 +722,19 @@ function CategoryCard({
                             </Box>
                         </Stack>
 
-                        <Tooltip title="Delete category">
-                            <IconButton color="error" onClick={onDelete}>
-                                <DeleteOutline />
-                            </IconButton>
-                        </Tooltip>
+                        <Stack direction="row" spacing={0.5}>
+                            <Tooltip title="Edit category">
+                                <IconButton color="primary" onClick={onEdit}>
+                                    <EditOutlined />
+                                </IconButton>
+                            </Tooltip>
+
+                            <Tooltip title="Delete category">
+                                <IconButton color="error" onClick={onDelete}>
+                                    <DeleteOutline />
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
                     </Stack>
 
                     <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>

@@ -215,9 +215,9 @@ export default function RequisitionDetailsPage() {
                                     alignItems="center"
                                 >
                                     <Typography fontWeight={600}>
-                                        {a.approvedBy?.fullName ||
+                                        {a.approvedByName ||
                                             //a.role?.name ||
-                                            'System'}
+                                            'System'} ({a.approvedByName})
                                     </Typography>
                                     <Chip
                                         label={a.status}
@@ -230,14 +230,12 @@ export default function RequisitionDetailsPage() {
                                     variant="caption"
                                     color="text.secondary"
                                 >
-                                    {formatDate(a.approvedDate)}
+                                    Approved Date: {formatDate(a.approvedDate)}
                                 </Typography>
 
-                                {a.comments && (
-                                    <Typography mt={1}>
-                                        Comment: {a.comments}
-                                    </Typography>
-                                )}
+                                <Typography mt={1}>
+                                    Comment: {a.comments}
+                                </Typography>
                             </Paper>
                         ))
                     )}

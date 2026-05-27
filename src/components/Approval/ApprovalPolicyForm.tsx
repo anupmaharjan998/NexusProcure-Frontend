@@ -129,7 +129,7 @@ export const ApprovalPolicyForm = ({open, onClose, defaultValues, onSaved}: any)
                             control={control}
                             render={({field}) => (
                                 <TextField {...field} select label="Risk Level" fullWidth>
-                                    {['Low', 'Medium', 'High'].map(r => (
+                                    {['Low', 'Medium', 'High', 'Critical'].map(r => (
                                         <MenuItem key={r} value={r}>{r}</MenuItem>
                                     ))}
                                 </TextField>

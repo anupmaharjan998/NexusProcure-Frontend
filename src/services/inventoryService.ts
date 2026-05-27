@@ -1,4 +1,5 @@
 import api from './api';
+import {string} from "yup";
 
 /* ================= STOCK / CATALOG ================= */
 
@@ -150,6 +151,7 @@ export interface InventoryStockDto {
     unit: string;
     reorderLevel: number;
     isAssetTracked: boolean;
+    estimatedUnitCost?: number;
     status: string;
 }
 
@@ -208,4 +210,10 @@ export interface InventoryItemDto {
 
     assignedTo?: string | null;
     location: string;
+}
+
+export interface InventoryCategoryDto  {
+    id: string;
+    name: string;
+    parentId?: string;
 }

@@ -107,7 +107,7 @@ export default function VendorQuotationForm({rfqToken}: { rfqToken: string }) {
                 setValue(
                     'items',
                     rfq.items.map((i: any) => ({
-                        rfqItemId: i.id,
+                        rfqItemId: i.rfqItemId,
                         description: i.itemName,
                         quantity: i.quantity,
                         unitPrice: 0,

@@ -42,6 +42,18 @@ import EditInventoryStockPage from './pages/Inventory/EditInventoryStockPage';
 import AddInventoryAssetPage from './pages/Inventory/AddInventoryAssetPage';
 import AddInventoryStockPage from "./pages/Inventory/EditInventoryStockPage";
 import DelegationPage from "./pages/Delegation/DelegationPage.tsx";
+import CreateInventoryRequestPage from './pages/Inventory/CreateInventoryRequestPage';
+import MyInventoryRequestsPage from './pages/Inventory/MyInventoryRequestsPage';
+import ManagerInventoryApprovalPage from './pages/Inventory/ManagerInventoryApprovalPage';
+import InventoryPendingRequestsPage from './pages/Inventory/InventoryPendingRequestsPage';
+import InventoryRequestDetailPage from './pages/Inventory/InventoryRequestDetailPage';
+import InventoryRequestProcessPage from './pages/Inventory/InventoryRequestProcessPage';
+import ManagerInventoryShortageDecisionPage from './pages/Inventory/ManagerInventoryShortageDecisionPage';
+import ReportsDashboardPage from './pages/Reports/ReportsDashboardPage';
+import PurchaseOrderReportPage from './pages/Reports/PurchaseOrderReportPage';
+import InventoryReportPage from './pages/Reports/InventoryReportPage';
+import SpendingAnalyticsPage from './pages/Reports/SpendingAnalyticsPage';
+
 
 // Create Material-UI theme with NexusProcure design system
 const theme = createTheme({
@@ -401,6 +413,41 @@ function App() {
 
                         <Route path="/rfq/:token" element={<PublicRfqPage/>}/>
 
+
+                        <Route path="/inventory-requests/new" element={<CreateInventoryRequestPage />} />
+
+                        <Route path="/inventory-requests/my" element={<MyInventoryRequestsPage />} />
+
+                        <Route
+                            path="/inventory-requests/manager-pending"
+                            element={<ManagerInventoryApprovalPage />}
+                        />
+
+                        <Route
+                            path="/inventory-requests/inventory-pending"
+                            element={<InventoryPendingRequestsPage />}
+                        />
+
+                        <Route
+                            path="/inventory-requests/:requestId"
+                            element={<InventoryRequestDetailPage />}
+                        />
+
+                        <Route
+                            path="/inventory-requests/:requestId/process"
+                            element={<InventoryRequestProcessPage />}
+                        />
+
+                        <Route
+                            path="/inventory-requests/shortage-decisions"
+                            element={<ManagerInventoryShortageDecisionPage />}
+                        />
+
+
+                        <Route path="/reports" element={<ReportsDashboardPage />} />
+                        <Route path="/reports/purchase-orders" element={<PurchaseOrderReportPage />} />
+                        <Route path="/reports/inventory" element={<InventoryReportPage />} />
+                        <Route path="/reports/spending" element={<SpendingAnalyticsPage />} />
 
                         {/*<Route*/}
                         {/*    path="/procurement/purchase-orders"*/}
