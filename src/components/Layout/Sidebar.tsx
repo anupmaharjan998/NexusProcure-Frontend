@@ -45,6 +45,7 @@ import { ManageAccounts } from '@mui/icons-material';
 import {useNavigate, useLocation} from 'react-router-dom';
 import {useAuth} from '../../hooks/useAuth';
 import {useEffect, useMemo, useState} from 'react';
+import {ClipboardList} from "lucide-react";
 
 export const drawerWidth = 260;
 export const drawerWidthCollapsed = 78;
@@ -233,6 +234,12 @@ const menuItems: MenuItem[] = [
                 text: 'Purchase Orders',
                 icon: <ShoppingCartOutlinedIcon />,
                 path: '/procurement/purchase-orders',
+                permissions: ['PUBLIC'],
+            },
+            {
+                text: 'Procurement Requests',
+                icon: <ClipboardList />,
+                path: '/procurement/requests',
                 permissions: ['PUBLIC'],
             },
         ],

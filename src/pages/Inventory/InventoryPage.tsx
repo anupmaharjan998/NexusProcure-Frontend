@@ -452,7 +452,6 @@ export default function InventoryPage() {
         try {
             await updateInventoryItem(editingAsset.id, {
                 name: editingAsset.name,
-                inventoryCategoryId,
                 serialNumber: editAssetForm.serialNumber.trim(),
                 description: editAssetForm.description.trim(),
                 location: editAssetForm.location.trim() || 'Inventory',
