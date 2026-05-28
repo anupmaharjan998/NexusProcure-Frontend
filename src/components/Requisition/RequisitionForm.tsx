@@ -38,7 +38,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 
 import {
     RequisitionDto,
-    RequisitionFormRequest,
     RequisitionRequest,
 } from '../../types/requisition';
 import {
@@ -61,24 +60,33 @@ type SnackState = {
     severity: 'success' | 'error' | 'info';
 };
 
+type RequisitionFormValues = {
+    isUrgent: boolean;
+    purpose: string;
+    notes?: string;
+    items: {
+        inventoryStockId: string;
+        quantity: number;
+        estimatedCost: number;
+        remarks?: string;
+    }[];
+};
+
 const emptyItem = {
-    categoryId: '',
     inventoryStockId: '',
     quantity: 1,
     estimatedCost: 0,
     remarks: '',
 };
 
-const requisitionSchema: yup.ObjectSchema<RequisitionFormRequest> = yup.object({
+const requisitionSchema: yup.ObjectSchema<RequisitionFormValues> = yup.object({
     isUrgent: yup.boolean().required(),
     purpose: yup.string().trim().required('Purpose is required'),
-    requiredDate: yup.string().nullable().optional(),
     notes: yup.string().optional(),
     items: yup
         .array()
         .of(
             yup.object({
-                categoryId: yup.string().required('Category is required'),
                 inventoryStockId: yup.string().required('Stock is required'),
                 quantity: yup
                     .number()
@@ -116,11 +124,12 @@ export const RequisitionForm = ({
                                     defaultValues,
                                 }: Props) => {
     const [categories, setCategories] = useState<InventoryCategoryDto[]>([]);
-    const [stocksByRow, setStocksByRow] = useState<Record<number, InventoryStockDto[]>>({});
+    const [selectedCategoryId, setSelectedCategoryId] = useState('');
+    const [stocks, setStocks] = useState<InventoryStockDto[]>([]);
     const [stockSearchByRow, setStockSearchByRow] = useState<Record<number, string>>({});
-    const [loadingStockRow, setLoadingStockRow] = useState<Record<number, boolean>>({});
 
     const [loadingCategories, setLoadingCategories] = useState(false);
+    const [loadingStocks, setLoadingStocks] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const [snackbar, setSnackbar] = useState<SnackState>({
@@ -135,12 +144,11 @@ export const RequisitionForm = ({
         reset,
         setValue,
         formState: { errors },
-    } = useForm<RequisitionFormRequest>({
+    } = useForm<RequisitionFormValues>({
         resolver: yupResolver(requisitionSchema),
         defaultValues: {
             isUrgent: false,
             purpose: '',
-            requiredDate: null,
             notes: '',
             items: [{ ...emptyItem }],
         },
@@ -155,6 +163,10 @@ export const RequisitionForm = ({
         control,
         name: 'items',
     });
+
+    const selectedCategory = useMemo(() => {
+        return categories.find((category) => category.id === selectedCategoryId) || null;
+    }, [categories, selectedCategoryId]);
 
     const totalAmount = useMemo(() => {
         return (
@@ -178,6 +190,10 @@ export const RequisitionForm = ({
         );
     }, [selectedStockIds]);
 
+    const showSnack = (message: string, severity: SnackState['severity']) => {
+        setSnackbar({ open: true, message, severity });
+    };
+
     const loadCategories = async () => {
         setLoadingCategories(true);
 
@@ -191,34 +207,26 @@ export const RequisitionForm = ({
         }
     };
 
-    const loadStocksForRow = async (
-        rowIndex: number,
-        categoryId: string,
-        search = ''
-    ) => {
+    const loadStocksForCategory = async (categoryId: string) => {
         if (!categoryId) {
-            setStocksByRow((prev) => ({ ...prev, [rowIndex]: [] }));
+            setStocks([]);
             return;
         }
 
-        setLoadingStockRow((prev) => ({ ...prev, [rowIndex]: true }));
+        setLoadingStocks(true);
 
         try {
             const res = await getInventoryStocks({
                 categoryId,
-                search,
                 pageNumber: 1,
-                pageSize: 100,
+                pageSize: 200,
             });
 
-            setStocksByRow((prev) => ({
-                ...prev,
-                [rowIndex]: res.items || [],
-            }));
+            setStocks(res.items || []);
         } catch {
             showSnack('Failed to load stocks for selected category', 'error');
         } finally {
-            setLoadingStockRow((prev) => ({ ...prev, [rowIndex]: false }));
+            setLoadingStocks(false);
         }
     };
 
@@ -234,13 +242,9 @@ export const RequisitionForm = ({
             reset({
                 isUrgent: defaultValues.isUrgent || false,
                 purpose: defaultValues.purpose || '',
-                requiredDate: defaultValues.requiredDate
-                    ? defaultValues.requiredDate.slice(0, 16)
-                    : null,
                 notes: defaultValues.notes || '',
                 items: defaultValues.items?.length
                     ? defaultValues.items.map((item) => ({
-                        categoryId: '',
                         inventoryStockId: item.inventoryStockId,
                         quantity: item.quantity,
                         estimatedCost: item.estimatedCost,
@@ -248,64 +252,67 @@ export const RequisitionForm = ({
                     }))
                     : [{ ...emptyItem }],
             });
+
+            setSelectedCategoryId('');
+            setStocks([]);
+            setStockSearchByRow({});
         } else {
             reset({
                 isUrgent: false,
                 purpose: '',
-                requiredDate: null,
                 notes: '',
                 items: [{ ...emptyItem }],
             });
 
-            setStocksByRow({});
+            setSelectedCategoryId('');
+            setStocks([]);
             setStockSearchByRow({});
         }
     }, [defaultValues, open, reset]);
 
-    useEffect(() => {
-        if (!open) return;
+    const handleCategoryChange = (categoryId: string) => {
+        setSelectedCategoryId(categoryId);
+        setStockSearchByRow({});
 
-        watchedItems?.forEach((item, index) => {
-            const categoryId = item?.categoryId;
-            const search = stockSearchByRow[index] || '';
+        watchedItems?.forEach((_, index) => {
+            setValue(`items.${index}.inventoryStockId`, '', {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
 
-            if (!categoryId) return;
-
-            const timeout = window.setTimeout(() => {
-                loadStocksForRow(index, categoryId, search);
-            }, 350);
-
-            return () => window.clearTimeout(timeout);
+            setValue(`items.${index}.estimatedCost`, 0, {
+                shouldValidate: true,
+                shouldDirty: true,
+            });
         });
-    }, [stockSearchByRow, open]);
 
-    const showSnack = (message: string, severity: SnackState['severity']) => {
-        setSnackbar({ open: true, message, severity });
+        loadStocksForCategory(categoryId);
     };
 
-    const handleCategoryChange = (
-        index: number,
-        categoryId: string,
-        onChange: (value: string) => void
-    ) => {
-        onChange(categoryId);
+    const handleAddItem = () => {
+        append({ ...emptyItem });
+    };
 
-        setValue(`items.${index}.inventoryStockId`, '', {
-            shouldValidate: true,
-            shouldDirty: true,
+    const handleRemoveItem = (index: number) => {
+        remove(index);
+
+        setStockSearchByRow((prev) => {
+            const next: Record<number, string> = {};
+
+            Object.entries(prev).forEach(([key, value]) => {
+                const numericKey = Number(key);
+
+                if (numericKey < index) {
+                    next[numericKey] = value;
+                }
+
+                if (numericKey > index) {
+                    next[numericKey - 1] = value;
+                }
+            });
+
+            return next;
         });
-
-        setValue(`items.${index}.estimatedCost`, 0, {
-            shouldValidate: true,
-            shouldDirty: true,
-        });
-
-        setStocksByRow((prev) => ({ ...prev, [index]: [] }));
-        setStockSearchByRow((prev) => ({ ...prev, [index]: '' }));
-
-        if (categoryId) {
-            loadStocksForRow(index, categoryId, '');
-        }
     };
 
     const handleClose = () => {
@@ -313,7 +320,12 @@ export const RequisitionForm = ({
         onClose();
     };
 
-    const submitForm = async (data: RequisitionFormRequest) => {
+    const submitForm = async (data: RequisitionFormValues) => {
+        if (!selectedCategoryId) {
+            showSnack('Please select a category before submitting requisition.', 'error');
+            return;
+        }
+
         if (duplicatedStockIds.length > 0) {
             showSnack('Duplicate stock items are not allowed. Increase quantity instead.', 'error');
             return;
@@ -325,9 +337,7 @@ export const RequisitionForm = ({
             await onSubmit({
                 isUrgent: data.isUrgent,
                 purpose: data.purpose.trim(),
-                requiredDate: data.requiredDate
-                    ? new Date(data.requiredDate).toISOString()
-                    : null,
+                requiredDate: null,
                 notes: data.notes?.trim() || '',
                 items: data.items.map((item) => ({
                     inventoryStockId: item.inventoryStockId,
@@ -357,8 +367,8 @@ export const RequisitionForm = ({
         }
     };
 
-    const findSelectedStock = (rowIndex: number, stockId: string) => {
-        return (stocksByRow[rowIndex] || []).find((stock) => stock.id === stockId) || null;
+    const findSelectedStock = (stockId: string) => {
+        return stocks.find((stock) => stock.id === stockId) || null;
     };
 
     return (
@@ -411,21 +421,36 @@ export const RequisitionForm = ({
                             </Grid>
 
                             <Grid item xs={12} md={4}>
-                                <Controller
-                                    name="requiredDate"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField
-                                            {...field}
-                                            value={field.value || ''}
-                                            label="Required Date"
-                                            type="datetime-local"
-                                            fullWidth
-                                            disabled={submitting}
-                                            InputLabelProps={{ shrink: true }}
-                                        />
-                                    )}
-                                />
+                                <TextField
+                                    select
+                                    label="Category"
+                                    value={selectedCategoryId}
+                                    onChange={(event) =>
+                                        handleCategoryChange(event.target.value)
+                                    }
+                                    fullWidth
+                                    required
+                                    disabled={submitting || loadingCategories}
+                                    error={!selectedCategoryId && Boolean(errors.items)}
+                                    helperText={
+                                        selectedCategoryId
+                                            ? 'All requested items must be from this category'
+                                            : 'Select one category for this requisition'
+                                    }
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <CategoryOutlinedIcon />
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                >
+                                    {categories.map((category) => (
+                                        <MenuItem key={category.id} value={category.id}>
+                                            {category.name}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
                             </Grid>
 
                             <Grid item xs={12} md={8}>
@@ -474,6 +499,13 @@ export const RequisitionForm = ({
                                 />
                             </Grid>
                         </Grid>
+
+                        {selectedCategory && (
+                            <Alert severity="info" sx={{ mt: 2, borderRadius: 2 }}>
+                                This requisition is limited to the{' '}
+                                <strong>{selectedCategory.name}</strong> category.
+                            </Alert>
+                        )}
                     </Paper>
 
                     <Paper
@@ -494,7 +526,7 @@ export const RequisitionForm = ({
                                         Requested Items
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Select category first, then choose stock from that category.
+                                        Add items from the selected category only.
                                     </Typography>
                                 </Box>
                             </Stack>
@@ -502,12 +534,18 @@ export const RequisitionForm = ({
                             <Button
                                 variant="outlined"
                                 startIcon={<AddIcon />}
-                                onClick={() => append({ ...emptyItem })}
-                                disabled={submitting}
+                                onClick={handleAddItem}
+                                disabled={submitting || !selectedCategoryId}
                             >
                                 Add Item
                             </Button>
                         </Stack>
+
+                        {!selectedCategoryId && (
+                            <Alert severity="warning" sx={{ mb: 2 }}>
+                                Please select a category before choosing stock items.
+                            </Alert>
+                        )}
 
                         {duplicatedStockIds.length > 0 && (
                             <Alert severity="error" sx={{ mb: 2 }}>
@@ -518,12 +556,10 @@ export const RequisitionForm = ({
                         <Stack spacing={2}>
                             {fields.map((field, index) => {
                                 const item = watchedItems?.[index];
-                                const selectedStock = item?.inventoryStockId
-                                    ? findSelectedStock(index, item.inventoryStockId)
-                                    : null;
 
-                                const rowStocks = stocksByRow[index] || [];
-                                const rowLoading = loadingStockRow[index] || false;
+                                const selectedStock = item?.inventoryStockId
+                                    ? findSelectedStock(item.inventoryStockId)
+                                    : null;
 
                                 const quantity = Number(item?.quantity || 0);
                                 const estimatedCost = Number(item?.estimatedCost || 0);
@@ -545,48 +581,7 @@ export const RequisitionForm = ({
                                     >
                                         <CardContent>
                                             <Grid container spacing={2} alignItems="flex-start">
-                                                <Grid item xs={12} md={3}>
-                                                    <Controller
-                                                        name={`items.${index}.categoryId`}
-                                                        control={control}
-                                                        render={({ field, fieldState }) => (
-                                                            <TextField
-                                                                select
-                                                                label="Category"
-                                                                value={field.value || ''}
-                                                                fullWidth
-                                                                disabled={submitting || loadingCategories}
-                                                                error={!!fieldState.error}
-                                                                helperText={
-                                                                    fieldState.error?.message ||
-                                                                    'Select category first'
-                                                                }
-                                                                onChange={(event) =>
-                                                                    handleCategoryChange(
-                                                                        index,
-                                                                        event.target.value,
-                                                                        field.onChange
-                                                                    )
-                                                                }
-                                                                InputProps={{
-                                                                    startAdornment: (
-                                                                        <InputAdornment position="start">
-                                                                            <CategoryOutlinedIcon />
-                                                                        </InputAdornment>
-                                                                    ),
-                                                                }}
-                                                            >
-                                                                {categories.map((category) => (
-                                                                    <MenuItem key={category.id} value={category.id}>
-                                                                        {category.name}
-                                                                    </MenuItem>
-                                                                ))}
-                                                            </TextField>
-                                                        )}
-                                                    />
-                                                </Grid>
-
-                                                <Grid item xs={12} md={4}>
+                                                <Grid item xs={12} md={5}>
                                                     <Controller
                                                         name={`items.${index}.inventoryStockId`}
                                                         control={control}
@@ -594,14 +589,17 @@ export const RequisitionForm = ({
                                                             <Autocomplete
                                                                 value={selectedStock}
                                                                 inputValue={stockSearchByRow[index] || ''}
-                                                                options={rowStocks}
-                                                                loading={rowLoading}
-                                                                filterOptions={(x) => x}
+                                                                options={stocks}
+                                                                loading={loadingStocks}
                                                                 getOptionLabel={(option) =>
                                                                     getStockLabel(option)
                                                                 }
                                                                 isOptionEqualToValue={(option, value) =>
                                                                     option.id === value.id
+                                                                }
+                                                                getOptionDisabled={(option) =>
+                                                                    selectedStockIds.includes(option.id) &&
+                                                                    option.id !== item?.inventoryStockId
                                                                 }
                                                                 onInputChange={(_, value, reason) => {
                                                                     if (reason === 'input' || reason === 'clear') {
@@ -625,9 +623,9 @@ export const RequisitionForm = ({
                                                                         );
                                                                     }
                                                                 }}
-                                                                disabled={submitting || !item?.categoryId}
+                                                                disabled={submitting || !selectedCategoryId}
                                                                 noOptionsText={
-                                                                    !item?.categoryId
+                                                                    !selectedCategoryId
                                                                         ? 'Select category first'
                                                                         : 'No stock found'
                                                                 }
@@ -646,7 +644,7 @@ export const RequisitionForm = ({
                                                                                         selectedStock.quantityAvailable ??
                                                                                         0
                                                                                     } ${selectedStock.unit || ''}`
-                                                                                    : 'Select stock from category')
+                                                                                    : 'Select stock from selected category')
                                                                         }
                                                                         InputProps={{
                                                                             ...params.InputProps,
@@ -660,7 +658,7 @@ export const RequisitionForm = ({
                                                                             ),
                                                                             endAdornment: (
                                                                                 <>
-                                                                                    {rowLoading ? (
+                                                                                    {loadingStocks ? (
                                                                                         <CircularProgress size={18} />
                                                                                     ) : null}
                                                                                     {params.InputProps.endAdornment}
@@ -676,10 +674,10 @@ export const RequisitionForm = ({
                                                                                 {option.name}
                                                                                 {option.sku ? ` - ${option.sku}` : ''}
                                                                             </Typography>
+
                                                                             <Typography variant="caption" color="text.secondary">
                                                                                 Available:{' '}
-                                                                                {option.quantityAvailable ??
-                                                                                    0}{' '}
+                                                                                {option.quantityAvailable ?? 0}{' '}
                                                                                 {option.unit || ''}
                                                                             </Typography>
                                                                         </Stack>
@@ -690,7 +688,7 @@ export const RequisitionForm = ({
                                                     />
                                                 </Grid>
 
-                                                <Grid item xs={12} sm={4} md={1.3}>
+                                                <Grid item xs={12} sm={4} md={1.5}>
                                                     <Controller
                                                         name={`items.${index}.quantity`}
                                                         control={control}
@@ -716,7 +714,7 @@ export const RequisitionForm = ({
                                                     />
                                                 </Grid>
 
-                                                <Grid item xs={12} sm={4} md={1.5}>
+                                                <Grid item xs={12} sm={4} md={1.8}>
                                                     <Controller
                                                         name={`items.${index}.estimatedCost`}
                                                         control={control}
@@ -742,7 +740,7 @@ export const RequisitionForm = ({
                                                     />
                                                 </Grid>
 
-                                                <Grid item xs={12} sm={4} md={1.7}>
+                                                <Grid item xs={12} sm={4} md={2}>
                                                     <Controller
                                                         name={`items.${index}.remarks`}
                                                         control={control}
@@ -757,7 +755,7 @@ export const RequisitionForm = ({
                                                     />
                                                 </Grid>
 
-                                                <Grid item xs={10} md={0.8}>
+                                                <Grid item xs={10} md={1}>
                                                     <Stack spacing={0.5}>
                                                         <Typography variant="caption" color="text.secondary">
                                                             Total
@@ -771,7 +769,7 @@ export const RequisitionForm = ({
                                                 <Grid item xs={2} md={0.7}>
                                                     <IconButton
                                                         color="error"
-                                                        onClick={() => remove(index)}
+                                                        onClick={() => handleRemoveItem(index)}
                                                         disabled={fields.length === 1 || submitting}
                                                     >
                                                         <DeleteIcon />
@@ -833,10 +831,15 @@ export const RequisitionForm = ({
                         <Button onClick={handleClose} disabled={submitting}>
                             Cancel
                         </Button>
+
                         <Button
                             variant="contained"
                             onClick={handleSubmit(submitForm)}
-                            disabled={submitting || duplicatedStockIds.length > 0}
+                            disabled={
+                                submitting ||
+                                duplicatedStockIds.length > 0 ||
+                                !selectedCategoryId
+                            }
                             startIcon={
                                 submitting ? (
                                     <CircularProgress size={18} color="inherit" />

@@ -10,7 +10,6 @@ import {
     DialogActions,
     DialogContent,
     DialogTitle,
-    Divider,
     FormControlLabel,
     Grid,
     IconButton,
@@ -19,6 +18,13 @@ import {
     Paper,
     Stack,
     Switch,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
     TextField,
     Tooltip,
     Typography,
@@ -63,6 +69,9 @@ export default function CategoryPage() {
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
     const load = async () => {
         setLoading(true);
 
@@ -91,6 +100,13 @@ export default function CategoryPage() {
             );
         });
     }, [categories, search]);
+
+    const paginatedCategories = useMemo(() => {
+        return filteredCategories.slice(
+            page * rowsPerPage,
+            page * rowsPerPage + rowsPerPage
+        );
+    }, [filteredCategories, page, rowsPerPage]);
 
     const stats = useMemo(() => {
         const total = categories.length;
@@ -176,6 +192,22 @@ export default function CategoryPage() {
         } finally {
             setDeleting(false);
         }
+    };
+
+    const handleChangePage = (_event: unknown, newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
+    const handleSearchChange = (value: string) => {
+        setSearch(value);
+        setPage(0);
     };
 
     return (
@@ -351,7 +383,7 @@ export default function CategoryPage() {
 
                                 <TextField
                                     value={search}
-                                    onChange={(event) => setSearch(event.target.value)}
+                                    onChange={(event) => handleSearchChange(event.target.value)}
                                     placeholder="Search category, code, description..."
                                     size="small"
                                     sx={{
@@ -377,17 +409,172 @@ export default function CategoryPage() {
                                     onCreate={openCreateDialog}
                                 />
                             ) : (
-                                <Grid container spacing={2.5}>
-                                    {filteredCategories.map((cat) => (
-                                        <Grid item xs={12} md={6} lg={4} key={cat.id}>
-                                            <CategoryCard
-                                                category={cat}
-                                                onEdit={() => openEditDialog(cat)}
-                                                onDelete={() => setDeleteTarget(cat)}
-                                            />
-                                        </Grid>
-                                    ))}
-                                </Grid>
+                                <Paper
+                                    variant="outlined"
+                                    sx={{
+                                        borderRadius: 4,
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    <TableContainer>
+                                        <Table>
+                                            <TableHead>
+                                                <TableRow
+                                                    sx={{
+                                                        bgcolor: '#f8fafc',
+                                                        '& th': {
+                                                            fontWeight: 900,
+                                                            color: '#334155',
+                                                        },
+                                                    }}
+                                                >
+                                                    <TableCell>Category</TableCell>
+                                                    <TableCell>Code</TableCell>
+                                                    <TableCell>Description</TableCell>
+                                                    <TableCell>Tracking Type</TableCell>
+                                                    <TableCell align="center">Risk Weight</TableCell>
+                                                    <TableCell align="center">Total Items</TableCell>
+                                                    <TableCell align="right">Actions</TableCell>
+                                                </TableRow>
+                                            </TableHead>
+
+                                            <TableBody>
+                                                {paginatedCategories.map((category) => (
+                                                    <TableRow
+                                                        key={category.id}
+                                                        hover
+                                                        sx={{
+                                                            '& td': {
+                                                                borderColor: '#e2e8f0',
+                                                            },
+                                                        }}
+                                                    >
+                                                        <TableCell>
+                                                            <Stack direction="row" spacing={1.5} alignItems="center">
+                                                                <Box
+                                                                    sx={{
+                                                                        width: 42,
+                                                                        height: 42,
+                                                                        borderRadius: 3,
+                                                                        bgcolor: category.isAssetTracked
+                                                                            ? '#eff6ff'
+                                                                            : '#f1f5f9',
+                                                                        color: category.isAssetTracked
+                                                                            ? 'primary.main'
+                                                                            : 'text.secondary',
+                                                                        display: 'grid',
+                                                                        placeItems: 'center',
+                                                                    }}
+                                                                >
+                                                                    {category.isAssetTracked ? (
+                                                                        <Shield fontSize="small" />
+                                                                    ) : (
+                                                                        <Storefront fontSize="small" />
+                                                                    )}
+                                                                </Box>
+
+                                                                <Box>
+                                                                    <Typography fontWeight={900}>
+                                                                        {category.name}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Stack>
+                                                        </TableCell>
+
+                                                        <TableCell>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                {category.categoryCode || 'N/A'}
+                                                            </Typography>
+                                                        </TableCell>
+
+                                                        <TableCell sx={{ maxWidth: 320 }}>
+                                                            <Typography
+                                                                variant="body2"
+                                                                color="text.secondary"
+                                                                sx={{
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 2,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    overflow: 'hidden',
+                                                                }}
+                                                            >
+                                                                {category.description || 'No description added.'}
+                                                            </Typography>
+                                                        </TableCell>
+
+                                                        <TableCell>
+                                                            <Chip
+                                                                size="small"
+                                                                label={
+                                                                    category.isAssetTracked
+                                                                        ? 'Asset Tracked'
+                                                                        : 'Stock Only'
+                                                                }
+                                                                color={
+                                                                    category.isAssetTracked
+                                                                        ? 'primary'
+                                                                        : 'default'
+                                                                }
+                                                                sx={{ fontWeight: 800 }}
+                                                            />
+                                                        </TableCell>
+
+                                                        <TableCell align="center">
+                                                            <Chip
+                                                                size="small"
+                                                                label={category.riskWeight ?? 0}
+                                                                variant="outlined"
+                                                                sx={{ fontWeight: 800 }}
+                                                            />
+                                                        </TableCell>
+
+                                                        <TableCell align="center">
+                                                            <Typography fontWeight={800}>
+                                                                {category.totalItems || 0}
+                                                            </Typography>
+                                                        </TableCell>
+
+                                                        <TableCell align="right">
+                                                            <Stack
+                                                                direction="row"
+                                                                spacing={0.5}
+                                                                justifyContent="flex-end"
+                                                            >
+                                                                <Tooltip title="Edit category">
+                                                                    <IconButton
+                                                                        color="primary"
+                                                                        onClick={() => openEditDialog(category)}
+                                                                    >
+                                                                        <EditOutlined />
+                                                                    </IconButton>
+                                                                </Tooltip>
+
+                                                                <Tooltip title="Delete category">
+                                                                    <IconButton
+                                                                        color="error"
+                                                                        onClick={() => setDeleteTarget(category)}
+                                                                    >
+                                                                        <DeleteOutline />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </Stack>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer>
+
+                                    <TablePagination
+                                        component="div"
+                                        count={filteredCategories.length}
+                                        page={page}
+                                        onPageChange={handleChangePage}
+                                        rowsPerPage={rowsPerPage}
+                                        onRowsPerPageChange={handleChangeRowsPerPage}
+                                        rowsPerPageOptions={[5, 10, 25, 50]}
+                                    />
+                                </Paper>
                             )}
                         </CardContent>
                     </Card>
@@ -663,167 +850,6 @@ function StatCard({
                             {helper}
                         </Typography>
                     </Box>
-                </Stack>
-            </CardContent>
-        </Card>
-    );
-}
-
-function CategoryCard({
-                          category,
-                          onEdit,
-                          onDelete,
-                      }: {
-    category: InventoryCategoryDto;
-    onEdit: () => void;
-    onDelete: () => void;
-}) {
-    return (
-        <Card
-            elevation={0}
-            sx={{
-                height: '100%',
-                borderRadius: 4,
-                border: '1px solid',
-                borderColor: 'divider',
-                transition: '0.2s ease',
-                '&:hover': {
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 16px 35px rgba(15,23,42,0.10)',
-                },
-            }}
-        >
-            <CardContent>
-                <Stack spacing={2}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Box
-                                sx={{
-                                    width: 44,
-                                    height: 44,
-                                    borderRadius: 3,
-                                    bgcolor: category.isAssetTracked ? '#eff6ff' : '#f1f5f9',
-                                    color: category.isAssetTracked ? 'primary.main' : 'text.secondary',
-                                    display: 'grid',
-                                    placeItems: 'center',
-                                }}
-                            >
-                                {category.isAssetTracked ? <Shield /> : <Storefront />}
-                            </Box>
-
-                            <Box>
-                                <Typography variant="h6" fontWeight={900}>
-                                    {category.name}
-                                </Typography>
-
-                                <Typography variant="caption" color="text.secondary">
-                                    Code: {category.categoryCode || 'N/A'}
-                                </Typography>
-                            </Box>
-                        </Stack>
-
-                        <Stack direction="row" spacing={0.5}>
-                            <Tooltip title="Edit category">
-                                <IconButton color="primary" onClick={onEdit}>
-                                    <EditOutlined />
-                                </IconButton>
-                            </Tooltip>
-
-                            <Tooltip title="Delete category">
-                                <IconButton color="error" onClick={onDelete}>
-                                    <DeleteOutline />
-                                </IconButton>
-                            </Tooltip>
-                        </Stack>
-                    </Stack>
-
-                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                        <Chip
-                            size="small"
-                            label={category.isAssetTracked ? 'Asset Tracked' : 'Stock Only'}
-                            color={category.isAssetTracked ? 'primary' : 'default'}
-                            sx={{ fontWeight: 700 }}
-                        />
-
-                        <Chip
-                            size="small"
-                            label={`Risk: ${category.riskWeight ?? 0}`}
-                            variant="outlined"
-                            sx={{ fontWeight: 700 }}
-                        />
-
-                        <Chip
-                            size="small"
-                            label={`${category.totalItems || 0} Items`}
-                            variant="outlined"
-                            sx={{ fontWeight: 700 }}
-                        />
-                    </Stack>
-
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                            minHeight: 42,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden',
-                        }}
-                    >
-                        {category.description || 'No description added for this category.'}
-                    </Typography>
-
-                    {Boolean(category.subCategories?.length) && (
-                        <>
-                            <Divider />
-
-                            <Box>
-                                <Typography variant="subtitle2" fontWeight={900} mb={1}>
-                                    Sub Categories
-                                </Typography>
-
-                                <Stack spacing={1}>
-                                    {category.subCategories?.map((sub) => (
-                                        <Paper
-                                            key={sub.id}
-                                            variant="outlined"
-                                            sx={{
-                                                p: 1.25,
-                                                borderRadius: 3,
-                                                bgcolor: '#f8fafc',
-                                            }}
-                                        >
-                                            <Stack
-                                                direction="row"
-                                                justifyContent="space-between"
-                                                alignItems="center"
-                                                spacing={1}
-                                            >
-                                                <Typography fontWeight={700} variant="body2">
-                                                    {sub.name}
-                                                </Typography>
-
-                                                <Chip
-                                                    size="small"
-                                                    label={
-                                                        sub.isAssetTracked
-                                                            ? 'Asset'
-                                                            : 'Stock'
-                                                    }
-                                                    color={
-                                                        sub.isAssetTracked
-                                                            ? 'primary'
-                                                            : 'default'
-                                                    }
-                                                />
-                                            </Stack>
-                                        </Paper>
-                                    ))}
-                                </Stack>
-                            </Box>
-                        </>
-                    )}
                 </Stack>
             </CardContent>
         </Card>
