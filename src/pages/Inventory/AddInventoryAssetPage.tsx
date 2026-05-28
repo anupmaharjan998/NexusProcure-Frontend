@@ -36,6 +36,7 @@ export default function AddInventoryAssetPage() {
 
     const submit = async () => {
         await createInventoryItem({
+            name: '',
             stockId: form.stockId,
             serialNumber: form.serialNumber,
             description: form.description,

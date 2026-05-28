@@ -644,7 +644,6 @@ export const RequisitionForm = ({
                                                                                 : selectedStock
                                                                                     ? `Available: ${
                                                                                         selectedStock.quantityAvailable ??
-                                                                                        selectedStock.availableQuantity ??
                                                                                         0
                                                                                     } ${selectedStock.unit || ''}`
                                                                                     : 'Select stock from category')
@@ -680,7 +679,6 @@ export const RequisitionForm = ({
                                                                             <Typography variant="caption" color="text.secondary">
                                                                                 Available:{' '}
                                                                                 {option.quantityAvailable ??
-                                                                                    option.availableQuantity ??
                                                                                     0}{' '}
                                                                                 {option.unit || ''}
                                                                             </Typography>
