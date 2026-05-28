@@ -14,6 +14,7 @@ import {
     Typography,
     alpha,
 } from '@mui/material';
+
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import AdminPanelSettingsOutlinedIcon from '@mui/icons-material/AdminPanelSettingsOutlined';
@@ -37,14 +38,14 @@ import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
 import DevicesOutlinedIcon from '@mui/icons-material/DevicesOutlined';
-import BarChartOutlinedIcon from '@mui/icons-material/BarChartOutlined';
 import InventoryOutlinedIcon from '@mui/icons-material/InventoryOutlined';
-import InsightsOutlinedIcon from '@mui/icons-material/InsightsOutlined';
 import PaidOutlinedIcon from '@mui/icons-material/PaidOutlined';
-import { ManageAccounts } from '@mui/icons-material';
-import {useNavigate, useLocation} from 'react-router-dom';
-import {useAuth} from '../../hooks/useAuth';
-import {useEffect, useMemo, useState} from 'react';
+import ManageAccountsOutlinedIcon from '@mui/icons-material/ManageAccountsOutlined';
+import AssignmentOutlinedIcon from '@mui/icons-material/AssignmentOutlined';
+
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../hooks/useAuth';
+import { useEffect, useMemo, useState } from 'react';
 
 export const drawerWidth = 260;
 export const drawerWidthCollapsed = 78;
@@ -72,35 +73,41 @@ const menuItems: MenuItem[] = [
         permissions: ['PUBLIC'],
     },
     {
-        text: 'Users',
-        icon: <PeopleAltOutlinedIcon />,
-        path: '/users',
-        permissions: ['VIEW_USERS'],
-    },
-    {
-        text: 'Roles',
+        text: 'Administration',
         icon: <AdminPanelSettingsOutlinedIcon />,
-        path: '/roles',
-        permissions: ['VIEW_ROLES'],
-    },
-    {
-        text: 'Permissions',
-        icon: <KeyOutlinedIcon />,
-        path: '/permissions',
-        permissions: ['VIEW_PERMISSIONS'],
-    },
-    {
-        text: 'Departments',
-        icon: <ApartmentOutlinedIcon />,
-        path: '/departments',
-        permissions: ['VIEW_DEPARTMENTS'],
-    },
-
-    {
-        text: 'Delegations',
-        icon: <ManageAccounts />,
-        path: '/delegations',
-        permissions: ['PUBLIC'],
+        permissions: ['VIEW_USERS', 'VIEW_ROLES', 'VIEW_PERMISSIONS', 'VIEW_DEPARTMENTS', 'DELEGATION', 'MANAGE_DELEGATION'],
+        children: [
+            {
+                text: 'Users',
+                icon: <PeopleAltOutlinedIcon />,
+                path: '/users',
+                permissions: ['VIEW_USERS'],
+            },
+            {
+                text: 'Roles',
+                icon: <AdminPanelSettingsOutlinedIcon />,
+                path: '/roles',
+                permissions: ['VIEW_ROLES'],
+            },
+            {
+                text: 'Permissions',
+                icon: <KeyOutlinedIcon />,
+                path: '/permissions',
+                permissions: ['VIEW_PERMISSIONS'],
+            },
+            {
+                text: 'Departments',
+                icon: <ApartmentOutlinedIcon />,
+                path: '/departments',
+                permissions: ['VIEW_DEPARTMENTS'],
+            },
+            {
+                text: 'Delegations',
+                icon: <ManageAccountsOutlinedIcon />,
+                path: '/delegations',
+                permissions: ['DELEGATION', 'MANAGE_DELEGATION'],
+            },
+        ],
     },
     {
         text: 'Vendors',
@@ -115,156 +122,157 @@ const menuItems: MenuItem[] = [
         permissions: ['VIEW_CATEGORIES'],
     },
     {
-        text: 'Inventory',
-        icon: <Inventory2OutlinedIcon />,
-        permissions: ['PUBLIC'],
+        text: 'Policy & Risk',
+        icon: <RuleFolderOutlinedIcon />,
+        permissions: ['VIEW_POLICIES'],
         children: [
             {
-                text: 'Stock Catalog',
+                text: 'Approval Policies',
+                icon: <RuleFolderOutlinedIcon />,
+                path: '/procurement/approval-policy',
+                permissions: ['VIEW_POLICIES'],
+            },
+            {
+                text: 'Risk Score Rules',
+                icon: <GppGoodOutlinedIcon />,
+                path: '/procurement/risk-score',
+                permissions: ['VIEW_POLICIES'],
+            },
+        ],
+    },
+    {
+        text: 'Inventory',
+        icon: <Inventory2OutlinedIcon />,
+        permissions: ['VIEW_INVENTORY'],
+        children: [
+            {
+                text: 'Inventory Items',
                 icon: <Inventory2OutlinedIcon />,
                 path: '/inventory',
-                permissions: ['PUBLIC'],
-            },
-            {
-                text: 'Add Stock',
-                icon: <AddBoxOutlinedIcon />,
-                path: '/inventory/stocks/create',
-                permissions: ['PUBLIC'],
-            },
-            {
-                text: 'Add Asset',
-                icon: <DevicesOutlinedIcon />,
-                path: '/inventory/assets/create',
-                permissions: ['PUBLIC'],
+                permissions: ['VIEW_INVENTORY'],
             },
             {
                 text: 'Inventory Categories',
                 icon: <CategoryOutlinedIcon />,
                 path: '/inventory/categories',
-                permissions: ['PUBLIC'],
+                permissions: ['VIEW_INVENTORY'],
             },
             {
-                text: 'PO Deliveries',
+                text: 'Purchase Order Receiving',
                 icon: <LocalShippingOutlinedIcon />,
                 path: '/inventory/delivery',
-                permissions: ['PUBLIC'],
+                permissions: ['VIEW_INVENTORY'],
             },
         ],
     },
     {
         text: 'Inventory Requests',
         icon: <AssignmentTurnedInOutlinedIcon />,
-        permissions: ['PUBLIC'],
+        permissions: ['REQUEST_ASSET', 'REQUEST_ASSET_APPROVAL'],
         children: [
             {
-                text: 'New Request',
+                text: 'Create Inventory Request',
                 icon: <AddBoxOutlinedIcon />,
                 path: '/inventory-requests/new',
-                permissions: ['PUBLIC'],
+                permissions: ['REQUEST_ASSET'],
             },
             {
-                text: 'My Requests',
+                text: 'My Inventory Requests',
                 icon: <ReceiptLongOutlinedIcon />,
                 path: '/inventory-requests/my',
-                permissions: ['PUBLIC'],
+                permissions: ['REQUEST_ASSET'],
             },
             {
-                text: 'Request Approvals',
+                text: 'Manager Approvals',
                 icon: <FactCheckOutlinedIcon />,
                 path: '/inventory-requests/manager-pending',
-                permissions: ['PUBLIC'],
+                permissions: ['REQUEST_ASSET_APPROVAL'],
             },
             {
-                text: 'Processing Queue',
+                text: 'Inventory Fulfillment',
                 icon: <Inventory2OutlinedIcon />,
                 path: '/inventory-requests/inventory-pending',
-                permissions: ['PUBLIC'],
+                permissions: ['ASSIGN_ASSET'],
             },
             {
                 text: 'Shortage Decisions',
                 icon: <FactCheckOutlinedIcon />,
                 path: '/inventory-requests/shortage-decisions',
-                permissions: ['PUBLIC'],
+                permissions: ['REQUEST_ASSET_APPROVAL'],
             },
         ],
     },
     {
         text: 'Procurement',
         icon: <ShoppingCartOutlinedIcon />,
-        permissions: ['PUBLIC'],
+        permissions: ['CREATE_REQUISITION', 'APPROVE_REQUISITION', 'RECEIVE_PURCHASE_ORDER'],
         children: [
-            {
-                text: 'Approval Policies',
-                icon: <RuleFolderOutlinedIcon />,
-                path: '/procurement/approval-policy',
-                permissions: ['PUBLIC'],
-            },
-            {
-                text: 'Amount Risk Scores',
-                icon: <GppGoodOutlinedIcon />,
-                path: '/procurement/risk-score',
-                permissions: ['PUBLIC'],
-            },
             {
                 text: 'Requisitions',
                 icon: <ReceiptLongOutlinedIcon />,
                 path: '/procurement/requisitions',
-                permissions: ['PUBLIC'],
+                permissions: ['CREATE_REQUISITION'],
             },
             {
                 text: 'Requisition Approvals',
                 icon: <AssignmentTurnedInOutlinedIcon />,
                 path: '/procurement/requisitions-approvals',
-                permissions: ['PUBLIC'],
+                permissions: ['APPROVE_REQUISITION'],
             },
             {
-                text: 'RFQ',
+                text: 'RFQs',
                 icon: <RequestQuoteOutlinedIcon />,
                 path: '/rfq',
-                permissions: ['PUBLIC'],
+                permissions: ['CREATE_REQUISITION'],
             },
             {
                 text: 'Quotation Approvals',
                 icon: <FactCheckOutlinedIcon />,
                 path: '/procurement/quotations-approvals',
-                permissions: ['PUBLIC'],
+                permissions: ['APPROVE_REQUISITION'],
             },
             {
                 text: 'Purchase Orders',
                 icon: <ShoppingCartOutlinedIcon />,
                 path: '/procurement/purchase-orders',
-                permissions: ['PUBLIC'],
+                permissions: ['RECEIVE_PURCHASE_ORDER'],
+            },
+            {
+                text: 'Procurement Requests',
+                icon: <AssignmentOutlinedIcon />,
+                path: '/procurement/requests',
+                permissions: ['CREATE_REQUISITION'],
             },
         ],
     },
     {
-        text: 'Reports',
+        text: 'Reports & Analytics',
         icon: <AssessmentOutlinedIcon />,
-        permissions: ['PUBLIC'],
+        permissions: ['VIEW_REPORTS'],
         children: [
             {
                 text: 'Reports Dashboard',
                 icon: <DashboardRoundedIcon />,
                 path: '/reports',
-                permissions: ['PUBLIC'],
+                permissions: ['VIEW_REPORTS'],
             },
             {
-                text: 'Purchase Order Report',
+                text: 'Purchase Orders Report',
                 icon: <ReceiptLongOutlinedIcon />,
                 path: '/reports/purchase-orders',
-                permissions: ['PUBLIC'],
+                permissions: ['VIEW_REPORTS'],
             },
             {
                 text: 'Inventory Reports',
                 icon: <InventoryOutlinedIcon />,
                 path: '/reports/inventory',
-                permissions: ['PUBLIC'],
+                permissions: ['VIEW_REPORTS'],
             },
             {
                 text: 'Spending Analytics',
                 icon: <PaidOutlinedIcon />,
                 path: '/reports/spending',
-                permissions: ['PUBLIC'],
+                permissions: ['VIEW_REPORTS'],
             },
         ],
     },
@@ -278,7 +286,8 @@ export const Sidebar = ({
                         }: SidebarProps) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const {hasPermission} = useAuth();
+    const { hasPermission } = useAuth();
+
     const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 
     const hasAccess = (permissions: string[]) =>
@@ -298,26 +307,34 @@ export const Sidebar = ({
 
     const isPathActive = (path?: string) => {
         if (!path) return false;
+
         return location.pathname === path || location.pathname.startsWith(`${path}/`);
     };
 
     const isParentActive = (item: MenuItem) => {
         if (item.path && isPathActive(item.path)) return true;
+
         return !!item.children?.some((child) => isPathActive(child.path));
     };
 
     useEffect(() => {
         const nextState: Record<string, boolean> = {};
+
         filteredMenuItems.forEach((item) => {
             if (item.children?.length && isParentActive(item)) {
                 nextState[item.text] = true;
             }
         });
-        setOpenMenus((prev) => ({...prev, ...nextState}));
-    }, [location.pathname]);
+
+        setOpenMenus((prev) => ({
+            ...prev,
+            ...nextState,
+        }));
+    }, [location.pathname, filteredMenuItems]);
 
     const toggleMenu = (key: string) => {
         if (collapsed) return;
+
         setOpenMenus((prev) => ({
             ...prev,
             [key]: !prev[key],
@@ -326,6 +343,7 @@ export const Sidebar = ({
 
     const handleNavigation = (path?: string) => {
         if (!path) return;
+
         navigate(path);
         onClose();
     };
@@ -361,7 +379,7 @@ export const Sidebar = ({
                     '&:hover': {
                         backgroundColor: active
                             ? alpha('#2563EB', 0.18)
-                            : alpha('#94A3B8', 0.10),
+                            : alpha('#94A3B8', 0.1),
                     },
                 }}
             >
@@ -387,6 +405,7 @@ export const Sidebar = ({
                                 fontFamily: 'Inter, sans-serif',
                             }}
                         />
+
                         {trailing}
                     </>
                 )}
@@ -414,7 +433,7 @@ export const Sidebar = ({
                 }}
             >
                 {!collapsed ? (
-                    <Box sx={{display: 'flex', alignItems: 'center', gap: 1.5}}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Box
                             sx={{
                                 width: 40,
@@ -440,6 +459,7 @@ export const Sidebar = ({
                                 }}
                             />
                         </Box>
+
                         <Box>
                             <Typography
                                 sx={{
@@ -452,6 +472,7 @@ export const Sidebar = ({
                             >
                                 NexusProcure
                             </Typography>
+
                             <Typography
                                 sx={{
                                     fontFamily: 'Poppins, sans-serif',
@@ -495,7 +516,7 @@ export const Sidebar = ({
                 )}
             </Toolbar>
 
-            <Divider sx={{mx: collapsed ? 1 : 2, opacity: 0.7}} />
+            <Divider sx={{ mx: collapsed ? 1 : 2, opacity: 0.7 }} />
 
             <Box
                 sx={{
@@ -514,22 +535,26 @@ export const Sidebar = ({
 
                         if (hasChildren) {
                             return (
-                                <ListItem key={item.text} disablePadding sx={{display: 'block'}}>
+                                <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
                                     {renderMenuButton(item, {
                                         active: parentActive,
                                         onClick: () => toggleMenu(item.text),
                                         trailing: !collapsed ? (
                                             isOpen ? (
-                                                <ExpandLessRoundedIcon sx={{fontSize: 20, color: '#64748B'}} />
+                                                <ExpandLessRoundedIcon
+                                                    sx={{ fontSize: 20, color: '#64748B' }}
+                                                />
                                             ) : (
-                                                <ExpandMoreRoundedIcon sx={{fontSize: 20, color: '#64748B'}} />
+                                                <ExpandMoreRoundedIcon
+                                                    sx={{ fontSize: 20, color: '#64748B' }}
+                                                />
                                             )
                                         ) : null,
                                     })}
 
                                     {!collapsed && (
                                         <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                                            <List disablePadding sx={{mt: 0.25}}>
+                                            <List disablePadding sx={{ mt: 0.25 }}>
                                                 {item.children!.map((child) => {
                                                     const childActive = isPathActive(child.path);
 
@@ -538,7 +563,8 @@ export const Sidebar = ({
                                                             {renderMenuButton(child, {
                                                                 nested: true,
                                                                 active: childActive,
-                                                                onClick: () => handleNavigation(child.path),
+                                                                onClick: () =>
+                                                                    handleNavigation(child.path),
                                                             })}
                                                         </ListItem>
                                                     );
@@ -551,7 +577,7 @@ export const Sidebar = ({
                         }
 
                         return (
-                            <ListItem key={item.text} disablePadding sx={{display: 'block'}}>
+                            <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
                                 {renderMenuButton(item, {
                                     active: isPathActive(item.path),
                                     onClick: () => handleNavigation(item.path),
@@ -561,10 +587,10 @@ export const Sidebar = ({
                     })}
                 </List>
 
-                <Divider sx={{my: 2, mx: collapsed ? 1 : 2, opacity: 0.7}} />
+                <Divider sx={{ my: 2, mx: collapsed ? 1 : 2, opacity: 0.7 }} />
 
                 {isDesktop && (
-                    <Box sx={{px: collapsed ? 1 : 1.5}}>
+                    <Box sx={{ px: collapsed ? 1 : 1.5 }}>
                         <Tooltip
                             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                             placement="right"
@@ -604,9 +630,9 @@ export const Sidebar = ({
                 variant="temporary"
                 open={open}
                 onClose={onClose}
-                ModalProps={{keepMounted: true}}
+                ModalProps={{ keepMounted: true }}
                 sx={{
-                    display: {xs: 'block', sm: 'none'},
+                    display: { xs: 'block', sm: 'none' },
                     '& .MuiDrawer-paper': {
                         width: drawerWidth,
                         boxSizing: 'border-box',
@@ -622,7 +648,7 @@ export const Sidebar = ({
                 variant="permanent"
                 open
                 sx={{
-                    display: {xs: 'none', sm: 'block'},
+                    display: { xs: 'none', sm: 'block' },
                     width: collapsed ? drawerWidthCollapsed : drawerWidth,
                     flexShrink: 0,
                     '& .MuiDrawer-paper': {

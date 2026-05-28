@@ -53,6 +53,8 @@ import ReportsDashboardPage from './pages/Reports/ReportsDashboardPage';
 import PurchaseOrderReportPage from './pages/Reports/PurchaseOrderReportPage';
 import InventoryReportPage from './pages/Reports/InventoryReportPage';
 import SpendingAnalyticsPage from './pages/Reports/SpendingAnalyticsPage';
+import ProcurementRequestPage from "./pages/ProcurementRequest/ProcurementRequestPage.tsx";
+import ProcurementRequestDetailPage from "./pages/ProcurementRequest/ProcurementRequestDetailPage.tsx";
 
 
 // Create Material-UI theme with NexusProcure design system
@@ -443,11 +445,22 @@ function App() {
                             element={<ManagerInventoryShortageDecisionPage />}
                         />
 
+                        <Route
+                            path="/procurement/requests"
+                            element={<ProcurementRequestPage />}
+                        />
+
+                        <Route
+                            path="/procurement/requests/:id"
+                            element={<ProcurementRequestDetailPage />}
+                        />
+
 
                         <Route path="/reports" element={<ReportsDashboardPage />} />
                         <Route path="/reports/purchase-orders" element={<PurchaseOrderReportPage />} />
                         <Route path="/reports/inventory" element={<InventoryReportPage />} />
                         <Route path="/reports/spending" element={<SpendingAnalyticsPage />} />
+
 
                         {/*<Route*/}
                         {/*    path="/procurement/purchase-orders"*/}
