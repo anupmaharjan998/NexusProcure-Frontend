@@ -55,6 +55,7 @@ import InventoryReportPage from './pages/Reports/InventoryReportPage';
 import SpendingAnalyticsPage from './pages/Reports/SpendingAnalyticsPage';
 import ProcurementRequestPage from "./pages/ProcurementRequest/ProcurementRequestPage.tsx";
 import ProcurementRequestDetailPage from "./pages/ProcurementRequest/ProcurementRequestDetailPage.tsx";
+import MyAssignedInventoryItemDetailPage from "./pages/Inventory/MyAssignedInventoryItemDetailPage.tsx";
 
 
 // Create Material-UI theme with NexusProcure design system
@@ -453,6 +454,10 @@ function App() {
                         <Route
                             path="/procurement/requests/:id"
                             element={<ProcurementRequestDetailPage />}
+                        />
+                        <Route
+                            path="/inventory-items/:id"
+                            element={<MyAssignedInventoryItemDetailPage />}
                         />
 
 

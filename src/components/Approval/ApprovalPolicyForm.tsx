@@ -1,181 +1,386 @@
+import { useEffect, useState } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
+    Alert,
+    Box,
     Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    FormControlLabel,
     Grid,
-    TextField,
     MenuItem,
+    Stack,
     Switch,
-    FormControlLabel
+    TextField,
+    Typography,
 } from '@mui/material';
-import {Controller, useForm} from 'react-hook-form';
-import {useEffect, useState} from 'react';
+import { Controller, useForm } from 'react-hook-form';
 
-import {
-    createApprovalPolicy
-} from '../../services/approvalPolicyService';
-import {
-    getAllCategories
-} from '../../services/vendorService';
-import {Role} from "../../types/Role.ts";
-import {getRoles} from '../../services/roleService.ts';
-import {getUsers} from "@/services/userService.ts";
-import {getDepartments} from "@/services/departmentService.ts";
+import { createApprovalPolicy } from '../../services/approvalPolicyService';
+import { getAllCategories } from '../../services/vendorService';
+import { Role } from '../../types/Role.ts';
+import { getRoles } from '../../services/roleService.ts';
 
 interface CategoryDto {
     id: string;
     name: string;
 }
 
-export const ApprovalPolicyForm = ({open, onClose, defaultValues, onSaved}: any) => {
-    const {control, handleSubmit, reset} = useForm({
-        defaultValues: defaultValues || {
-            categoryId: '',
-            riskLevel: 'Low',
-            sequenceOrder: 1,
-            escalationHours: 24,
-            isActive: true
-        }
+interface ApprovalPolicyFormValues {
+    categoryId: string;
+    roleId: string;
+    riskLevel: string;
+    sequenceOrder: number;
+    escalationHours: number;
+    isActive: boolean;
+}
+
+interface ApprovalPolicyFormProps {
+    open: boolean;
+    onClose: () => void;
+    onSaved: () => void | Promise<void>;
+}
+
+const initialValues: ApprovalPolicyFormValues = {
+    categoryId: '',
+    roleId: '',
+    riskLevel: 'Low',
+    sequenceOrder: 1,
+    escalationHours: 24,
+    isActive: true,
+};
+
+export const ApprovalPolicyForm = ({
+                                       open,
+                                       onClose,
+                                       onSaved,
+                                   }: ApprovalPolicyFormProps) => {
+    const {
+        control,
+        handleSubmit,
+        reset,
+        formState: { errors },
+    } = useForm<ApprovalPolicyFormValues>({
+        defaultValues: initialValues,
     });
 
-
-    const [levels, setLevels] = useState([]);
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
 
+    const [loadingDropdowns, setLoadingDropdowns] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError] = useState('');
 
-    const fetchRoleData = async () => {
+    const loadDropdownData = async () => {
+        setLoadingDropdowns(true);
+        setFormError('');
+
         try {
-            const [rolesData] = await Promise.all([
-                getRoles()
-
+            const [categoriesData, rolesData] = await Promise.all([
+                getAllCategories(),
+                getRoles(),
             ]);
+
+            setCategories(categoriesData);
             setRoles(rolesData);
         } catch (err: any) {
-
+            setFormError(
+                err.response?.data?.message ||
+                'Failed to load categories and roles.'
+            );
+        } finally {
+            setLoadingDropdowns(false);
         }
     };
 
     useEffect(() => {
-        fetchRoleData();
-    }, []);
+        if (open) {
+            reset(initialValues);
+            setFormError('');
+            loadDropdownData();
+        }
+    }, [open]);
 
-    useEffect(() => {
-        const loadCategoryData = async () => {
-            const [cats] = await Promise.all([
-                getAllCategories()
-            ]);
-            setCategories(cats);
-        };
-        loadCategoryData();
-    }, []);
+    const handleClose = () => {
+        if (submitting) return;
 
-    useEffect(() => {
-        reset(defaultValues);
-    }, [defaultValues]);
+        setFormError('');
+        reset(initialValues);
+        onClose();
+    };
 
-    const submit = async (data: any) => {
-        await createApprovalPolicy(data);
+    const submit = async (data: ApprovalPolicyFormValues) => {
+        setSubmitting(true);
+        setFormError('');
 
-        onSaved();
+        try {
+            const payload = {
+                categoryId: data.categoryId,
+                roleId: data.roleId,
+                riskLevel: data.riskLevel,
+                sequenceOrder: Number(data.sequenceOrder),
+                escalationHours: Number(data.escalationHours),
+                isActive: Boolean(data.isActive),
+            };
+
+            await createApprovalPolicy(payload);
+
+            await onSaved();
+
+            reset(initialValues);
+        } catch (err: any) {
+            setFormError(
+                err.response?.data?.message ||
+                err.response?.data?.title ||
+                'Failed to add approval policy.'
+            );
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-            <DialogTitle>
-                {defaultValues ? 'Edit Policy' : 'Add Policy'}
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            fullWidth
+            maxWidth="sm"
+            PaperProps={{
+                sx: {
+                    borderRadius: 4,
+                },
+            }}
+        >
+            <DialogTitle sx={{ pb: 1 }}>
+                <Typography variant="h5" fontWeight={900}>
+                    Add Approval Policy
+                </Typography>
+
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Configure who should approve requests based on category and risk level.
+                </Typography>
             </DialogTitle>
 
             <DialogContent dividers>
-                <Grid container spacing={2}>
-                    <Grid item xs={12}>
-                        <Controller
-                            name="categoryId"
-                            control={control}
-                            rules={{required: true}}
-                            render={({field}) => (
-                                <TextField {...field} select label="Category" fullWidth>
-                                    {categories.map((c: any) => (
-                                        <MenuItem key={c.id} value={c.id}>
-                                            {c.name}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                            )}
-                        />
-                    </Grid>
+                <Stack spacing={2}>
+                    {formError && (
+                        <Alert severity="error">
+                            {formError}
+                        </Alert>
+                    )}
 
-                    <Grid item xs={12}>
-                        <Controller
-                            name="roleId"
-                            control={control}
-                            render={({field}) => (
-                                <TextField {...field} select label="Assign to Role" fullWidth>
-                                    {roles.map((l: any) => (
-                                        <MenuItem key={l.id} value={l.id}>
-                                            {l.name}
-                                        </MenuItem>
-                                    ))}
-                                </TextField>
-                            )}
-                        />
-                    </Grid>
+                    {loadingDropdowns ? (
+                        <Stack alignItems="center" py={5}>
+                            <CircularProgress />
 
-                    <Grid item xs={6}>
-                        <Controller
-                            name="riskLevel"
-                            control={control}
-                            render={({field}) => (
-                                <TextField {...field} select label="Risk Level" fullWidth>
-                                    {['Low', 'Medium', 'High', 'Critical'].map(r => (
-                                        <MenuItem key={r} value={r}>{r}</MenuItem>
-                                    ))}
-                                </TextField>
-                            )}
-                        />
-                    </Grid>
-
-                    <Grid item xs={3}>
-                        <Controller
-                            name="sequenceOrder"
-                            control={control}
-                            render={({field}) => (
-                                <TextField {...field} type="number" label="Order" fullWidth/>
-                            )}
-                        />
-                    </Grid>
-
-                    <Grid item xs={3}>
-                        <Controller
-                            name="escalationHours"
-                            control={control}
-                            render={({field}) => (
-                                <TextField {...field} type="number" label="Escalation Hrs" fullWidth/>
-                            )}
-                        />
-                    </Grid>
-
-                    <Grid item xs={12}>
-                        <Controller
-                            name="isActive"
-                            control={control}
-                            render={({field}) => (
-                                <FormControlLabel
-                                    control={<Switch {...field} checked={field.value}/>}
-                                    label="Active"
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                                Loading form data...
+                            </Typography>
+                        </Stack>
+                    ) : (
+                        <Grid container spacing={2}>
+                            <Grid item xs={12}>
+                                <Controller
+                                    name="categoryId"
+                                    control={control}
+                                    rules={{
+                                        required: 'Category is required.',
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            select
+                                            label="Category"
+                                            fullWidth
+                                            error={!!errors.categoryId}
+                                            helperText={errors.categoryId?.message}
+                                            disabled={submitting}
+                                        >
+                                            {categories.map((category) => (
+                                                <MenuItem key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    )}
                                 />
-                            )}
-                        />
-                    </Grid>
-                </Grid>
+                            </Grid>
+
+                            <Grid item xs={12}>
+                                <Controller
+                                    name="roleId"
+                                    control={control}
+                                    rules={{
+                                        required: 'Approval role is required.',
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            select
+                                            label="Assign to Role"
+                                            fullWidth
+                                            error={!!errors.roleId}
+                                            helperText={errors.roleId?.message}
+                                            disabled={submitting}
+                                        >
+                                            {roles.map((role: any) => (
+                                                <MenuItem key={role.id} value={role.id}>
+                                                    {role.name}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    )}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                                <Controller
+                                    name="riskLevel"
+                                    control={control}
+                                    rules={{
+                                        required: 'Risk level is required.',
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            select
+                                            label="Risk Level"
+                                            fullWidth
+                                            error={!!errors.riskLevel}
+                                            helperText={errors.riskLevel?.message}
+                                            disabled={submitting}
+                                        >
+                                            {['Low', 'Medium', 'High', 'Critical'].map((risk) => (
+                                                <MenuItem key={risk} value={risk}>
+                                                    {risk}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    )}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                                <Controller
+                                    name="sequenceOrder"
+                                    control={control}
+                                    rules={{
+                                        required: 'Sequence order is required.',
+                                        min: {
+                                            value: 1,
+                                            message: 'Order must be at least 1.',
+                                        },
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            type="number"
+                                            label="Approval Order"
+                                            fullWidth
+                                            error={!!errors.sequenceOrder}
+                                            helperText={errors.sequenceOrder?.message}
+                                            disabled={submitting}
+                                            inputProps={{
+                                                min: 1,
+                                            }}
+                                        />
+                                    )}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                                <Controller
+                                    name="escalationHours"
+                                    control={control}
+                                    rules={{
+                                        required: 'Escalation hours is required.',
+                                        min: {
+                                            value: 1,
+                                            message: 'Escalation hours must be at least 1.',
+                                        },
+                                    }}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            type="number"
+                                            label="Escalation Hours"
+                                            fullWidth
+                                            error={!!errors.escalationHours}
+                                            helperText={errors.escalationHours?.message}
+                                            disabled={submitting}
+                                            inputProps={{
+                                                min: 1,
+                                            }}
+                                        />
+                                    )}
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} sm={6}>
+                                <Box
+                                    sx={{
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        px: 1,
+                                    }}
+                                >
+                                    <Controller
+                                        name="isActive"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={Boolean(field.value)}
+                                                        onChange={(e) =>
+                                                            field.onChange(e.target.checked)
+                                                        }
+                                                        disabled={submitting}
+                                                    />
+                                                }
+                                                label="Active Policy"
+                                            />
+                                        )}
+                                    />
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    )}
+                </Stack>
             </DialogContent>
 
-            <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
-                <Button variant="contained" onClick={handleSubmit(submit)}>
-                    Save
+            <DialogActions sx={{ px: 3, py: 2 }}>
+                <Button
+                    onClick={handleClose}
+                    disabled={submitting}
+                    sx={{
+                        textTransform: 'none',
+                        fontWeight: 800,
+                        borderRadius: 3,
+                    }}
+                >
+                    Cancel
+                </Button>
+
+                <Button
+                    variant="contained"
+                    onClick={handleSubmit(submit)}
+                    disabled={submitting || loadingDropdowns}
+                    sx={{
+                        textTransform: 'none',
+                        fontWeight: 900,
+                        borderRadius: 3,
+                        minWidth: 120,
+                    }}
+                >
+                    {submitting ? (
+                        <CircularProgress size={22} color="inherit" />
+                    ) : (
+                        'Save Policy'
+                    )}
                 </Button>
             </DialogActions>
         </Dialog>

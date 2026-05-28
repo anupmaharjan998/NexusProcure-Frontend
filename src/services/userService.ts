@@ -92,3 +92,18 @@ export const uploadProfilePicture = async (file: File): Promise<string> => {
 };
 
 
+export const checkUsernameExists = async (
+    username: string,
+    excludeUserId?: string
+): Promise<boolean> => {
+    const response = await api.get('/users/check-username', {
+        params: {
+            username,
+            excludeUserId,
+        },
+    });
+
+    return response.data.exists;
+};
+
+

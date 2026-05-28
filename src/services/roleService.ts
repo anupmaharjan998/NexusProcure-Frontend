@@ -1,18 +1,9 @@
 import api from './api.ts';
-import {Role, RoleFormData} from '../types/Role.ts';
+import { Role, RoleFormData } from '../types/Role.ts';
 
 export const getRoles = async (): Promise<Role[]> => {
-    try {
-        const response = await api.get<Role[]>('/roles');
-        return response.data;
-    } catch (error) {
-        return [
-            {id: 'r-1', name: 'Admin', description: 'System administrator'},
-            {id: 'r-2', name: 'Employee', description: 'Regular employee'},
-            {id: 'r-3', name: 'Department Head', description: 'Leads a department'},
-            {id: 'r-4', name: 'Procurement Officer', description: 'Handles procurement'},
-        ];
-    }
+    const response = await api.get<Role[]>('/roles');
+    return response.data;
 };
 
 export const getRoleById = async (id: string): Promise<Role> => {
@@ -32,4 +23,18 @@ export const updateRole = async (id: string, data: RoleFormData): Promise<Role> 
 
 export const deleteRole = async (id: string): Promise<void> => {
     await api.delete(`/roles/${id}`);
+};
+
+export const checkRoleNameExists = async (
+    name: string,
+    excludeRoleId?: string
+): Promise<boolean> => {
+    const response = await api.get('/roles/check-role-name', {
+        params: {
+            name,
+            excludeRoleId,
+        },
+    });
+
+    return response.data.exists;
 };

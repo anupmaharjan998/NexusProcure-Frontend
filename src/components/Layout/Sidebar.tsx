@@ -116,12 +116,6 @@ const menuItems: MenuItem[] = [
         permissions: ['VIEW_VENDOR'],
     },
     {
-        text: 'Categories',
-        icon: <CategoryOutlinedIcon />,
-        path: '/categories',
-        permissions: ['VIEW_CATEGORIES'],
-    },
-    {
         text: 'Policy & Risk',
         icon: <RuleFolderOutlinedIcon />,
         permissions: ['VIEW_POLICIES'],

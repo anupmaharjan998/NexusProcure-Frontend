@@ -1,29 +1,30 @@
+import { useEffect, useState } from 'react';
 import {
+    Alert,
     Box,
-    Grid,
-    Typography,
-    FormControlLabel,
-    Checkbox,
-    Divider,
-    Paper,
     Chip,
-    Stack,
-    FormHelperText,
+    Divider,
+    Grid,
     InputAdornment,
+    Paper,
+    Stack,
+    Typography,
 } from '@mui/material';
-import SecurityIcon from '@mui/icons-material/Security';
 import BadgeIcon from '@mui/icons-material/Badge';
 import DescriptionIcon from '@mui/icons-material/Description';
+import SecurityIcon from '@mui/icons-material/Security';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import {useForm} from 'react-hook-form';
-import {yupResolver} from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import {Input} from '../UI/Input.tsx';
-import {Button} from '../UI/Button.tsx';
-import {Modal} from '../UI/Modal.tsx';
-import {Role, RoleFormData} from '../../types/Role.ts';
-import {Permission} from '../../types/Permission.ts';
-import {useEffect, useMemo, useState} from 'react';
+
+import { Input } from '../UI/Input.tsx';
+import { Button } from '../UI/Button.tsx';
+import { Modal } from '../UI/Modal.tsx';
+import { Role, RoleFormData } from '../../types/Role.ts';
+import { Permission } from '../../types/Permission.ts';
+import { checkRoleNameExists } from '../../services/roleService.ts';
 
 const schema = yup.object({
     name: yup
@@ -54,15 +55,21 @@ export const RoleForm = ({
                              permissions,
                              loading = false,
                          }: RoleFormProps) => {
-    const isEdit = !!role;
+    const isEdit = Boolean(role);
+
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+    const [formError, setFormError] = useState('');
+    const [checkingRoleName, setCheckingRoleName] = useState(false);
+    const [roleNameAvailable, setRoleNameAvailable] = useState<boolean | null>(null);
 
     const {
         register,
         handleSubmit,
         reset,
         watch,
-        formState: {errors, isValid},
+        setError,
+        clearErrors,
+        formState: { errors, isValid },
     } = useForm<RoleFormData>({
         resolver: yupResolver(schema),
         mode: 'onChange',
@@ -76,90 +83,163 @@ export const RoleForm = ({
     const description = watch('description');
 
     useEffect(() => {
+        if (!open) return;
+
         if (role) {
             reset({
-                name: role.name,
+                name: role.name || '',
                 description: role.description || '',
             });
-            setSelectedPermissions(role.permissions?.map((p) => p.id) || []);
+
+            setSelectedPermissions(role.permissions?.map((permission) => permission.id) || []);
         } else {
             reset({
                 name: '',
                 description: '',
             });
+
             setSelectedPermissions([]);
         }
-    }, [role, reset]);
 
-    const groupedPermissions = useMemo(() => {
-        const groups: Record<string, Permission[]> = {};
+        setFormError('');
+        setRoleNameAvailable(null);
+    }, [open, role, reset]);
 
-        permissions.forEach((permission) => {
-            const groupName =
-                (permission as any).module ||
-                (permission as any).group ||
-                'General';
+    useEffect(() => {
+        const name = roleName?.trim();
 
-            if (!groups[groupName]) groups[groupName] = [];
-            groups[groupName].push(permission);
-        });
+        if (!open) return;
 
-        return groups;
-    }, [permissions]);
-
-    const togglePermission = (permissionId: string) => {
-        setSelectedPermissions((prev) =>
-            prev.includes(permissionId)
-                ? prev.filter((id) => id !== permissionId)
-                : [...prev, permissionId]
-        );
-    };
-
-    const toggleGroup = (groupPermissions: Permission[]) => {
-        const groupIds = groupPermissions.map((p) => p.id);
-        const allSelected = groupIds.every((id) => selectedPermissions.includes(id));
-
-        if (allSelected) {
-            setSelectedPermissions((prev) => prev.filter((id) => !groupIds.includes(id)));
-        } else {
-            setSelectedPermissions((prev) => Array.from(new Set([...prev, ...groupIds])));
+        if (!name || name.length < 2) {
+            setRoleNameAvailable(null);
+            return;
         }
-    };
+
+        if (isEdit && name.toLowerCase() === role?.name?.trim().toLowerCase()) {
+            clearErrors('name');
+            setRoleNameAvailable(null);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            try {
+                setCheckingRoleName(true);
+
+                const exists = await checkRoleNameExists(name, role?.id);
+
+                if (exists) {
+                    setRoleNameAvailable(false);
+                    setError('name', {
+                        type: 'manual',
+                        message: 'Role name already exists',
+                    });
+                } else {
+                    setRoleNameAvailable(true);
+                    clearErrors('name');
+                }
+            } catch {
+                setRoleNameAvailable(null);
+                setError('name', {
+                    type: 'manual',
+                    message: 'Could not verify role name availability',
+                });
+            } finally {
+                setCheckingRoleName(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timeout);
+    }, [roleName, open, isEdit, role?.id, role?.name, setError, clearErrors]);
 
     const handleFormSubmit = async (data: RoleFormData) => {
-        await onSubmit({
-            ...data,
-            permissionIds: selectedPermissions,
-        });
-        reset();
-        setSelectedPermissions([]);
+        setFormError('');
+
+        if (roleNameAvailable === false) {
+            setError('name', {
+                type: 'manual',
+                message: 'Role name already exists',
+            });
+            return;
+        }
+
+        try {
+            await onSubmit({
+                ...data,
+                name: data.name.trim(),
+                description: data.description?.trim() || '',
+            });
+
+            reset();
+            setSelectedPermissions([]);
+            setRoleNameAvailable(null);
+        } catch (err: any) {
+            setFormError(
+                err.response?.data?.message ||
+                err.response?.data?.title ||
+                'Failed to save role.'
+            );
+        }
     };
 
     const handleClose = () => {
+        if (loading) return;
+
         reset();
         setSelectedPermissions([]);
+        setFormError('');
+        setRoleNameAvailable(null);
         onClose();
     };
+
+    const totalAvailablePermissions = permissions.length;
+    const selectedPermissionCount = selectedPermissions.length;
+
+    const roleNameHelperText =
+        errors.name?.message ||
+        (checkingRoleName
+            ? 'Checking role name availability...'
+            : roleNameAvailable === true
+                ? 'Role name is available'
+                : 'Role name must be unique');
 
     return (
         <Modal
             open={open}
             onClose={handleClose}
             title={isEdit ? 'Edit Role' : 'Create New Role'}
-            maxWidth="md"
+            maxWidth="sm"
             actions={
                 <>
-                    <Button variant="outlined" onClick={handleClose} disabled={loading}>
+                    <Button
+                        variant="outlined"
+                        onClick={handleClose}
+                        disabled={loading}
+                        sx={{
+                            borderRadius: 3,
+                            textTransform: 'none',
+                            fontWeight: 800,
+                        }}
+                    >
                         Cancel
                     </Button>
+
                     <Button
                         variant="contained"
                         onClick={handleSubmit(handleFormSubmit)}
                         loading={loading}
-                        disabled={!isValid || loading}
+                        disabled={
+                            !isValid ||
+                            loading ||
+                            checkingRoleName ||
+                            roleNameAvailable === false
+                        }
                         sx={{
-                            minWidth: 140,
-                            background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
+                            minWidth: 145,
+                            borderRadius: 3,
+                            textTransform: 'none',
+                            fontWeight: 900,
+                            background:
+                                'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
                         }}
                     >
                         {isEdit ? 'Save Changes' : 'Create Role'}
@@ -168,28 +248,74 @@ export const RoleForm = ({
             }
         >
             <form>
-                <Stack spacing={3} sx={{mt: 1}}>
+                <Stack spacing={3} sx={{ mt: 1 }}>
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 2,
+                            borderRadius: 3,
+                            bgcolor: '#f8fafc',
+                            borderColor: '#e2e8f0',
+                        }}
+                    >
+                        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                            <Box
+                                sx={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: 2.5,
+                                    bgcolor: '#eff6ff',
+                                    color: '#2563eb',
+                                    display: 'grid',
+                                    placeItems: 'center',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <AdminPanelSettingsIcon />
+                            </Box>
+
+                            <Box>
+                                <Typography fontWeight={900} color="#0f172a">
+                                    {isEdit ? 'Update role information' : 'Create a system role'}
+                                </Typography>
+
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                    Permission details are hidden from this form. Only permission count is shown.
+                                </Typography>
+                            </Box>
+                        </Stack>
+                    </Paper>
+
+                    {formError && (
+                        <Alert severity="error" onClose={() => setFormError('')}>
+                            {formError}
+                        </Alert>
+                    )}
+
                     <Box>
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                color: '#64748B',
-                                fontFamily: 'Poppins, sans-serif',
-                                mb: 2,
-                            }}
-                        >
-                            Configure the role details and assign the permissions this role should have.
+                        <Typography variant="subtitle1" fontWeight={900} sx={{ mb: 2 }}>
+                            Role Details
                         </Typography>
 
                         <Grid container spacing={2}>
                             <Grid item xs={12}>
                                 <Input
                                     label="Role Name"
-                                    placeholder="Enter role name"
+                                    placeholder="Example: Procurement Manager"
                                     {...register('name')}
                                     error={!!errors.name}
-                                    helperText={errors.name?.message}
+                                    helperText={roleNameHelperText}
                                     disabled={loading}
+                                    FormHelperTextProps={{
+                                        sx: {
+                                            color:
+                                                errors.name
+                                                    ? '#D32F2F'
+                                                    : roleNameAvailable === true
+                                                        ? '#2E7D32'
+                                                        : undefined,
+                                        },
+                                    }}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -227,202 +353,84 @@ export const RoleForm = ({
 
                     <Divider />
 
-                    <Box>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: {xs: 'flex-start', sm: 'center'},
-                                flexDirection: {xs: 'column', sm: 'row'},
-                                gap: 1.5,
-                                mb: 2,
-                            }}
-                        >
-                            <Box>
-                                <Typography
-                                    variant="subtitle1"
-                                    sx={{
-                                        fontWeight: 700,
-                                        color: '#1E293B',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                    }}
-                                >
-                                    <SecurityIcon fontSize="small" />
-                                    Permissions
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        color: '#64748B',
-                                        fontFamily: 'Poppins, sans-serif',
-                                    }}
-                                >
-                                    Select the actions users with this role are allowed to perform.
-                                </Typography>
-                            </Box>
+                    <Paper
+                        variant="outlined"
+                        sx={{
+                            p: 2.5,
+                            borderRadius: 3,
+                            bgcolor: '#ffffff',
+                            borderColor: '#e2e8f0',
+                        }}
+                    >
+                        <Stack spacing={2}>
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                justifyContent="space-between"
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                spacing={2}
+                            >
+                                <Box>
+                                    <Typography
+                                        variant="subtitle1"
+                                        sx={{
+                                            fontWeight: 900,
+                                            color: '#1E293B',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <SecurityIcon fontSize="small" />
+                                        Permission Summary
+                                    </Typography>
 
-                            <Chip
-                                icon={<CheckCircleOutlineIcon />}
-                                label={`${selectedPermissions.length} selected`}
-                                color={selectedPermissions.length > 0 ? 'primary' : 'default'}
-                                variant={selectedPermissions.length > 0 ? 'filled' : 'outlined'}
-                                sx={{fontWeight: 600}}
-                            />
-                        </Box>
+                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                        This role currently has the following permission count.
+                                    </Typography>
+                                </Box>
 
-                        {permissions.length === 0 ? (
-                            <Paper
-                                variant="outlined"
+                                <Chip
+                                    icon={<CheckCircleOutlineIcon />}
+                                    label={`${selectedPermissionCount} assigned`}
+                                    color={selectedPermissionCount > 0 ? 'primary' : 'default'}
+                                    variant={selectedPermissionCount > 0 ? 'filled' : 'outlined'}
+                                    sx={{
+                                        fontWeight: 900,
+                                        px: 0.5,
+                                    }}
+                                />
+                            </Stack>
+
+                            <Box
                                 sx={{
-                                    p: 3,
+                                    p: 2,
                                     borderRadius: 3,
-                                    textAlign: 'center',
-                                    bgcolor: '#F8FAFC',
+                                    bgcolor: '#f8fafc',
+                                    border: '1px dashed #cbd5e1',
                                 }}
                             >
-                                <Typography sx={{fontWeight: 600, color: '#334155', mb: 0.5}}>
-                                    No permissions available
-                                </Typography>
-                                <Typography variant="body2" sx={{color: '#64748B'}}>
-                                    Add permissions first before assigning them to a role.
-                                </Typography>
-                            </Paper>
-                        ) : (
-                            <Stack spacing={2}>
-                                {Object.entries(groupedPermissions).map(([groupName, groupPermissions]) => {
-                                    const groupIds = groupPermissions.map((p) => p.id);
-                                    const selectedInGroup = groupIds.filter((id) =>
-                                        selectedPermissions.includes(id)
-                                    ).length;
-                                    const allSelected =
-                                        groupPermissions.length > 0 &&
-                                        selectedInGroup === groupPermissions.length;
+                                <Stack
+                                    direction={{ xs: 'column', sm: 'row' }}
+                                    spacing={1}
+                                    useFlexGap
+                                    flexWrap="wrap"
+                                >
+                                    <Chip
+                                        label={`${selectedPermissionCount} role permissions`}
+                                        color={selectedPermissionCount > 0 ? 'primary' : 'default'}
+                                        variant="outlined"
+                                        sx={{ fontWeight: 800 }}
+                                    />
 
-                                    return (
-                                        <Paper
-                                            key={groupName}
-                                            variant="outlined"
-                                            sx={{
-                                                p: 2,
-                                                borderRadius: 3,
-                                                borderColor: '#E2E8F0',
-                                                transition: '0.2s ease',
-                                                '&:hover': {
-                                                    borderColor: '#CBD5E1',
-                                                    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.05)',
-                                                },
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: {xs: 'flex-start', sm: 'center'},
-                                                    flexDirection: {xs: 'column', sm: 'row'},
-                                                    gap: 1,
-                                                    mb: 1,
-                                                }}
-                                            >
-                                                <FormControlLabel
-                                                    control={
-                                                        <Checkbox
-                                                            checked={allSelected}
-                                                            indeterminate={
-                                                                selectedInGroup > 0 && !allSelected
-                                                            }
-                                                            onChange={() => toggleGroup(groupPermissions)}
-                                                            disabled={loading}
-                                                        />
-                                                    }
-                                                    label={
-                                                        <Typography
-                                                            sx={{
-                                                                fontWeight: 700,
-                                                                color: '#1E293B',
-                                                            }}
-                                                        >
-                                                            {groupName}
-                                                        </Typography>
-                                                    }
-                                                />
-
-                                                <Chip
-                                                    size="small"
-                                                    label={`${selectedInGroup}/${groupPermissions.length}`}
-                                                    variant="outlined"
-                                                />
-                                            </Box>
-
-                                            <Grid container spacing={1}>
-                                                {groupPermissions.map((permission) => (
-                                                    <Grid item xs={12} sm={6} md={4} key={permission.id}>
-                                                        <Paper
-                                                            variant="outlined"
-                                                            sx={{
-                                                                px: 1.5,
-                                                                py: 1,
-                                                                borderRadius: 2,
-                                                                borderColor: selectedPermissions.includes(permission.id)
-                                                                    ? '#93C5FD'
-                                                                    : '#E2E8F0',
-                                                                bgcolor: selectedPermissions.includes(permission.id)
-                                                                    ? '#EFF6FF'
-                                                                    : '#FFFFFF',
-                                                            }}
-                                                        >
-                                                            <FormControlLabel
-                                                                sx={{m: 0, width: '100%'}}
-                                                                control={
-                                                                    <Checkbox
-                                                                        checked={selectedPermissions.includes(
-                                                                            permission.id
-                                                                        )}
-                                                                        onChange={() =>
-                                                                            togglePermission(permission.id)
-                                                                        }
-                                                                        disabled={loading}
-                                                                    />
-                                                                }
-                                                                label={
-                                                                    <Box>
-                                                                        <Typography
-                                                                            sx={{
-                                                                                fontSize: 14,
-                                                                                fontWeight: 600,
-                                                                                color: '#1E293B',
-                                                                            }}
-                                                                        >
-                                                                            {permission.name}
-                                                                        </Typography>
-                                                                        {(permission as any).description && (
-                                                                            <Typography
-                                                                                sx={{
-                                                                                    fontSize: 12,
-                                                                                    color: '#64748B',
-                                                                                }}
-                                                                            >
-                                                                                {(permission as any).description}
-                                                                            </Typography>
-                                                                        )}
-                                                                    </Box>
-                                                                }
-                                                            />
-                                                        </Paper>
-                                                    </Grid>
-                                                ))}
-                                            </Grid>
-                                        </Paper>
-                                    );
-                                })}
-                            </Stack>
-                        )}
-
-                        <FormHelperText sx={{mt: 1}}>
-                            Choose only the permissions required for this role.
-                        </FormHelperText>
-                    </Box>
+                                    <Chip
+                                        label={`${totalAvailablePermissions} available permissions`}
+                                        variant="outlined"
+                                        sx={{ fontWeight: 800 }}
+                                    />
+                                </Stack>
+                            </Box>
+                        </Stack>
+                    </Paper>
 
                     {!!roleName?.trim() && (
                         <Paper
@@ -436,17 +444,23 @@ export const RoleForm = ({
                         >
                             <Typography
                                 variant="subtitle2"
-                                sx={{fontWeight: 700, color: '#334155', mb: 1}}
+                                sx={{ fontWeight: 900, color: '#334155', mb: 1 }}
                             >
                                 Preview
                             </Typography>
-                            <Box sx={{display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap'}}>
+
+                            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                                 <Chip label={roleName.trim()} color="primary" />
+
                                 <Chip
-                                    label={`${selectedPermissions.length} permissions`}
+                                    label={`${selectedPermissionCount} ${
+                                        selectedPermissionCount === 1
+                                            ? 'permission'
+                                            : 'permissions'
+                                    }`}
                                     variant="outlined"
                                 />
-                            </Box>
+                            </Stack>
                         </Paper>
                     )}
                 </Stack>

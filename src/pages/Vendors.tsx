@@ -1,10 +1,20 @@
+import { useEffect, useMemo, useState } from 'react';
 import {
-    Box,
-    Typography,
-    IconButton,
     Alert,
+    Box,
+    Button,
+    Card,
+    CardContent,
     Chip,
+    IconButton,
+    InputAdornment,
+    Paper,
+    Snackbar,
+    Stack,
+    Tooltip,
+    Typography,
 } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -12,44 +22,75 @@ import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import PhoneOutlinedIcon from '@mui/icons-material/PhoneOutlined';
-import {useEffect, useState} from 'react';
-import {DashboardLayout} from '../components/Layout/DashboardLayout';
-import {Table, Column} from '../components/UI/Table';
-import {Button} from '../components/UI/Button';
-import {ConfirmDialog} from '../components/UI/ConfirmDialog';
-import {VendorForm} from '../components/Vendor/VendorForm';
+import SearchIcon from '@mui/icons-material/Search';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+
+import { useNavigate } from 'react-router-dom';
+
+import { DashboardLayout } from '../components/Layout/DashboardLayout';
+import { ConfirmDialog } from '../components/UI/ConfirmDialog';
+import { VendorForm } from '../components/Vendor/VendorForm';
+
 import {
     getVendors,
     createVendor,
     updateVendor,
     deleteVendor,
-    getVendorById
+    getVendorById,
 } from '../services/vendorService';
-import {Vendor, VendorFormData} from '../types/Vendor';
-import {useNavigate} from 'react-router-dom';
-import {useAuth} from '../hooks/useAuth.ts';
+import { Vendor, VendorFormData } from '../types/Vendor';
+import { useAuth } from '../hooks/useAuth.ts';
+
+type SnackbarState = {
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error' | 'info' | 'warning';
+};
 
 export const Vendors = () => {
     const [vendors, setVendors] = useState<Vendor[]>([]);
     const [loading, setLoading] = useState(true);
+
     const [formOpen, setFormOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedVendor, setSelectedVendor] = useState<Vendor | undefined>();
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [vendorToDelete, setVendorToDelete] = useState<Vendor | undefined>();
+
     const [actionLoading, setActionLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [search, setSearch] = useState('');
+
+    const [snackbar, setSnackbar] = useState<SnackbarState>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
 
     const navigate = useNavigate();
-    const {hasPermission} = useAuth();
+    const { hasPermission } = useAuth();
+
+    const showMessage = (
+        message: string,
+        severity: SnackbarState['severity'] = 'success'
+    ) => {
+        setSnackbar({
+            open: true,
+            message,
+            severity,
+        });
+    };
 
     const fetchData = async () => {
         setLoading(true);
+
         try {
             const vendorsData = await getVendors();
             setVendors(vendorsData);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to fetch vendors');
+            showMessage(
+                err.response?.data?.message || 'Failed to fetch vendors.',
+                'error'
+            );
         } finally {
             setLoading(false);
         }
@@ -59,19 +100,35 @@ export const Vendors = () => {
         fetchData();
     }, []);
 
+    const filteredVendors = useMemo(() => {
+        const keyword = search.trim().toLowerCase();
+
+        if (!keyword) return vendors;
+
+        return vendors.filter((vendor) =>
+            `${vendor.vendorName || ''} ${vendor.companyName || ''} ${vendor.email || ''} ${vendor.phoneNumber || ''} ${vendor.status || ''}`
+                .toLowerCase()
+                .includes(keyword)
+        );
+    }, [vendors, search]);
+
     const handleAdd = () => {
         setSelectedVendor(undefined);
         setFormOpen(true);
     };
 
     const handleEdit = async (vendor: Vendor) => {
+        setActionLoading(true);
+
         try {
-            setActionLoading(true);
             const detailedVendor = await getVendorById(vendor.id);
             setSelectedVendor(detailedVendor);
             setFormOpen(true);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to load vendor data');
+            showMessage(
+                err.response?.data?.message || 'Failed to load vendor details.',
+                'error'
+            );
         } finally {
             setActionLoading(false);
         }
@@ -86,41 +143,47 @@ export const Vendors = () => {
         if (!vendorToDelete) return;
 
         setActionLoading(true);
+
         try {
             await deleteVendor(vendorToDelete.id);
-            setSuccess('Vendor deleted successfully');
+
             setDeleteDialogOpen(false);
             setVendorToDelete(undefined);
+
             await fetchData();
+
+            showMessage('Vendor deleted successfully.', 'success');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to delete vendor');
+            showMessage(
+                err.response?.data?.message || 'Failed to delete vendor.',
+                'error'
+            );
         } finally {
             setActionLoading(false);
         }
     };
 
-    const handleRowClick = (vendor: Vendor) => {
-        navigate(`/vendors/${vendor.id}`);
-    };
-
     const handleFormSubmit = async (data: VendorFormData) => {
         setActionLoading(true);
-        setError('');
 
         try {
             if (selectedVendor) {
                 await updateVendor(selectedVendor.id, data);
-                setSuccess('Vendor updated successfully');
+                showMessage('Vendor updated successfully.', 'success');
             } else {
                 await createVendor(data);
-                setSuccess('Vendor created successfully');
+                showMessage('Vendor created successfully.', 'success');
             }
 
             setFormOpen(false);
             setSelectedVendor(undefined);
+
             await fetchData();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to save vendor');
+            showMessage(
+                err.response?.data?.message || 'Failed to save vendor.',
+                'error'
+            );
         } finally {
             setActionLoading(false);
         }
@@ -140,214 +203,289 @@ export const Vendors = () => {
         }
     };
 
-    const columns: Column<Vendor>[] = [
+    const columns: GridColDef<Vendor>[] = [
         {
-            id: 'vendorName',
-            label: 'Vendor',
+            field: 'vendorName',
+            headerName: 'Vendor',
+            flex: 1,
             minWidth: 220,
-            format: (_, row) => (
+            renderCell: (params) => (
                 <Box>
-                    <Typography
-                        sx={{
-                            fontWeight: 700,
-                            color: '#1E293B',
-                            fontSize: 14,
-                            lineHeight: 1.3,
-                        }}
-                    >
-                        {row.vendorName || '-'}
+                    <Typography fontWeight={800} color="#1E293B">
+                        {params.row.vendorName || '-'}
                     </Typography>
-                    <Typography
-                        sx={{
-                            color: '#64748B',
-                            fontSize: 12,
-                            mt: 0.35,
-                        }}
-                    >
-                        Contact vendor profile
-                    </Typography>
+
                 </Box>
             ),
         },
         {
-            id: 'companyName',
-            label: 'Company Name',
-            minWidth: 200,
-            format: (value) => (
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <BusinessOutlinedIcon sx={{fontSize: 16, color: '#64748B'}} />
-                    <Typography sx={{fontSize: 14, color: '#334155', fontWeight: 500}}>
-                        {value || '-'}
-                    </Typography>
-                </Box>
-            ),
-        },
-        {
-            id: 'email',
-            label: 'Email',
+            field: 'companyName',
+            headerName: 'Company',
+            flex: 1,
             minWidth: 220,
-            format: (value) => (
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <EmailOutlinedIcon sx={{fontSize: 16, color: '#64748B'}} />
-                    <Typography sx={{fontSize: 14, color: '#334155'}}>
-                        {value || '-'}
+            renderCell: (params) => (
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <BusinessOutlinedIcon sx={{ fontSize: 18, color: '#64748B' }} />
+                    <Typography fontWeight={600}>
+                        {params.row.companyName || '-'}
                     </Typography>
-                </Box>
+                </Stack>
             ),
         },
         {
-            id: 'phoneNumber',
-            label: 'Phone',
-            minWidth: 160,
-            format: (value) => (
-                <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                    <PhoneOutlinedIcon sx={{fontSize: 16, color: '#64748B'}} />
-                    <Typography sx={{fontSize: 14, color: '#334155'}}>
-                        {value || '-'}
+            field: 'email',
+            headerName: 'Email',
+            flex: 1,
+            minWidth: 240,
+            renderCell: (params) => (
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <EmailOutlinedIcon sx={{ fontSize: 18, color: '#64748B' }} />
+                    <Typography>
+                        {params.row.email || '-'}
                     </Typography>
-                </Box>
+                </Stack>
             ),
         },
         {
-            id: 'status',
-            label: 'Status',
-            minWidth: 120,
-            format: (value) => (
+            field: 'phoneNumber',
+            headerName: 'Phone',
+            width: 170,
+            renderCell: (params) => (
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <PhoneOutlinedIcon sx={{ fontSize: 18, color: '#64748B' }} />
+                    <Typography>
+                        {params.row.phoneNumber || '-'}
+                    </Typography>
+                </Stack>
+            ),
+        },
+        {
+            field: 'status',
+            headerName: 'Status',
+            width: 140,
+            renderCell: (params) => (
                 <Chip
-                    label={value || 'Unknown'}
+                    label={params.row.status || 'Unknown'}
                     size="small"
-                    color={getStatusColor(value) as any}
-                    variant={value === 'Inactive' ? 'outlined' : 'filled'}
-                    sx={{fontWeight: 600}}
+                    color={getStatusColor(params.row.status) as any}
+                    variant={params.row.status === 'Inactive' ? 'outlined' : 'filled'}
+                    sx={{ fontWeight: 800 }}
                 />
             ),
         },
         {
-            id: 'actions',
-            label: 'Actions',
-            minWidth: 120,
+            field: 'actions',
+            headerName: 'Actions',
+            width: 170,
             align: 'center',
-            format: (_, vendor) => (
-                <Box sx={{display: 'flex', gap: 1, justifyContent: 'center'}}>
-                    {hasPermission('EDIT_VENDOR') && (
+            headerAlign: 'center',
+            sortable: false,
+            filterable: false,
+            renderCell: (params) => (
+                <Stack direction="row" spacing={0.75} justifyContent="center">
+                    <Tooltip title="View details">
                         <IconButton
                             size="small"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(vendor);
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                navigate(`/vendors/${params.row.id}`);
                             }}
                             sx={{
-                                color: '#0056D2',
-                                bgcolor: '#EFF6FF',
-                                '&:hover': {bgcolor: '#DBEAFE'},
+                                color: '#0f172a',
+                                bgcolor: '#f1f5f9',
+                                '&:hover': { bgcolor: '#e2e8f0' },
                             }}
                         >
-                            <EditIcon fontSize="small" />
+                            <VisibilityIcon fontSize="small" />
                         </IconButton>
+                    </Tooltip>
+
+                    {hasPermission('EDIT_VENDOR') && (
+                        <Tooltip title="Edit vendor">
+                            <IconButton
+                                size="small"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleEdit(params.row);
+                                }}
+                                sx={{
+                                    color: '#0056D2',
+                                    bgcolor: '#EFF6FF',
+                                    '&:hover': { bgcolor: '#DBEAFE' },
+                                }}
+                            >
+                                <EditIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
                     )}
 
                     {hasPermission('DELETE_VENDOR') && (
-                        <IconButton
-                            size="small"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(vendor);
-                            }}
-                            sx={{
-                                color: '#E63946',
-                                bgcolor: '#FEF2F2',
-                                '&:hover': {bgcolor: '#FEE2E2'},
-                            }}
-                        >
-                            <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <Tooltip title="Delete vendor">
+                            <IconButton
+                                size="small"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleDeleteClick(params.row);
+                                }}
+                                sx={{
+                                    color: '#E63946',
+                                    bgcolor: '#FEF2F2',
+                                    '&:hover': { bgcolor: '#FEE2E2' },
+                                }}
+                            >
+                                <DeleteIcon fontSize="small" />
+                            </IconButton>
+                        </Tooltip>
                     )}
-                </Box>
+                </Stack>
             ),
         },
     ];
 
     return (
         <DashboardLayout>
-            <Box>
-                <Box
+            <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>
+                <Paper
+                    elevation={0}
                     sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: {xs: 'flex-start', md: 'center'},
-                        flexDirection: {xs: 'column', md: 'row'},
-                        gap: 2,
+                        p: 4,
                         mb: 3,
+                        borderRadius: 5,
+                        color: 'white',
+                        background:
+                            'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
                     }}
                 >
-                    <Box>
-                        <Typography
-                            variant="h4"
-                            sx={{
-                                fontFamily: 'Inter, sans-serif',
-                                fontWeight: 700,
-                                color: '#1E293B',
-                                mb: 0.5,
-                            }}
-                        >
-                            Vendor Management
-                        </Typography>
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                fontFamily: 'Poppins, sans-serif',
-                                color: '#64748B',
-                            }}
-                        >
-                            Manage vendor profiles, company records, and contact information.
-                        </Typography>
-                    </Box>
+                    <Stack
+                        direction={{ xs: 'column', md: 'row' }}
+                        justifyContent="space-between"
+                        alignItems={{ xs: 'flex-start', md: 'center' }}
+                        spacing={2}
+                    >
+                        <Stack direction="row" spacing={2} alignItems="center">
+                            <StorefrontOutlinedIcon sx={{ fontSize: 42 }} />
 
-                    <Box sx={{display: 'flex', gap: 1.5, flexWrap: 'wrap'}}>
-                        <Chip
-                            icon={<StorefrontOutlinedIcon />}
-                            label={`${vendors.length} Vendors`}
-                            variant="outlined"
-                            sx={{fontWeight: 600}}
-                        />
+                            <Box>
+                                <Typography variant="h4" fontWeight={900}>
+                                    Vendor Management
+                                </Typography>
 
-                        {hasPermission('ADD_VENDOR') && (
-                            <Button
-                                variant="contained"
-                                startIcon={<AddIcon />}
-                                onClick={handleAdd}
+                                <Typography sx={{ mt: 1, color: 'rgba(255,255,255,0.75)' }}>
+                                    Manage vendor profiles, companies, contacts, documents and approval status.
+                                </Typography>
+                            </Box>
+                        </Stack>
+
+                        <Stack direction="row" spacing={1.5} flexWrap="wrap">
+                            <Chip
+                                icon={<StorefrontOutlinedIcon />}
+                                label={`${vendors.length} Vendors`}
                                 sx={{
-                                    background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
+                                    bgcolor: 'rgba(255,255,255,0.12)',
+                                    color: 'white',
+                                    fontWeight: 800,
                                 }}
-                            >
-                                Add Vendor
-                            </Button>
-                        )}
-                    </Box>
-                </Box>
+                            />
 
-                {error && (
-                    <Alert severity="error" sx={{mb: 3}} onClose={() => setError('')}>
-                        {error}
-                    </Alert>
-                )}
+                            {hasPermission('ADD_VENDOR') && (
+                                <Button
+                                    variant="contained"
+                                    startIcon={<AddIcon />}
+                                    onClick={handleAdd}
+                                    sx={{
+                                        bgcolor: 'white',
+                                        color: '#0f172a',
+                                        borderRadius: 3,
+                                        textTransform: 'none',
+                                        fontWeight: 900,
+                                        '&:hover': {
+                                            bgcolor: '#e2e8f0',
+                                        },
+                                    }}
+                                >
+                                    Add Vendor
+                                </Button>
+                            )}
+                        </Stack>
+                    </Stack>
+                </Paper>
 
-                {success && (
-                    <Alert severity="success" sx={{mb: 3}} onClose={() => setSuccess('')}>
-                        {success}
-                    </Alert>
-                )}
+                <Card elevation={0} sx={{ borderRadius: 5 }}>
+                    <CardContent>
+                        <Stack
+                            direction={{ xs: 'column', md: 'row' }}
+                            justifyContent="space-between"
+                            alignItems={{ xs: 'stretch', md: 'center' }}
+                            spacing={2}
+                            sx={{ mb: 2 }}
+                        >
+                            <Box>
+                                <Typography variant="h6" fontWeight={900}>
+                                    Vendor List
+                                </Typography>
 
-                <Table
-                    data={vendors}
-                    columns={columns}
-                    loading={loading}
-                    onRowClick={handleRowClick}
-                />
+                                <Typography variant="body2" color="text.secondary">
+                                    {filteredVendors.length} records found.
+                                </Typography>
+                            </Box>
+
+                            <Box
+                                component="input"
+                                value={search}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                                    setSearch(e.target.value)
+                                }
+                                placeholder="Search vendor, company, email, phone or status"
+                                style={{
+                                    width: '100%',
+                                    maxWidth: 420,
+                                    padding: '12px 14px',
+                                    borderRadius: 12,
+                                    border: '1px solid #cbd5e1',
+                                    outline: 'none',
+                                    fontSize: 14,
+                                }}
+                            />
+                        </Stack>
+
+                        <DataGrid
+                            rows={filteredVendors}
+                            columns={columns}
+                            autoHeight
+                            loading={loading || actionLoading}
+                            getRowId={(row) => row.id}
+                            disableRowSelectionOnClick
+                            onRowClick={(params) => navigate(`/vendors/${params.row.id}`)}
+                            pageSizeOptions={[10, 25, 50]}
+                            initialState={{
+                                pagination: {
+                                    paginationModel: {
+                                        pageSize: 10,
+                                        page: 0,
+                                    },
+                                },
+                            }}
+                            sx={{
+                                border: 0,
+                                '& .MuiDataGrid-columnHeaders': {
+                                    bgcolor: '#f8fafc',
+                                    fontWeight: 900,
+                                },
+                                '& .MuiDataGrid-row': {
+                                    cursor: 'pointer',
+                                },
+                                '& .MuiDataGrid-cell': {
+                                    borderColor: '#eef2f7',
+                                },
+                            }}
+                        />
+                    </CardContent>
+                </Card>
 
                 <VendorForm
                     open={formOpen}
                     onClose={() => {
+                        if (actionLoading) return;
                         setFormOpen(false);
                         setSelectedVendor(undefined);
                     }}
@@ -359,16 +497,48 @@ export const Vendors = () => {
                 <ConfirmDialog
                     open={deleteDialogOpen}
                     title="Delete Vendor"
-                    message={`Are you sure you want to delete "${vendorToDelete?.vendorName}"? This action cannot be undone.`}
+                    message={`Are you sure you want to delete "${
+                        vendorToDelete?.vendorName || 'this vendor'
+                    }"? This action cannot be undone.`}
                     onConfirm={handleDeleteConfirm}
                     onCancel={() => {
+                        if (actionLoading) return;
                         setDeleteDialogOpen(false);
                         setVendorToDelete(undefined);
                     }}
-                    confirmText="Delete"
+                    confirmText={actionLoading ? 'Deleting...' : 'Delete'}
                     confirmColor="error"
                     loading={actionLoading}
                 />
+
+                <Snackbar
+                    open={snackbar.open}
+                    autoHideDuration={3500}
+                    onClose={() =>
+                        setSnackbar((prev) => ({
+                            ...prev,
+                            open: false,
+                        }))
+                    }
+                    anchorOrigin={{
+                        vertical: 'top',
+                        horizontal: 'right',
+                    }}
+                >
+                    <Alert
+                        severity={snackbar.severity}
+                        variant="filled"
+                        onClose={() =>
+                            setSnackbar((prev) => ({
+                                ...prev,
+                                open: false,
+                            }))
+                        }
+                        sx={{ width: '100%' }}
+                    >
+                        {snackbar.message}
+                    </Alert>
+                </Snackbar>
             </Box>
         </DashboardLayout>
     );

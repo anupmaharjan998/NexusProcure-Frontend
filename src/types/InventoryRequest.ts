@@ -19,6 +19,7 @@ export interface InventoryRequestSummary {
     priority: string;
     status: string;
     totalItems: number;
+    itemNames?: string | null;
     createdAt: string;
 }
 
@@ -74,4 +75,33 @@ export interface ProcessInventoryRequestItemRequest {
 
 export interface RejectInventoryRequestRequest {
     remarks?: string;
+}
+
+export interface MyAssignedInventoryItem {
+    id: string;
+    itemName: string;
+    categoryName?: string | null;
+    serialNumber?: string | null;
+    department: string;
+    barcode?: string | null;
+    location?: string | null;
+    condition?: string | null;
+    assignedAt?: string | null;
+}
+
+export interface MyAssignedInventoryItemDetail {
+    id: string;
+    itemName: string;
+    categoryName?: string | null;
+    sku?: string | null;
+    barcode?: string | null;
+    serialNumber?: string | null;
+    department?: string | null;
+    assignedTo?: string | null;
+    location?: string | null;
+    condition?: string | null;
+    status?: string | null;
+    assignedAt?: string | null;
+    createdAt?: string | null;
+    updatedAt?: string | null;
 }

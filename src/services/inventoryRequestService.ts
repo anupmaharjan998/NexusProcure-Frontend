@@ -5,6 +5,7 @@ import {
     CreateInventoryRequestRequest,
     InventoryRequest,
     InventoryRequestSummary,
+    MyAssignedInventoryItem, MyAssignedInventoryItemDetail,
     ProcessInventoryRequestRequest,
     RejectInventoryRequestRequest,
 } from '../types/InventoryRequest';
@@ -96,4 +97,20 @@ export const rejectInventoryShortage = async (
         { remarks }
     );
     return res.data;
+};
+
+
+export const getMyAssignedInventoryItems = async (): Promise<MyAssignedInventoryItem[]> => {
+    const response = await api.get<MyAssignedInventoryItem[]>('/inventory-requests/my-assigned');
+    return response.data;
+};
+
+export const getMyAssignedInventoryItemDetail = async (
+    itemId: string
+): Promise<MyAssignedInventoryItemDetail> => {
+    const response = await api.get<MyAssignedInventoryItemDetail>(
+        `/inventory-requests/my-assigned/${itemId}`
+    );
+
+    return response.data;
 };
