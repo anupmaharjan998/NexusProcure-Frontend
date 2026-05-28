@@ -1,5 +1,4 @@
 import {useAuthStore} from '../store/authStore.ts';
-import {ROLE_TYPES} from '../types/Role.ts';
 
 export const useAuth = () => {
     const {user, token, permissions, isAuthenticated, setAuth, logout, updateUser} = useAuthStore();

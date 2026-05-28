@@ -30,7 +30,8 @@ import {Modal} from '../UI/Modal.tsx';
 import {User, UserFormData} from '../../types/User.ts';
 import {Role} from '../../types/Role.ts';
 import {Department} from '../../types/Department.ts';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
+import {checkUsernameExists} from '../../services/userService.ts';
 
 const schema = yup.object({
     name: yup
@@ -39,16 +40,24 @@ const schema = yup.object({
         .required('Name is required')
         .matches(/.*\S.*/, 'Please enter a name')
         .max(100, 'Name cannot exceed 100 characters'),
+
     email: yup
         .string()
         .email('Invalid email')
         .required('Email is required'),
+
     username: yup
         .string()
         .trim()
         .required('Username is required')
         .matches(/.*\S.*/, 'Please enter a username')
+        .matches(
+            /^[a-zA-Z0-9._-]+$/,
+            'Username can only contain letters, numbers, dots, underscores, and hyphens'
+        )
+        .min(3, 'Username must be at least 3 characters')
         .max(50, 'Username cannot exceed 50 characters'),
+
     roleId: yup.string().required('Role is required'),
     departmentId: yup.string().required('Department is required'),
     isActive: yup.boolean().required('Status is required'),
@@ -75,12 +84,17 @@ export const UserForm = ({
                          }: UserFormProps) => {
     const isEdit = !!user;
 
+    const [checkingUsername, setCheckingUsername] = useState(false);
+    const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+
     const {
         register,
         handleSubmit,
         control,
         reset,
         watch,
+        setError,
+        clearErrors,
         formState: {errors, isValid},
     } = useForm<UserFormData>({
         resolver: yupResolver(schema),
@@ -96,6 +110,7 @@ export const UserForm = ({
     });
 
     const watchedName = watch('name');
+    const watchedUsername = watch('username');
     const watchedRoleId = watch('roleId');
     const watchedDepartmentId = watch('departmentId');
     const watchedIsActive = watch('isActive');
@@ -110,6 +125,7 @@ export const UserForm = ({
                 departmentId: user.departmentId,
                 isActive: user.isActive,
             });
+            setUsernameAvailable(null);
         } else {
             reset({
                 name: '',
@@ -119,21 +135,86 @@ export const UserForm = ({
                 departmentId: '',
                 isActive: true,
             });
+            setUsernameAvailable(null);
         }
     }, [user, reset]);
 
+    useEffect(() => {
+        const username = watchedUsername?.trim();
+
+        if (!open) return;
+
+        if (!username || username.length < 3) {
+            setUsernameAvailable(null);
+            return;
+        }
+
+        if (isEdit && username === user?.username) {
+            clearErrors('username');
+            setUsernameAvailable(null);
+            return;
+        }
+
+        const timeout = setTimeout(async () => {
+            try {
+                setCheckingUsername(true);
+
+                const exists = await checkUsernameExists(username, user?.id);
+
+                if (exists) {
+                    setUsernameAvailable(false);
+                    setError('username', {
+                        type: 'manual',
+                        message: 'Username already exists',
+                    });
+                } else {
+                    setUsernameAvailable(true);
+                    clearErrors('username');
+                }
+            } catch {
+                setUsernameAvailable(null);
+                setError('username', {
+                    type: 'manual',
+                    message: 'Could not verify username availability',
+                });
+            } finally {
+                setCheckingUsername(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(timeout);
+    }, [watchedUsername, open, isEdit, user?.id, user?.username, setError, clearErrors]);
+
     const handleFormSubmit = async (data: UserFormData) => {
+        if (usernameAvailable === false) {
+            setError('username', {
+                type: 'manual',
+                message: 'Username already exists',
+            });
+            return;
+        }
+
         await onSubmit(data);
         reset();
+        setUsernameAvailable(null);
     };
 
     const handleClose = () => {
         reset();
+        setUsernameAvailable(null);
         onClose();
     };
 
     const selectedRole = roles.find((r) => r.id === watchedRoleId);
     const selectedDepartment = departments.find((d) => d.id === watchedDepartmentId);
+
+    const usernameHelperText =
+        errors.username?.message ||
+        (checkingUsername
+            ? 'Checking username availability...'
+            : usernameAvailable === true
+                ? 'Username is available'
+                : 'Username must be unique');
 
     return (
         <Modal
@@ -146,11 +227,12 @@ export const UserForm = ({
                     <Button variant="outlined" onClick={handleClose} disabled={loading}>
                         Cancel
                     </Button>
+
                     <Button
                         variant="contained"
                         onClick={handleSubmit(handleFormSubmit)}
                         loading={loading}
-                        disabled={!isValid || loading}
+                        disabled={!isValid || loading || checkingUsername || usernameAvailable === false}
                         sx={{
                             minWidth: 140,
                             background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
@@ -246,8 +328,18 @@ export const UserForm = ({
                                         placeholder="Enter username"
                                         {...register('username')}
                                         error={!!errors.username}
-                                        helperText={errors.username?.message}
+                                        helperText={usernameHelperText}
                                         disabled={loading}
+                                        FormHelperTextProps={{
+                                            sx: {
+                                                color:
+                                                    errors.username
+                                                        ? '#D32F2F'
+                                                        : usernameAvailable === true
+                                                            ? '#2E7D32'
+                                                            : undefined,
+                                            },
+                                        }}
                                         InputProps={{
                                             startAdornment: (
                                                 <InputAdornment position="start">
@@ -429,13 +521,18 @@ export const UserForm = ({
 
                             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                                 <Chip label={watchedName.trim()} color="primary" />
-                                {selectedRole && <Chip label={selectedRole.name} variant="outlined" />}
+
+                                {selectedRole && (
+                                    <Chip label={selectedRole.name} variant="outlined" />
+                                )}
+
                                 {selectedDepartment && (
                                     <Chip
                                         label={selectedDepartment.departmentName}
                                         variant="outlined"
                                     />
                                 )}
+
                                 <Chip
                                     label={watchedIsActive ? 'Active' : 'Inactive'}
                                     color={watchedIsActive ? 'success' : 'default'}

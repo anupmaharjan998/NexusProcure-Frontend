@@ -49,4 +49,17 @@ export const deleteDepartment = async (id: string): Promise<void> => {
     await api.delete(`/departments/${id}`);
 };
 
+export const checkDepartmentNameExists = async (
+    departmentName: string,
+    excludeDepartmentId?: string
+): Promise<boolean> => {
+    const response = await api.get('/departments/check-department-name', {
+        params: {
+            departmentName,
+            excludeDepartmentId,
+        },
+    });
+
+    return response.data.exists;
+};
 

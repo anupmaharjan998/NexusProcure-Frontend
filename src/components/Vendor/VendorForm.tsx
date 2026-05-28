@@ -1,21 +1,22 @@
 import {
+    Alert,
+    Autocomplete,
     Box,
     Chip,
+    Divider,
     FormControl,
     FormControlLabel,
+    FormHelperText,
     FormLabel,
     Grid,
-    Radio,
-    RadioGroup,
-    Typography,
-    Divider,
-    TextField,
-    Autocomplete,
+    InputAdornment,
     MenuItem,
     Paper,
+    Radio,
+    RadioGroup,
     Stack,
-    InputAdornment,
-    FormHelperText,
+    TextField,
+    Typography,
 } from '@mui/material';
 import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import BusinessOutlinedIcon from '@mui/icons-material/BusinessOutlined';
@@ -26,21 +27,22 @@ import ReceiptLongOutlinedIcon from '@mui/icons-material/ReceiptLongOutlined';
 import AccountBalanceOutlinedIcon from '@mui/icons-material/AccountBalanceOutlined';
 import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import CheckCircleOutlineOutlinedIcon from '@mui/icons-material/CheckCircleOutlineOutlined';
-import {useForm, Controller} from 'react-hook-form';
-import {yupResolver} from '@hookform/resolvers/yup';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import {Input} from '../UI/Input';
-import {Button} from '../UI/Button';
-import {Modal} from '../UI/Modal';
-import {useEffect, useState} from 'react';
-import {Vendor, VendorFormData} from '../../types/Vendor';
+
+import { Input } from '../UI/Input';
+import { Button } from '../UI/Button';
+import { Modal } from '../UI/Modal';
+import { useEffect, useState } from 'react';
+import { Vendor, VendorFormData } from '../../types/Vendor';
 import {
     getAllCategories,
-    getAllPaymentTerms
+    getAllPaymentTerms,
 } from '../../services/vendorService';
-import {Category} from '../../types/Category';
-import {PaymentTerms} from '../../types/PaymentTerms.ts';
-import {TaxType} from '../../types/TaxType.ts';
+import { Category } from '../../types/Category';
+import { PaymentTerms } from '../../types/PaymentTerms.ts';
+import { TaxType } from '../../types/TaxType.ts';
 
 const schema = yup.object({
     vendorName: yup.string().trim().required('Vendor name is required'),
@@ -50,23 +52,27 @@ const schema = yup.object({
         .string()
         .matches(/^\+?\d{7,15}$/, 'Invalid phone number')
         .required('Phone number is required'),
-    address: yup.string().required('Address is required'),
+    address: yup.string().trim().required('Address is required'),
     taxType: yup
         .mixed<TaxType>()
-        .oneOf(Object.values(TaxType).filter(v => typeof v === 'number'))
-        .required(),
-    taxId: yup.string().required('Tax number is required'),
+        .oneOf(Object.values(TaxType).filter((value) => typeof value === 'number') as TaxType[])
+        .required('Tax type is required'),
+    taxId: yup.string().trim().required('Tax number is required'),
     categoryIds: yup
         .array()
         .of(yup.string().required())
         .min(1, 'At least one category is required')
-        .required(),
+        .required('At least one category is required'),
     bankName: yup.string().optional(),
     bankBranch: yup.string().optional(),
     bankAccount: yup.string().optional(),
-    paymentTerms: yup.number().required('Payment terms is required'),
+    paymentTerms: yup
+        .number()
+        .typeError('Payment terms is required')
+        .required('Payment terms is required'),
     status: yup
         .mixed<'Active' | 'Inactive' | 'Pending' | 'Rejected'>()
+        .oneOf(['Active', 'Inactive', 'Pending', 'Rejected'])
         .required(),
 });
 
@@ -78,6 +84,22 @@ interface VendorFormProps {
     loading?: boolean;
 }
 
+const emptyValues: VendorFormData = {
+    vendorName: '',
+    companyName: '',
+    email: '',
+    phoneNumber: '',
+    address: '',
+    taxType: TaxType.VAT,
+    taxId: '',
+    categoryIds: [],
+    bankName: '',
+    bankBranch: '',
+    bankAccount: '',
+    paymentTerms: 0,
+    status: 'Pending',
+};
+
 export const VendorForm = ({
                                open,
                                onClose,
@@ -85,10 +107,12 @@ export const VendorForm = ({
                                vendor,
                                loading = false,
                            }: VendorFormProps) => {
-    const isEdit = !!vendor;
+    const isEdit = Boolean(vendor);
 
     const [categories, setCategories] = useState<Category[]>([]);
     const [paymentTermsList, setPaymentTermsList] = useState<PaymentTerms[]>([]);
+    const [formError, setFormError] = useState('');
+    const [loadingFormData, setLoadingFormData] = useState(false);
 
     const {
         register,
@@ -96,25 +120,11 @@ export const VendorForm = ({
         control,
         reset,
         watch,
-        formState: {errors, isValid},
+        formState: { errors, isValid },
     } = useForm<VendorFormData>({
         resolver: yupResolver(schema),
         mode: 'onChange',
-        defaultValues: {
-            vendorName: '',
-            companyName: '',
-            email: '',
-            phoneNumber: '',
-            address: '',
-            taxType: TaxType.VAT,
-            taxId: '',
-            categoryIds: [],
-            bankName: '',
-            bankBranch: '',
-            bankAccount: '',
-            paymentTerms: 0,
-            status: 'Pending',
-        },
+        defaultValues: emptyValues,
     });
 
     const watchedVendorName = watch('vendorName');
@@ -122,68 +132,103 @@ export const VendorForm = ({
     const watchedStatus = watch('status');
     const watchedCategoryIds = watch('categoryIds');
 
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                const [cats, terms] = await Promise.all([
-                    getAllCategories(),
-                    getAllPaymentTerms(),
-                ]);
-                setCategories(cats);
-                setPaymentTermsList(terms);
-            } catch (error) {
-                console.error('Failed to load vendor form data', error);
-            }
-        };
+    const loadDropdownData = async () => {
+        setLoadingFormData(true);
+        setFormError('');
 
-        loadData();
-    }, []);
+        try {
+            const [cats, terms] = await Promise.all([
+                getAllCategories(),
+                getAllPaymentTerms(),
+            ]);
+
+            setCategories(cats);
+            setPaymentTermsList(terms);
+        } catch (error: any) {
+            setFormError(
+                error.response?.data?.message ||
+                'Failed to load categories and payment terms.'
+            );
+        } finally {
+            setLoadingFormData(false);
+        }
+    };
 
     useEffect(() => {
+        if (open) {
+            loadDropdownData();
+        }
+    }, [open]);
+
+    useEffect(() => {
+        if (!open) return;
+
         if (vendor) {
             reset({
-                vendorName: vendor.vendorName,
+                vendorName: vendor.vendorName || '',
                 companyName: vendor.companyName || '',
                 email: vendor.email || '',
                 phoneNumber: vendor.phoneNumber || '',
                 address: vendor.address || '',
-                taxType: vendor.taxType,
+                taxType: vendor.taxType ?? TaxType.VAT,
                 taxId: vendor.taxId || '',
                 categoryIds: vendor.categoryIds || [],
                 bankName: vendor.bankName || '',
                 bankBranch: vendor.bankBranch || '',
                 bankAccount: vendor.bankAccount || '',
-                paymentTerms: vendor.paymentTerms,
-                status: vendor.status,
+                paymentTerms: vendor.paymentTerms ?? 0,
+                status: vendor.status || 'Pending',
             });
         } else {
-            reset({
-                vendorName: '',
-                companyName: '',
-                email: '',
-                phoneNumber: '',
-                address: '',
-                taxType: TaxType.VAT,
-                taxId: '',
-                categoryIds: [],
-                bankName: '',
-                bankBranch: '',
-                bankAccount: '',
-                paymentTerms: 0,
-                status: 'Pending',
-            });
+            reset(emptyValues);
         }
-    }, [vendor, reset]);
+
+        setFormError('');
+    }, [open, vendor, reset]);
 
     const handleFormSubmit = async (data: VendorFormData) => {
-        await onSubmit(data);
-        reset();
+        setFormError('');
+
+        try {
+            const payload: VendorFormData = {
+                vendorName: data.vendorName.trim(),
+                companyName: data.companyName.trim(),
+                email: data.email.trim(),
+                phoneNumber: data.phoneNumber.trim(),
+                address: data.address.trim(),
+                taxType: Number(data.taxType) as TaxType,
+                taxId: data.taxId.trim(),
+                categoryIds: data.categoryIds || [],
+                bankName: data.bankName?.trim() || '',
+                bankBranch: data.bankBranch?.trim() || '',
+                bankAccount: data.bankAccount?.trim() || '',
+                paymentTerms: Number(data.paymentTerms),
+                status: data.status,
+            };
+
+            await onSubmit(payload);
+
+            if (!isEdit) {
+                reset(emptyValues);
+            }
+        } catch (error: any) {
+            setFormError(
+                error.response?.data?.message ||
+                error.response?.data?.title ||
+                'Failed to save vendor.'
+            );
+        }
     };
 
     const handleClose = () => {
-        reset();
+        if (loading) return;
+
+        setFormError('');
+        reset(emptyValues);
         onClose();
     };
+
+    const selectedCategoryCount = watchedCategoryIds?.length || 0;
 
     return (
         <Modal
@@ -193,16 +238,29 @@ export const VendorForm = ({
             maxWidth="md"
             actions={
                 <>
-                    <Button variant="outlined" onClick={handleClose} disabled={loading}>
+                    <Button
+                        variant="outlined"
+                        onClick={handleClose}
+                        disabled={loading || loadingFormData}
+                        sx={{
+                            borderRadius: 3,
+                            textTransform: 'none',
+                            fontWeight: 800,
+                        }}
+                    >
                         Cancel
                     </Button>
+
                     <Button
                         variant="contained"
                         loading={loading}
                         onClick={handleSubmit(handleFormSubmit)}
-                        disabled={!isValid || loading}
+                        disabled={!isValid || loading || loadingFormData}
                         sx={{
-                            minWidth: 140,
+                            minWidth: 150,
+                            borderRadius: 3,
+                            textTransform: 'none',
+                            fontWeight: 900,
                             background: 'linear-gradient(135deg, #0056D2 0%, #00A8E8 100%)',
                         }}
                     >
@@ -212,7 +270,7 @@ export const VendorForm = ({
             }
         >
             <form>
-                <Stack spacing={3} sx={{mt: 1}}>
+                <Stack spacing={3} sx={{ mt: 1 }}>
                     <Typography
                         variant="body2"
                         sx={{
@@ -221,9 +279,21 @@ export const VendorForm = ({
                         }}
                     >
                         {isEdit
-                            ? 'Update vendor details, contact records, tax information, and payment setup.'
-                            : 'Register a new vendor with company, contact, tax, category, and payment details.'}
+                            ? 'Update vendor details, contact records, tax information, banking information and payment setup.'
+                            : 'Register a new vendor with company, contact, tax, category, banking and payment details.'}
                     </Typography>
+
+                    {formError && (
+                        <Alert severity="error" onClose={() => setFormError('')}>
+                            {formError}
+                        </Alert>
+                    )}
+
+                    {loadingFormData && (
+                        <Alert severity="info">
+                            Loading categories and payment terms...
+                        </Alert>
+                    )}
 
                     <Paper
                         variant="outlined"
@@ -236,7 +306,7 @@ export const VendorForm = ({
                     >
                         <Typography
                             variant="subtitle1"
-                            sx={{fontWeight: 700, color: '#1E293B', mb: 2}}
+                            sx={{ fontWeight: 700, color: '#1E293B', mb: 2 }}
                         >
                             Basic Information
                         </Typography>
@@ -249,7 +319,7 @@ export const VendorForm = ({
                                     {...register('vendorName')}
                                     error={!!errors.vendorName}
                                     helperText={errors.vendorName?.message}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -267,7 +337,7 @@ export const VendorForm = ({
                                     {...register('companyName')}
                                     error={!!errors.companyName}
                                     helperText={errors.companyName?.message}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -293,7 +363,7 @@ export const VendorForm = ({
                     >
                         <Typography
                             variant="subtitle1"
-                            sx={{fontWeight: 700, color: '#1E293B', mb: 2}}
+                            sx={{ fontWeight: 700, color: '#1E293B', mb: 2 }}
                         >
                             Contact Information
                         </Typography>
@@ -306,7 +376,7 @@ export const VendorForm = ({
                                     {...register('email')}
                                     error={!!errors.email}
                                     helperText={errors.email?.message}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -324,7 +394,7 @@ export const VendorForm = ({
                                     {...register('phoneNumber')}
                                     error={!!errors.phoneNumber}
                                     helperText={errors.phoneNumber?.message}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -344,7 +414,7 @@ export const VendorForm = ({
                                     {...register('address')}
                                     error={!!errors.address}
                                     helperText={errors.address?.message}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -370,7 +440,7 @@ export const VendorForm = ({
                     >
                         <Typography
                             variant="subtitle1"
-                            sx={{fontWeight: 700, color: '#1E293B', mb: 2}}
+                            sx={{ fontWeight: 700, color: '#1E293B', mb: 2 }}
                         >
                             Tax & Classification
                         </Typography>
@@ -380,7 +450,7 @@ export const VendorForm = ({
                                 <Controller
                                     name="taxType"
                                     control={control}
-                                    render={({field}) => (
+                                    render={({ field }) => (
                                         <TextField
                                             {...field}
                                             select
@@ -388,7 +458,8 @@ export const VendorForm = ({
                                             label="Tax Type"
                                             error={!!errors.taxType}
                                             helperText={errors.taxType?.message}
-                                            disabled={loading}
+                                            disabled={loading || loadingFormData}
+                                            onChange={(e) => field.onChange(Number(e.target.value))}
                                         >
                                             <MenuItem value={TaxType.VAT}>VAT</MenuItem>
                                             <MenuItem value={TaxType.PAN}>PAN</MenuItem>
@@ -404,7 +475,7 @@ export const VendorForm = ({
                                     {...register('taxId')}
                                     error={!!errors.taxId}
                                     helperText={errors.taxId?.message}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -419,23 +490,26 @@ export const VendorForm = ({
                                 <Controller
                                     name="categoryIds"
                                     control={control}
-                                    render={({field}) => (
+                                    render={({ field }) => (
                                         <Autocomplete
                                             multiple
                                             options={categories}
                                             getOptionLabel={(option) => option.name}
-                                            value={categories.filter(c => field.value?.includes(c.id))}
+                                            value={categories.filter((category) =>
+                                                field.value?.includes(category.id)
+                                            )}
                                             onChange={(_, selected) => {
-                                                field.onChange(selected.map(item => item.id));
+                                                field.onChange(selected.map((item) => item.id));
                                             }}
                                             disableCloseOnSelect
+                                            disabled={loading || loadingFormData}
                                             renderTags={(value, getTagProps) =>
                                                 value.map((option, index) => (
                                                     <Chip
                                                         label={option.name}
-                                                        {...getTagProps({index})}
+                                                        {...getTagProps({ index })}
                                                         key={option.id}
-                                                        sx={{fontWeight: 500}}
+                                                        sx={{ fontWeight: 500 }}
                                                     />
                                                 ))
                                             }
@@ -448,6 +522,17 @@ export const VendorForm = ({
                                                         (errors.categoryIds as any)?.message ||
                                                         'Select one or more vendor categories'
                                                     }
+                                                    InputProps={{
+                                                        ...params.InputProps,
+                                                        startAdornment: (
+                                                            <>
+                                                                <InputAdornment position="start">
+                                                                    <CategoryOutlinedIcon fontSize="small" />
+                                                                </InputAdornment>
+                                                                {params.InputProps.startAdornment}
+                                                            </>
+                                                        ),
+                                                    }}
                                                 />
                                             )}
                                         />
@@ -470,7 +555,7 @@ export const VendorForm = ({
                     >
                         <Typography
                             variant="subtitle1"
-                            sx={{fontWeight: 700, color: '#1E293B', mb: 2}}
+                            sx={{ fontWeight: 700, color: '#1E293B', mb: 2 }}
                         >
                             Banking & Payment
                         </Typography>
@@ -481,7 +566,7 @@ export const VendorForm = ({
                                     label="Bank Name"
                                     placeholder="Enter bank name"
                                     {...register('bankName')}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                     InputProps={{
                                         startAdornment: (
                                             <InputAdornment position="start">
@@ -497,7 +582,7 @@ export const VendorForm = ({
                                     label="Bank Branch"
                                     placeholder="Enter bank branch"
                                     {...register('bankBranch')}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                 />
                             </Grid>
 
@@ -506,7 +591,7 @@ export const VendorForm = ({
                                     label="Account Number"
                                     placeholder="Enter account number"
                                     {...register('bankAccount')}
-                                    disabled={loading}
+                                    disabled={loading || loadingFormData}
                                 />
                             </Grid>
 
@@ -514,7 +599,7 @@ export const VendorForm = ({
                                 <Controller
                                     name="paymentTerms"
                                     control={control}
-                                    render={({field}) => (
+                                    render={({ field }) => (
                                         <TextField
                                             {...field}
                                             select
@@ -522,9 +607,10 @@ export const VendorForm = ({
                                             label="Payment Terms"
                                             error={!!errors.paymentTerms}
                                             helperText={errors.paymentTerms?.message}
-                                            disabled={loading}
+                                            disabled={loading || loadingFormData}
+                                            onChange={(e) => field.onChange(Number(e.target.value))}
                                         >
-                                            {paymentTermsList.map(term => (
+                                            {paymentTermsList.map((term) => (
                                                 <MenuItem key={term.value} value={term.value}>
                                                     {term.displayName}
                                                 </MenuItem>
@@ -539,6 +625,7 @@ export const VendorForm = ({
                     {vendor?.status !== 'Pending' && isEdit && (
                         <>
                             <Divider />
+
                             <Paper
                                 variant="outlined"
                                 sx={{
@@ -551,8 +638,8 @@ export const VendorForm = ({
                                 <Controller
                                     name="status"
                                     control={control}
-                                    render={({field}) => (
-                                        <FormControl disabled={loading}>
+                                    render={({ field }) => (
+                                        <FormControl disabled={loading || loadingFormData}>
                                             <FormLabel
                                                 sx={{
                                                     fontWeight: 600,
@@ -562,18 +649,21 @@ export const VendorForm = ({
                                             >
                                                 Status
                                             </FormLabel>
+
                                             <RadioGroup row {...field}>
                                                 <FormControlLabel
                                                     value="Active"
                                                     control={<Radio color="success" />}
                                                     label="Active"
                                                 />
+
                                                 <FormControlLabel
                                                     value="Inactive"
                                                     control={<Radio color="warning" />}
                                                     label="Inactive"
                                                 />
                                             </RadioGroup>
+
                                             <FormHelperText>
                                                 Update the current vendor availability status.
                                             </FormHelperText>
@@ -596,7 +686,7 @@ export const VendorForm = ({
                         >
                             <Typography
                                 variant="subtitle2"
-                                sx={{fontWeight: 700, color: '#334155', mb: 1.25}}
+                                sx={{ fontWeight: 700, color: '#334155', mb: 1.25 }}
                             >
                                 Preview
                             </Typography>
@@ -607,14 +697,17 @@ export const VendorForm = ({
                                     label={watchedVendorName.trim()}
                                     color="primary"
                                 />
+
                                 {!!watchedCompanyName?.trim() && (
                                     <Chip label={watchedCompanyName.trim()} variant="outlined" />
                                 )}
+
                                 <Chip
                                     icon={<CategoryOutlinedIcon />}
-                                    label={`${watchedCategoryIds?.length || 0} categories`}
+                                    label={`${selectedCategoryCount} categories`}
                                     variant="outlined"
                                 />
+
                                 <Chip
                                     label={watchedStatus || 'Pending'}
                                     color={
