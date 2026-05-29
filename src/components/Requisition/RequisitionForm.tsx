@@ -489,7 +489,10 @@ export const RequisitionForm = ({
                                                     <Typography fontWeight={700}>
                                                         Mark as urgent
                                                     </Typography>
-                                                    <Typography variant="caption" color="text.secondary">
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                    >
                                                         Urgent requisitions may increase risk score.
                                                     </Typography>
                                                 </Box>
@@ -554,7 +557,7 @@ export const RequisitionForm = ({
                         )}
 
                         <Stack spacing={2}>
-                            {fields.map((field, index) => {
+                            {fields.map((fieldArrayItem, index) => {
                                 const item = watchedItems?.[index];
 
                                 const selectedStock = item?.inventoryStockId
@@ -571,7 +574,7 @@ export const RequisitionForm = ({
 
                                 return (
                                     <Card
-                                        key={field.id}
+                                        key={fieldArrayItem.id}
                                         variant="outlined"
                                         sx={{
                                             borderRadius: 3,
@@ -588,7 +591,10 @@ export const RequisitionForm = ({
                                                         render={({ field, fieldState }) => (
                                                             <Autocomplete
                                                                 value={selectedStock}
-                                                                inputValue={stockSearchByRow[index] || ''}
+                                                                inputValue={
+                                                                    stockSearchByRow[index] ??
+                                                                    getStockLabel(selectedStock)
+                                                                }
                                                                 options={stocks}
                                                                 loading={loadingStocks}
                                                                 getOptionLabel={(option) =>
@@ -602,26 +608,49 @@ export const RequisitionForm = ({
                                                                     option.id !== item?.inventoryStockId
                                                                 }
                                                                 onInputChange={(_, value, reason) => {
-                                                                    if (reason === 'input' || reason === 'clear') {
+                                                                    if (
+                                                                        reason === 'input' ||
+                                                                        reason === 'clear'
+                                                                    ) {
                                                                         setStockSearchByRow((prev) => ({
                                                                             ...prev,
                                                                             [index]: value,
                                                                         }));
                                                                     }
-                                                                }}
-                                                                onChange={(_, stock) => {
-                                                                    field.onChange(stock?.id || '');
 
-                                                                    if (stock?.estimatedUnitCost !== undefined) {
+                                                                    if (reason === 'clear') {
+                                                                        field.onChange('');
+
                                                                         setValue(
                                                                             `items.${index}.estimatedCost`,
-                                                                            Number(stock.estimatedUnitCost || 0),
+                                                                            0,
                                                                             {
                                                                                 shouldValidate: true,
                                                                                 shouldDirty: true,
                                                                             }
                                                                         );
                                                                     }
+                                                                }}
+                                                                onChange={(_, stock) => {
+                                                                    field.onChange(stock?.id || '');
+
+                                                                    setStockSearchByRow((prev) => ({
+                                                                        ...prev,
+                                                                        [index]: stock
+                                                                            ? getStockLabel(stock)
+                                                                            : '',
+                                                                    }));
+
+                                                                    setValue(
+                                                                        `items.${index}.estimatedCost`,
+                                                                        Number(
+                                                                            stock?.estimatedUnitCost || 0
+                                                                        ),
+                                                                        {
+                                                                            shouldValidate: true,
+                                                                            shouldDirty: true,
+                                                                        }
+                                                                    );
                                                                 }}
                                                                 disabled={submitting || !selectedCategoryId}
                                                                 noOptionsText={
@@ -634,7 +663,9 @@ export const RequisitionForm = ({
                                                                         {...params}
                                                                         label="Stock"
                                                                         placeholder="Search stock"
-                                                                        error={!!fieldState.error || isDuplicate}
+                                                                        error={
+                                                                            !!fieldState.error || isDuplicate
+                                                                        }
                                                                         helperText={
                                                                             fieldState.error?.message ||
                                                                             (isDuplicate
@@ -643,7 +674,9 @@ export const RequisitionForm = ({
                                                                                     ? `Available: ${
                                                                                         selectedStock.quantityAvailable ??
                                                                                         0
-                                                                                    } ${selectedStock.unit || ''}`
+                                                                                    } ${
+                                                                                        selectedStock.unit || ''
+                                                                                    }`
                                                                                     : 'Select stock from selected category')
                                                                         }
                                                                         InputProps={{
@@ -653,7 +686,10 @@ export const RequisitionForm = ({
                                                                                     <InputAdornment position="start">
                                                                                         <SearchIcon />
                                                                                     </InputAdornment>
-                                                                                    {params.InputProps.startAdornment}
+                                                                                    {
+                                                                                        params.InputProps
+                                                                                            .startAdornment
+                                                                                    }
                                                                                 </>
                                                                             ),
                                                                             endAdornment: (
@@ -661,23 +697,36 @@ export const RequisitionForm = ({
                                                                                     {loadingStocks ? (
                                                                                         <CircularProgress size={18} />
                                                                                     ) : null}
-                                                                                    {params.InputProps.endAdornment}
+                                                                                    {
+                                                                                        params.InputProps
+                                                                                            .endAdornment
+                                                                                    }
                                                                                 </>
                                                                             ),
                                                                         }}
                                                                     />
                                                                 )}
                                                                 renderOption={(props, option) => (
-                                                                    <Box component="li" {...props} key={option.id}>
+                                                                    <Box
+                                                                        component="li"
+                                                                        {...props}
+                                                                        key={option.id}
+                                                                    >
                                                                         <Stack spacing={0.3}>
                                                                             <Typography fontWeight={800}>
                                                                                 {option.name}
-                                                                                {option.sku ? ` - ${option.sku}` : ''}
+                                                                                {option.sku
+                                                                                    ? ` - ${option.sku}`
+                                                                                    : ''}
                                                                             </Typography>
 
-                                                                            <Typography variant="caption" color="text.secondary">
+                                                                            <Typography
+                                                                                variant="caption"
+                                                                                color="text.secondary"
+                                                                            >
                                                                                 Available:{' '}
-                                                                                {option.quantityAvailable ?? 0}{' '}
+                                                                                {option.quantityAvailable ??
+                                                                                    0}{' '}
                                                                                 {option.unit || ''}
                                                                             </Typography>
                                                                         </Stack>
@@ -699,7 +748,10 @@ export const RequisitionForm = ({
                                                                     field.onChange(
                                                                         e.target.value === ''
                                                                             ? ''
-                                                                            : parseInt(e.target.value, 10) || 0
+                                                                            : parseInt(
+                                                                            e.target.value,
+                                                                            10
+                                                                        ) || 0
                                                                     )
                                                                 }
                                                                 type="number"
@@ -725,7 +777,9 @@ export const RequisitionForm = ({
                                                                     field.onChange(
                                                                         e.target.value === ''
                                                                             ? ''
-                                                                            : parseFloat(e.target.value) || 0
+                                                                            : parseFloat(
+                                                                            e.target.value
+                                                                        ) || 0
                                                                     )
                                                                 }
                                                                 type="number"
@@ -757,7 +811,10 @@ export const RequisitionForm = ({
 
                                                 <Grid item xs={10} md={1}>
                                                     <Stack spacing={0.5}>
-                                                        <Typography variant="caption" color="text.secondary">
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
                                                             Total
                                                         </Typography>
                                                         <Typography fontWeight={800}>
@@ -770,7 +827,9 @@ export const RequisitionForm = ({
                                                     <IconButton
                                                         color="error"
                                                         onClick={() => handleRemoveItem(index)}
-                                                        disabled={fields.length === 1 || submitting}
+                                                        disabled={
+                                                            fields.length === 1 || submitting
+                                                        }
                                                     >
                                                         <DeleteIcon />
                                                     </IconButton>
@@ -802,7 +861,9 @@ export const RequisitionForm = ({
 
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <Chip
-                                    label={`${fields.length} item${fields.length > 1 ? 's' : ''}`}
+                                    label={`${fields.length} item${
+                                        fields.length > 1 ? 's' : ''
+                                    }`}
                                     color="primary"
                                     variant="outlined"
                                 />
@@ -824,7 +885,8 @@ export const RequisitionForm = ({
                     }}
                 >
                     <Typography variant="body2" color="text.secondary">
-                        {fields.length} item{fields.length > 1 ? 's' : ''} in this requisition
+                        {fields.length} item{fields.length > 1 ? 's' : ''} in this
+                        requisition
                     </Typography>
 
                     <Stack direction="row" spacing={1.5}>
