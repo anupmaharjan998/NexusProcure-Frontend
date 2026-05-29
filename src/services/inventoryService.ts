@@ -1,5 +1,4 @@
 import api from './api';
-import {string} from "yup";
 
 /* ================= STOCK / CATALOG ================= */
 

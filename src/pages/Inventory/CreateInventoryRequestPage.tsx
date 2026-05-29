@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
+    Autocomplete,
     Box,
     Card,
     CardContent,
@@ -272,8 +273,9 @@ export default function CreateInventoryRequestPage() {
                                             <Typography variant="h6" fontWeight={900}>
                                                 Requested Items
                                             </Typography>
+
                                             <Typography variant="body2" color="text.secondary">
-                                                Select stock item and required quantity.
+                                                Search stock item and enter required quantity.
                                             </Typography>
                                         </Box>
 
@@ -308,32 +310,64 @@ export default function CreateInventoryRequestPage() {
                                                         spacing={2}
                                                         alignItems={{ xs: 'stretch', md: 'center' }}
                                                     >
-                                                        <TextField
-                                                            label="Stock Item"
-                                                            select
-                                                            value={item.stockId}
-                                                            onChange={(event) =>
+                                                        <Autocomplete
+                                                            fullWidth
+                                                            loading={loadingStocks}
+                                                            options={stocks}
+                                                            value={
+                                                                stocks.find(
+                                                                    (stock) => stock.id === item.stockId
+                                                                ) || null
+                                                            }
+                                                            getOptionLabel={(option) =>
+                                                                `${option.name} — Available: ${option.quantityAvailable}`
+                                                            }
+                                                            isOptionEqualToValue={(option, value) =>
+                                                                option.id === value.id
+                                                            }
+                                                            getOptionDisabled={(option) =>
+                                                                selectedStockIds.includes(option.id) &&
+                                                                option.id !== item.stockId
+                                                            }
+                                                            onChange={(_, value) =>
                                                                 updateItem(index, {
-                                                                    stockId: event.target.value,
+                                                                    stockId: value?.id || '',
                                                                 })
                                                             }
-                                                            fullWidth
-                                                        >
-                                                            {stocks.map((stock) => (
-                                                                <MenuItem
-                                                                    key={stock.id}
-                                                                    value={stock.id}
-                                                                    disabled={
-                                                                        selectedStockIds.includes(
-                                                                            stock.id
-                                                                        ) && stock.id !== item.stockId
-                                                                    }
+                                                            renderOption={(props, option) => (
+                                                                <Box
+                                                                    component="li"
+                                                                    {...props}
+                                                                    key={option.id}
                                                                 >
-                                                                    {stock.name} — Available:{' '}
-                                                                    {stock.quantityAvailable}
-                                                                </MenuItem>
-                                                            ))}
-                                                        </TextField>
+                                                                    <Stack spacing={0.3}>
+                                                                        <Typography fontWeight={800}>
+                                                                            {option.name}
+                                                                        </Typography>
+
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            color="text.secondary"
+                                                                        >
+                                                                            Available: {option.quantityAvailable}
+                                                                            {option.categoryName
+                                                                                ? ` • ${option.categoryName}`
+                                                                                : ''}
+                                                                            {option.isAssetTracked
+                                                                                ? ' • Asset Tracked'
+                                                                                : ' • Consumable'}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                </Box>
+                                                            )}
+                                                            renderInput={(params) => (
+                                                                <TextField
+                                                                    {...params}
+                                                                    label="Stock Item"
+                                                                    placeholder="Search stock item..."
+                                                                />
+                                                            )}
+                                                        />
 
                                                         <TextField
                                                             label="Quantity"

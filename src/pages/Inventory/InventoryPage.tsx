@@ -20,6 +20,13 @@ import {
     Paper,
     Stack,
     Tab,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TablePagination,
+    TableRow,
     Tabs,
     TextField,
     Tooltip,
@@ -53,9 +60,8 @@ import {
 } from '../../services/inventoryService';
 import { DashboardLayout } from '../../components/Layout/DashboardLayout.tsx';
 import { InventoryCategoryDto } from '../../types/InventoryCategoryDto.ts';
-import {InventoryItemCondition} from "../../types/enum/InventoryItemCondition.ts";
-import {InventoryItemStatus} from "../../types/enum/InventoryItemStatus.ts";
-
+import { InventoryItemCondition } from '../../types/enum/InventoryItemCondition.ts';
+import { InventoryItemStatus } from '../../types/enum/InventoryItemStatus.ts';
 
 const inventoryItemStatusOptions = [
     { label: 'Available', value: InventoryItemStatus.Available, apiValue: 'Available' },
@@ -125,6 +131,9 @@ export default function InventoryPage() {
     const [stockStatus, setStockStatus] = useState('');
     const [assetStatus, setAssetStatus] = useState('');
 
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
     const [openStockDialog, setOpenStockDialog] = useState(false);
     const [openAssetDialog, setOpenAssetDialog] = useState(false);
     const [openEditStockDialog, setOpenEditStockDialog] = useState(false);
@@ -156,6 +165,14 @@ export default function InventoryPage() {
         [assetTrackedStocks, assetForm.stockId]
     );
 
+    const paginatedStocks = useMemo(() => {
+        return stocks.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    }, [stocks, page, rowsPerPage]);
+
+    const paginatedAssets = useMemo(() => {
+        return assets.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+    }, [assets, page, rowsPerPage]);
+
     const stockStats = useMemo(() => {
         const total = stocks.length;
         const lowStock = stocks.filter((stock) => stock.status === 'LowStock').length;
@@ -186,6 +203,7 @@ export default function InventoryPage() {
 
     const getStatusLabel = (value: number | string) => {
         const numericValue = Number(value);
+
         return (
             inventoryItemStatusOptions.find((option) => option.value === numericValue)?.label ||
             String(value)
@@ -194,6 +212,7 @@ export default function InventoryPage() {
 
     const getConditionLabel = (value: number | string) => {
         const numericValue = Number(value);
+
         return (
             inventoryItemConditionOptions.find((option) => option.value === numericValue)?.label ||
             String(value)
@@ -239,7 +258,7 @@ export default function InventoryPage() {
                 search,
                 status: stockStatus as any,
                 pageNumber: 1,
-                pageSize: 50,
+                pageSize: 100,
             });
 
             setStocks(res.items || []);
@@ -267,7 +286,7 @@ export default function InventoryPage() {
                 search,
                 status: assetStatus,
                 pageNumber: 1,
-                pageSize: 50,
+                pageSize: 100,
             });
 
             setAssets(res.items || []);
@@ -283,6 +302,8 @@ export default function InventoryPage() {
     }, []);
 
     useEffect(() => {
+        setPage(0);
+
         if (tab === 0) {
             loadStocks();
         } else {
@@ -291,11 +312,27 @@ export default function InventoryPage() {
     }, [tab, stockStatus, assetStatus]);
 
     const handleSearch = () => {
+        setPage(0);
+
         if (tab === 0) {
             loadStocks();
         } else {
             loadAssets();
         }
+    };
+
+    const handleTabChange = (_event: React.SyntheticEvent, value: number) => {
+        setTab(value);
+        setPage(0);
+    };
+
+    const handleChangePage = (_event: unknown, newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setRowsPerPage(parseInt(event.target.value, 10));
+        setPage(0);
     };
 
     const closeStockDialog = () => {
@@ -478,6 +515,7 @@ export default function InventoryPage() {
         if (statusNumber === InventoryItemStatus.Available || status === 'Available') return 'success';
         if (statusNumber === InventoryItemStatus.Assigned || status === 'Assigned') return 'primary';
         if (statusNumber === InventoryItemStatus.Maintenance || status === 'Maintenance') return 'warning';
+
         if (
             statusNumber === InventoryItemStatus.Damaged ||
             statusNumber === InventoryItemStatus.Lost ||
@@ -665,7 +703,7 @@ export default function InventoryPage() {
                         <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
                             <Tabs
                                 value={tab}
-                                onChange={(_, value) => setTab(value)}
+                                onChange={handleTabChange}
                                 sx={{
                                     mb: 3,
                                     '& .MuiTab-root': {
@@ -769,17 +807,16 @@ export default function InventoryPage() {
                                 onClick={() => setOpenStockDialog(true)}
                             />
                         ) : (
-                            <Grid container spacing={2.5}>
-                                {stocks.map((stock) => (
-                                    <Grid item xs={12} md={6} lg={4} key={stock.id}>
-                                        <StockCard
-                                            stock={stock}
-                                            getStockChipColor={getStockChipColor}
-                                            onEdit={() => openEditStock(stock)}
-                                        />
-                                    </Grid>
-                                ))}
-                            </Grid>
+                            <InventoryStockTable
+                                stocks={paginatedStocks}
+                                totalCount={stocks.length}
+                                page={page}
+                                rowsPerPage={rowsPerPage}
+                                onPageChange={handleChangePage}
+                                onRowsPerPageChange={handleChangeRowsPerPage}
+                                getStockChipColor={getStockChipColor}
+                                onEdit={openEditStock}
+                            />
                         )
                     ) : assets.length === 0 ? (
                         <EmptyState
@@ -790,21 +827,24 @@ export default function InventoryPage() {
                             onClick={() => setOpenAssetDialog(true)}
                         />
                     ) : (
-                        <Grid container spacing={2.5}>
-                            {assets.map((asset) => (
-                                <Grid item xs={12} md={6} lg={4} key={asset.id}>
-                                    <AssetCard
-                                        asset={asset}
-                                        getStatusLabel={getStatusLabel}
-                                        getAssetChipColor={getAssetChipColor}
-                                        onEdit={() => openEditAsset(asset)}
-                                        onView={() => navigate(`/inventory/assets/${asset.id}`)}
-                                    />
-                                </Grid>
-                            ))}
-                        </Grid>
+                        <InventoryAssetTable
+                            assets={paginatedAssets}
+                            totalCount={assets.length}
+                            page={page}
+                            rowsPerPage={rowsPerPage}
+                            onPageChange={handleChangePage}
+                            onRowsPerPageChange={handleChangeRowsPerPage}
+                            getStatusLabel={getStatusLabel}
+                            getConditionLabel={getConditionLabel}
+                            getAssetChipColor={getAssetChipColor}
+                            onEdit={openEditAsset}
+                            onView={(asset) => navigate(`/inventory/assets/${asset.id}`)}
+                        />
                     )}
                 </Box>
+
+                {/* Keep all your existing dialogs below unchanged */}
+                {/* Stock Dialog, Asset Dialog, Edit Stock Dialog, Edit Asset Dialog */}
 
                 <Dialog open={openStockDialog} onClose={closeStockDialog} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 5 } }}>
                     <DialogTitle sx={{ pb: 1 }}>
@@ -1294,6 +1334,360 @@ export default function InventoryPage() {
     );
 }
 
+function InventoryStockTable({
+                                 stocks,
+                                 totalCount,
+                                 page,
+                                 rowsPerPage,
+                                 onPageChange,
+                                 onRowsPerPageChange,
+                                 getStockChipColor,
+                                 onEdit,
+                             }: {
+    stocks: InventoryStockDto[];
+    totalCount: number;
+    page: number;
+    rowsPerPage: number;
+    onPageChange: (event: unknown, page: number) => void;
+    onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    getStockChipColor: (status: string) => any;
+    onEdit: (stock: InventoryStockDto) => void;
+}) {
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                borderRadius: 5,
+                overflow: 'hidden',
+                bgcolor: 'white',
+            }}
+        >
+            <TableContainer>
+                <Table>
+                    <TableHead>
+                        <TableRow
+                            sx={{
+                                bgcolor: '#f8fafc',
+                                '& th': {
+                                    fontWeight: 900,
+                                    color: '#334155',
+                                    whiteSpace: 'nowrap',
+                                },
+                            }}
+                        >
+                            <TableCell>Stock Item</TableCell>
+                            <TableCell>SKU</TableCell>
+                            <TableCell>Category</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Tracking</TableCell>
+                            <TableCell align="center">Available</TableCell>
+                            <TableCell align="center">Unit</TableCell>
+                            <TableCell align="center">Reorder Level</TableCell>
+                            <TableCell align="right">Actions</TableCell>
+                        </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                        {stocks.map((stock) => (
+                            <TableRow
+                                key={stock.id}
+                                hover
+                                sx={{
+                                    '& td': {
+                                        borderColor: '#e2e8f0',
+                                    },
+                                }}
+                            >
+                                <TableCell>
+                                    <Stack direction="row" spacing={1.5} alignItems="center">
+                                        <Box
+                                            sx={{
+                                                width: 42,
+                                                height: 42,
+                                                borderRadius: 3,
+                                                bgcolor: '#eff6ff',
+                                                color: 'primary.main',
+                                                display: 'grid',
+                                                placeItems: 'center',
+                                            }}
+                                        >
+                                            <Inventory2 fontSize="small" />
+                                        </Box>
+
+                                        <Box>
+                                            <Typography fontWeight={900}>
+                                                {stock.name}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {stock.isAssetTracked ? 'Asset tracked item' : 'Stock only item'}
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {stock.sku || 'N/A'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Typography variant="body2" fontWeight={700}>
+                                        {stock.categoryName || 'N/A'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Chip
+                                        size="small"
+                                        label={stock.status}
+                                        color={getStockChipColor(stock.status)}
+                                        sx={{ fontWeight: 800 }}
+                                    />
+                                </TableCell>
+
+                                <TableCell>
+                                    <Chip
+                                        size="small"
+                                        label={stock.isAssetTracked ? 'Asset Tracked' : 'Stock Only'}
+                                        color={stock.isAssetTracked ? 'primary' : 'default'}
+                                        sx={{ fontWeight: 800 }}
+                                    />
+                                </TableCell>
+
+                                <TableCell align="center">
+                                    <Typography fontWeight={900}>
+                                        {stock.quantityAvailable}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell align="center">
+                                    <Typography color="text.secondary">
+                                        {stock.unit || 'pcs'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell align="center">
+                                    <Chip
+                                        size="small"
+                                        label={stock.reorderLevel ?? 0}
+                                        variant="outlined"
+                                        sx={{ fontWeight: 800 }}
+                                    />
+                                </TableCell>
+
+                                <TableCell align="right">
+                                    <Tooltip title="Edit stock">
+                                        <IconButton color="primary" onClick={() => onEdit(stock)}>
+                                            <Edit />
+                                        </IconButton>
+                                    </Tooltip>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+
+            <TablePagination
+                component="div"
+                count={totalCount}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                onPageChange={onPageChange}
+                onRowsPerPageChange={onRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+            />
+        </Paper>
+    );
+}
+
+function InventoryAssetTable({
+                                 assets,
+                                 totalCount,
+                                 page,
+                                 rowsPerPage,
+                                 onPageChange,
+                                 onRowsPerPageChange,
+                                 getStatusLabel,
+                                 getConditionLabel,
+                                 getAssetChipColor,
+                                 onEdit,
+                                 onView,
+                             }: {
+    assets: InventoryItemDto[];
+    totalCount: number;
+    page: number;
+    rowsPerPage: number;
+    onPageChange: (event: unknown, page: number) => void;
+    onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    getStatusLabel: (status: string | number) => string;
+    getConditionLabel: (condition: string | number) => string;
+    getAssetChipColor: (status: string | number) => any;
+    onEdit: (asset: InventoryItemDto) => void;
+    onView: (asset: InventoryItemDto) => void;
+}) {
+    return (
+        <Paper
+            variant="outlined"
+            sx={{
+                borderRadius: 5,
+                overflow: 'hidden',
+                bgcolor: 'white',
+            }}
+        >
+            <TableContainer>
+                <Table>
+                    <TableHead>
+                        <TableRow
+                            sx={{
+                                bgcolor: '#f8fafc',
+                                '& th': {
+                                    fontWeight: 900,
+                                    color: '#334155',
+                                    whiteSpace: 'nowrap',
+                                },
+                            }}
+                        >
+                            <TableCell>Asset</TableCell>
+                            <TableCell>SKU</TableCell>
+                            <TableCell>Category</TableCell>
+                            <TableCell>Serial Number</TableCell>
+                            <TableCell>Location</TableCell>
+                            <TableCell>Assigned To</TableCell>
+                            <TableCell>Status</TableCell>
+                            <TableCell>Condition</TableCell>
+                            <TableCell align="right">Actions</TableCell>
+                        </TableRow>
+                    </TableHead>
+
+                    <TableBody>
+                        {assets.map((asset) => (
+                            <TableRow
+                                key={asset.id}
+                                hover
+                                sx={{
+                                    '& td': {
+                                        borderColor: '#e2e8f0',
+                                    },
+                                }}
+                            >
+                                <TableCell>
+                                    <Stack direction="row" spacing={1.5} alignItems="center">
+                                        <Box
+                                            sx={{
+                                                width: 42,
+                                                height: 42,
+                                                borderRadius: 3,
+                                                bgcolor: '#eff6ff',
+                                                color: 'primary.main',
+                                                display: 'grid',
+                                                placeItems: 'center',
+                                            }}
+                                        >
+                                            <LaptopMac fontSize="small" />
+                                        </Box>
+
+                                        <Box>
+                                            <Typography fontWeight={900}>
+                                                {asset.name}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Physical asset record
+                                            </Typography>
+                                        </Box>
+                                    </Stack>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {asset.sku || 'N/A'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Typography variant="body2" fontWeight={700}>
+                                        {asset.category || 'N/A'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {asset.serialNumber || '-'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {asset.location || '-'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {asset.assignedTo || 'Not assigned'}
+                                    </Typography>
+                                </TableCell>
+
+                                <TableCell>
+                                    <Chip
+                                        size="small"
+                                        label={getStatusLabel(asset.status as any)}
+                                        color={getAssetChipColor(asset.status as any)}
+                                        sx={{ fontWeight: 800 }}
+                                    />
+                                </TableCell>
+
+                                <TableCell>
+                                    <Chip
+                                        size="small"
+                                        label={getConditionLabel(asset.condition as any)}
+                                        variant="outlined"
+                                        sx={{ fontWeight: 800 }}
+                                    />
+                                </TableCell>
+
+                                <TableCell align="right">
+                                    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                        <Tooltip title="Edit asset">
+                                            <IconButton color="primary" onClick={() => onEdit(asset)}>
+                                                <Edit />
+                                            </IconButton>
+                                        </Tooltip>
+
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={() => onView(asset)}
+                                            sx={{
+                                                borderRadius: 2,
+                                                textTransform: 'none',
+                                                fontWeight: 800,
+                                            }}
+                                        >
+                                            Details
+                                        </Button>
+                                    </Stack>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableContainer>
+
+            <TablePagination
+                component="div"
+                count={totalCount}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                onPageChange={onPageChange}
+                onRowsPerPageChange={onRowsPerPageChange}
+                rowsPerPageOptions={[5, 10, 25, 50]}
+            />
+        </Paper>
+    );
+}
+
 function StatCard({
                       icon,
                       title,
@@ -1326,191 +1720,6 @@ function StatCard({
                             {helper}
                         </Typography>
                     </Box>
-                </Stack>
-            </CardContent>
-        </Card>
-    );
-}
-
-function StockCard({
-                       stock,
-                       getStockChipColor,
-                       onEdit,
-                   }: {
-    stock: InventoryStockDto;
-    getStockChipColor: (status: string) => any;
-    onEdit: () => void;
-}) {
-    return (
-        <Card
-            elevation={0}
-            sx={{
-                borderRadius: 4,
-                height: '100%',
-                border: '1px solid',
-                borderColor: 'divider',
-                transition: '0.2s ease',
-                '&:hover': {
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 16px 35px rgba(15,23,42,0.10)',
-                },
-            }}
-        >
-            <CardContent>
-                <Stack spacing={2}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Box sx={{ width: 46, height: 46, borderRadius: 3, bgcolor: '#eff6ff', color: 'primary.main', display: 'grid', placeItems: 'center' }}>
-                                <Inventory2 />
-                            </Box>
-
-                            <Box>
-                                <Typography variant="h6" fontWeight={900}>
-                                    {stock.name}
-                                </Typography>
-
-                                <Typography variant="caption" color="text.secondary">
-                                    SKU: {stock.sku}
-                                </Typography>
-                            </Box>
-                        </Stack>
-
-                        <Chip size="small" label={stock.status} color={getStockChipColor(stock.status)} sx={{ fontWeight: 700 }} />
-                    </Stack>
-
-                    <Typography variant="body2" color="text.secondary">
-                        Category: <b>{stock.categoryName}</b>
-                    </Typography>
-
-                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 3, bgcolor: '#f8fafc' }}>
-                        <Stack direction="row" justifyContent="space-between">
-                            <Box>
-                                <Typography variant="caption" color="text.secondary">
-                                    Available
-                                </Typography>
-
-                                <Typography variant="h5" fontWeight={900}>
-                                    {stock.quantityAvailable} {stock.unit}
-                                </Typography>
-                            </Box>
-
-                            <Box textAlign="right">
-                                <Typography variant="caption" color="text.secondary">
-                                    Reorder Level
-                                </Typography>
-
-                                <Typography fontWeight={800}>
-                                    {stock.reorderLevel}
-                                </Typography>
-                            </Box>
-                        </Stack>
-                    </Paper>
-
-                    <Chip
-                        size="small"
-                        label={stock.isAssetTracked ? 'Asset Tracked' : 'Stock Only'}
-                        color={stock.isAssetTracked ? 'primary' : 'default'}
-                        sx={{ width: 'fit-content', fontWeight: 700 }}
-                    />
-
-                    <Button
-                        variant="contained"
-                        startIcon={<Edit />}
-                        onClick={onEdit}
-                        sx={{ borderRadius: 3, textTransform: 'none', fontWeight: 800 }}
-                    >
-                        Edit Stock
-                    </Button>
-                </Stack>
-            </CardContent>
-        </Card>
-    );
-}
-
-function AssetCard({
-                       asset,
-                       getStatusLabel,
-                       getAssetChipColor,
-                       onEdit,
-                       onView,
-                   }: {
-    asset: InventoryItemDto;
-    getStatusLabel: (status: string | number) => string;
-    getAssetChipColor: (status: string | number) => any;
-    onEdit: () => void;
-    onView: () => void;
-}) {
-    return (
-        <Card
-            elevation={0}
-            sx={{
-                borderRadius: 4,
-                height: '100%',
-                border: '1px solid',
-                borderColor: 'divider',
-                transition: '0.2s ease',
-                '&:hover': {
-                    transform: 'translateY(-3px)',
-                    boxShadow: '0 16px 35px rgba(15,23,42,0.10)',
-                },
-            }}
-        >
-            <CardContent>
-                <Stack spacing={2}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Box sx={{ width: 46, height: 46, borderRadius: 3, bgcolor: '#eff6ff', color: 'primary.main', display: 'grid', placeItems: 'center' }}>
-                                <LaptopMac />
-                            </Box>
-
-                            <Box>
-                                <Typography variant="h6" fontWeight={900}>
-                                    {asset.name}
-                                </Typography>
-
-                                <Typography variant="caption" color="text.secondary">
-                                    SKU: {asset.sku}
-                                </Typography>
-                            </Box>
-                        </Stack>
-
-                        <Chip
-                            size="small"
-                            label={getStatusLabel(asset.status as any)}
-                            color={getAssetChipColor(asset.status as any)}
-                            sx={{ fontWeight: 700 }}
-                        />
-                    </Stack>
-
-                    <Divider />
-
-                    <Stack spacing={1}>
-                        <Typography variant="body2" color="text.secondary">
-                            Category: <b>{asset.category}</b>
-                        </Typography>
-
-                        <Typography variant="body2" color="text.secondary">
-                            Serial: <b>{asset.serialNumber || '-'}</b>
-                        </Typography>
-
-                        <Typography variant="body2" color="text.secondary">
-                            Location: <b>{asset.location || '-'}</b>
-                        </Typography>
-
-                        <Typography variant="body2" color="text.secondary">
-                            Assigned To: <b>{asset.assignedTo || 'Not assigned'}</b>
-                        </Typography>
-                    </Stack>
-
-                    <Stack direction="row" spacing={1}>
-                        <Button variant="contained" startIcon={<Edit />} onClick={onEdit} fullWidth sx={{ borderRadius: 3, textTransform: 'none', fontWeight: 800 }}>
-                            Edit
-                        </Button>
-
-                        <Button variant="outlined" onClick={onView} fullWidth sx={{ borderRadius: 3, textTransform: 'none', fontWeight: 800 }}>
-                            Details
-                        </Button>
-                    </Stack>
                 </Stack>
             </CardContent>
         </Card>
